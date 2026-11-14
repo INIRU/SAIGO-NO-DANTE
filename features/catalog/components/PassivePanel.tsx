@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import { getSinnerLogoUrl } from '@/lib/utils/images'
 import { buildPassivePanelModel, type PlannerPassiveIdentitySlot, type PlannerPassiveLike, type PlannerPassiveSinnerLike } from '@/lib/planner/passives'
 import { PassiveEffect } from './PassiveEffect'
-import { useOwnKeywordSets } from '@/lib/hooks/useOwnKeywords'
+import { useOwnKeywordSets } from '@/hooks/useOwnKeywords'
 
 interface PlannerPassivePanelProps {
   identitySlots: PlannerPassiveIdentitySlot[]

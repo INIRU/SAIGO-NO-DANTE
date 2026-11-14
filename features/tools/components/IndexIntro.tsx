@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import DanteLogo from '@/components/brand/DanteLogo'
-import styles from './prescript.module.css'
+import styles from '@/features/tools/components/PrescriptClient.module.css'
 
 const SEEN_KEY = 'prescript-intro-seen'
 

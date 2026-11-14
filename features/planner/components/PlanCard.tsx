@@ -15,7 +15,7 @@ import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvi
 import { useLocale, useTranslations } from 'next-intl'
 import { localizeDeckKeyword } from '@/features/decks'
 import type { SupportedLang } from '@/lib/i18n'
-import { normalizePlannerListKeywords, planDifficultyBadge, type PlanSummary } from '@/lib/planner/stripPlanForList'
+import { normalizePlannerListKeywords, planDifficultyBadge, type PlanSummary } from '@/lib/planner/strip-plan-for-list'
 import { guestAuthorName } from '@/features/account'
 import OwnedBadge, { useMissingSinners } from '@/features/tools/components/OwnedBadge'
 

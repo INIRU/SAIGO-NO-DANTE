@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user'
 import {
   ADMIN_INQUIRY_FIELDS,
   inquiryAdminPatchSchema,

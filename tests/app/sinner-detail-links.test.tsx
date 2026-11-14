@@ -16,7 +16,7 @@ vi.mock('@/lib/i18n/navigation', () => ({
 }))
 vi.mock('@/components/providers/KeywordProvider', () => ({ useKeywordData: () => ({ sinMap: {}, iconMap: {}, getIconUrl: () => null }) }))
 vi.mock('@/features/catalog/hooks/useOwnedIdentities', () => ({ useOwnedIdentities: () => null }))
-vi.mock('@/lib/hooks/useRoutePrefetch', () => ({ useRoutePrefetch: () => {} }))
+vi.mock('@/hooks/useRoutePrefetch', () => ({ useRoutePrefetch: () => {} }))
 
 const sinner = { id: 'faust', name: 'Faust', name_kr: '파우스트', name_jp: 'ファウスト', order_num: 2 } as unknown as Sinner
 const identities = [

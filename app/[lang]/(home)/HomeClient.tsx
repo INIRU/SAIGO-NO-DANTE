@@ -6,7 +6,7 @@ import Image from 'next/image'
 import dynamic from 'next/dynamic'
 
 import { useTranslations, useLocale } from 'next-intl'
-import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
+import { useRoutePrefetch } from '@/hooks/useRoutePrefetch'
 import type { SupportedLang } from '@/lib/i18n/types'
 import HeroWordmark from '@/components/home/HeroWordmark'
 import LimpiLink from '@/app/[lang]/(home)/_components/LimpiLink'

@@ -8,7 +8,7 @@ import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 import KeywordSidebar from './KeywordSidebar'
 import { refNameLabels } from '@/lib/game-text/rich-text'
 import { giftSearchText } from '@/features/planner/lib/gift-search'
-import { useGameTextRefs, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
+import { useGameTextRefs, wantGameTextRefs } from '@/hooks/useGameTextRefs'
 
 // ── Gift grid with grade groups ──────────────────────────────────────────────
 export default memo(function GiftGridPanel({

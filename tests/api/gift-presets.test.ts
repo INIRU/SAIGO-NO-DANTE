@@ -12,7 +12,7 @@ vi.mock('@/lib/auth', () => ({
     ? { error: false, session: { user: { email: 'a@b.c' } } }
     : { error: true, response: new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 }) },
 }))
-vi.mock('@/lib/supabase/findOrCreateUser', () => ({ findOrCreateSupabaseUser: async () => 'user-1' }))
+vi.mock('@/lib/supabase/find-or-create-user', () => ({ findOrCreateSupabaseUser: async () => 'user-1' }))
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
     schema: () => ({

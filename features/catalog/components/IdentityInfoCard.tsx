@@ -2,7 +2,7 @@
 
 
 import Image from 'next/image'
-import SinnerShardIcon from '@/components/ui/SinnerShardIcon'
+import SinnerShardIcon from '@/features/catalog/components/SinnerShardIcon'
 import {
   Identity,
   RARITY_ICON_MAP,

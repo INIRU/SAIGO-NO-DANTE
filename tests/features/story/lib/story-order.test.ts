@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isHiddenChapter, storyOrder } from '@/app/[lang]/story/_components/story-order'
+import { isHiddenChapter, storyOrder } from '@/features/story/lib/story-order'
 
 describe('story progress', () => {
   const index = [
@@ -33,7 +33,7 @@ describe('chapter parts', () => {
     { id: 9112, hard: true, normal: 9105, sync: null },
   ]
   it('pairs a HARD version with its normal chapter, and leaves a sync chapter out without making it a part', async () => {
-    const { chapterParts, isExtraPart } = await import('@/app/[lang]/story/_components/story-order')
+    const { chapterParts, isExtraPart } = await import('@/features/story/lib/story-order')
     expect(chapterParts(index, 9112).map(e => e.id)).toEqual([9105, 9112])
     expect(chapterParts(index, 110).map(e => e.id)).toEqual([110])
     expect(index.filter(e => isExtraPart(index, e)).map(e => e.id)).toEqual([9128, 9112])

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { countCollection, filterCollection } from '@/lib/collection-view'
+import { countCollection, filterCollection } from '@/features/tools/lib/collection-view'
 import type { CollectionData, IdentityInfo, EGOInfo } from '@/lib/collection'
 
 const identity = (id: string, keywords: string[] | null): IdentityInfo => ({ id, sinner_id: 'a', name_kr: id, game_id: null, folder_name: null, rarity: 3, keywords })

@@ -3,7 +3,7 @@ import { pushForComment } from '@/lib/push/send'
 import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireActiveUser } from '@/lib/auth'
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Passive, Skill } from '@/lib/types'
-import { computePassiveDiffs, computeSkillDiffs, diffDescriptionLines } from '@/lib/utils/uptie-diff'
+import { computePassiveDiffs, computeSkillDiffs, diffDescriptionLines } from '@/features/catalog/lib/uptie-diff'
 
 describe('diffDescriptionLines', () => {
   it('returns only changed lines, removed before their replacement, tagged with the coin', () => {

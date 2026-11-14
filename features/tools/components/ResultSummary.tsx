@@ -4,7 +4,7 @@ import { RARITY_ICON_MAP } from '@/lib/constants/game'
 import { getEgoGradeBannerUrl } from '@/lib/utils/images'
 import { EGO_GRADES, summarize } from '@/features/tools/lib/random/display'
 import type { RandomResult } from '@/features/tools/lib/random/engine'
-import styles from './random.module.css'
+import styles from '@/features/tools/components/RandomClient.module.css'
 
 const RARITIES = [3, 2, 1] as const
 

@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import BackLink from '@/components/navigation/BackLink'
 import { HISTORY_KEY, historyTotals, readHistory } from '@/features/tools/lib/prescript-history'
-import styles from './prescript.module.css'
+import styles from '@/features/tools/components/PrescriptClient.module.css'
 
 /**
  * The ranking of Proselytes by grace. Its server table is not in place yet (a migration goes with the site's next

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { toggleFormationSlot } from '@/lib/planner/formation-toggle'
+import { toggleFormationSlot } from '@/features/planner/lib/formation-toggle'
 import type { IdentitySlot } from '@/lib/planner/types'
 
 const slot = (sinner_id: string, slot_order: number) => ({ identity_id: 'i' + sinner_id, sinner_id, name_kr: sinner_id, rarity: 3, keywords: [], game_id: null, folder_name: null, slot_order }) as IdentitySlot

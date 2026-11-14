@@ -92,7 +92,7 @@ describe('one Switch everywhere', () => {
   it('has no screen-specific switch styles left', () => {
     const left: Record<string, RegExp> = {
       'features/tools/components/CollectionBoard.module.css': /\.switch\b/,
-      'features/tools/components/random.module.css': /\.switch\b/,
+      'features/tools/components/RandomClient.module.css': /\.switch\b/,
       'features/motion/components/MotionDeck.module.css': /\.switch\b/,
       'features/tools/components/LunacyCalendar.module.css': /\.switch(Track|State)\b/,
       'features/account/components/support.css': /desk-switch/,

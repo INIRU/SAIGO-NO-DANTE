@@ -12,7 +12,7 @@ import {
 import SkillDescription from '@/features/catalog/components/SkillDescription'
 import GameSkillBox from '@/features/catalog/components/GameSkillBox'
 import { UptieChangePanel, type StatChange } from '@/features/catalog/components/UptieChanges'
-import { diffDescriptionLines, type SkillDiff } from '@/lib/utils/uptie-diff'
+import { diffDescriptionLines, type SkillDiff } from '@/features/catalog/lib/uptie-diff'
 import { useTranslations, useLocale } from 'next-intl'
 import { IDENTITY_STAT_BASE_LEVEL, offenseLevelDisplay } from '@/features/catalog/lib/identity-level'
 

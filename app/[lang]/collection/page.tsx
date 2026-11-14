@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { metaText, pageMetadata } from '@/lib/seo/metadata'
-import { fetchCollectionData } from '@/lib/db/collection'
+import { fetchCollectionData } from '@/features/tools/server'
 import CollectionClient from './_components/CollectionClient'
 import RequestTimeRoute from '@/components/layout/RequestTimeRoute'
 import { getTranslations } from 'next-intl/server'

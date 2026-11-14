@@ -3,7 +3,7 @@
 import { Download, Link2, Route, Users } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import Button from '@/components/ui/Button'
-import styles from './random.module.css'
+import styles from '@/features/tools/components/RandomClient.module.css'
 
 /** What can be done with the result: share its link, open it in the planner or the deck builder, save the board as an image. */
 export default function ResultToolbar({ disabled, imageDisabled, saving, onCopyLink, onPlanner, onDeck, onImage }: {

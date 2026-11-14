@@ -15,7 +15,7 @@ import { getLocalizedKeywordDesc, getLocalizedKeywordName } from '@/lib/i18n/loc
 import type { SupportedLang } from '@/lib/i18n/types'
 import { PlaceholderText } from '@/components/ui/PlaceholderLabel'
 import { mayBeRawGameText, parseGameText } from '@/lib/game-text/rich-text'
-import { preloadGameTextRefDescriptions, preloadGameTextRefFlavors, useGameTextRefDescription, useKeywordFlavor, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
+import { preloadGameTextRefDescriptions, preloadGameTextRefFlavors, useGameTextRefDescription, useKeywordFlavor, wantGameTextRefs } from '@/hooks/useGameTextRefs'
 import GameText from '@/components/game-text/GameText'
 import { keywordTextAllowed } from '@/lib/keywords/plain-keywords'
 import { FLAVOR_COLOR } from '@/lib/game-text/flavor'

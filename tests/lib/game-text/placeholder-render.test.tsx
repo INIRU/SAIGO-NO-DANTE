@@ -7,7 +7,7 @@ import en from '@/messages/en.json'
 import ja from '@/messages/ja.json'
 import PlaceholderLabel, { PlaceholderGiftProvider, PlaceholderText } from '@/components/ui/PlaceholderLabel'
 import { KeywordProvider, useFormatSkillDesc } from '@/components/providers/KeywordProvider'
-import { colorizeEventText } from '@/lib/utils/event-text'
+import { colorizeEventText } from '@/features/mirror-dungeon/lib/event-text'
 import { PLACEHOLDER_LABELS, PLACEHOLDER_TOKENS, placeholdersToPlainText, type PlaceholderLocale } from '@/lib/game-text/placeholders'
 
 vi.mock('next/image', () => ({ default: (props: { src: string; alt: string; className?: string }) => <img src={props.src} alt={props.alt} className={props.className} /> }))

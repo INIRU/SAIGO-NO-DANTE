@@ -15,7 +15,7 @@ import KeywordModal, { type KeywordEgo, type KeywordGift, type KeywordIdentity }
 import { keywordDesc, keywordName, kt, type KeywordEntry } from './KeywordCard'
 import { gameTextToPlain, refNameLabels } from '@/lib/game-text/rich-text'
 import { createGiftMentionMatcher } from '@/lib/keywords/gift-mentions'
-import { useGameTextRefs, wantGameTextRefs } from '@/lib/hooks/useGameTextRefs'
+import { useGameTextRefs, wantGameTextRefs } from '@/hooks/useGameTextRefs'
 
 interface Sinner {
   id: string

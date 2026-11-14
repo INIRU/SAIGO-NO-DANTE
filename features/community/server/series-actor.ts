@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireActiveUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user'
 import { discoveryUserId } from '@/features/community/lib/user-id'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { isAllowedRequestOrigin } from '@/lib/request-origin'

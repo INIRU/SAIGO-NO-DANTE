@@ -12,7 +12,7 @@ const REFS: GameTextRefNames = {
 }
 vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key: string) => key }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: 'a' }))
-vi.mock('@/lib/hooks/useGameTextRefs', () => ({
+vi.mock('@/hooks/useGameTextRefs', () => ({
   useGameTextRefs: () => ({ names: REFS, refIds: new Set(Object.keys(REFS)) }),
   wantGameTextRefs: () => {},
   preloadGameTextRefDescriptions: () => {},
