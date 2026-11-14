@@ -11,6 +11,8 @@ const ALLOWED = [
   'features/assist/lib/scene-worker.ts',
   'features/assist/lib/frame-tape-worker.ts',
   'features/assist/lib/ocr-worker.ts',
+  // scripts/db/gen-types.mjs가 만드는 DB 타입. Supabase 클라이언트에 붙이는 다음 단계에서 import되면 이 줄을 지운다.
+  'lib/supabase/database.types.ts',
 ]
 
 const find = (files: Record<string, string>, allowed: string[] = []) =>
