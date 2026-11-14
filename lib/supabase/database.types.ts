@@ -3214,6 +3214,12 @@ export type Database = {
         }
         Returns: Json
       }
+      delete_user_account: {
+        Args: {
+          p_user_id: string | null
+        }
+        Returns: undefined
+      }
       discovery_counts_since: {
         Args: {
           since?: string | null
