@@ -13,8 +13,8 @@ import { withPostAuthors } from '@/features/community/server/post-authors'
 
 beforeEach(() => { db.calls = []; db.result = { data: [], error: null } })
 
-describe('REQ-DECKS-020 REQ-PLANNER-024 post authors', () => {
-  it('REQ-DECKS-020 REQ-PLANNER-024 shows the author of a post whatever their profile privacy', async () => {
+describe('post authors', () => {
+  it('shows the author of a post whatever their profile privacy', async () => {
     db.result.data = [
       { id: 'u-private', username: '비공개 작성자', avatar_url: 'https://x/a.webp', public_profile: false },
       { id: 'u-public', username: '공개 작성자', avatar_url: null, public_profile: true },
@@ -37,7 +37,7 @@ describe('REQ-DECKS-020 REQ-PLANNER-024 post authors', () => {
     expect(db.calls.filter(call => call[0] === 'from')).toEqual([['from', 'profiles']])
   })
 
-  it('REQ-DECKS-020 leaves a suspended author anonymous and keeps what was read when the lookup fails', async () => {
+  it('leaves a suspended author anonymous and keeps what was read when the lookup fails', async () => {
     // The suspended author is not returned: the post keeps the empty author it had.
     expect((await withPostAuthors([{ id: 'd1', user_id: 'u-banned', profiles: null }]))[0].profiles).toBeNull()
     db.result = { data: null, error: { message: 'down' } }
@@ -45,7 +45,7 @@ describe('REQ-DECKS-020 REQ-PLANNER-024 post authors', () => {
     expect(rows[0].profiles).toEqual({ username: '공개 작성자', avatar_url: null })
   })
 
-  it('REQ-DECKS-020 reads nothing for guest-only lists', async () => {
+  it('reads nothing for guest-only lists', async () => {
     await withPostAuthors([{ id: 'd1', user_id: null }, { id: 'd2' }])
     expect(db.calls).toEqual([])
   })

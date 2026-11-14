@@ -192,7 +192,7 @@ it('reads the plan gifts for a pack wherever the plan placed it, plus the given 
   expect(planThemeGiftIds(createInitialRunState(), [], 'A', 1)).toEqual([])
 })
 
-it('REQ-PLANNER-047 leaves the clear reward off the pack on floor 15 but keeps the gifts planned there', () => {
+it('leaves the clear reward off the pack on floor 15 but keeps the gifts planned there', () => {
   const state = createInitialRunState()
   state.sourcePlanSnapshot = { floorPlan: [
     { floor: 14, theme_id: 'A', gift_ids: ['10'] },
@@ -206,7 +206,7 @@ it('REQ-PLANNER-047 leaves the clear reward off the pack on floor 15 but keeps t
   expect(planThemeGiftIds({ ...state, sourcePlanSnapshot: { floorPlan: [] } as unknown as RunState['sourcePlanSnapshot'] }, packs, 'B', 3)).toEqual([9251])
 })
 
-it('REQ-PLANNER-047 the current floor 15 does not count the pack clear reward as planned', () => {
+it('the current floor 15 does not count the pack clear reward as planned', () => {
   const tiered = (game_id: number) => ({ game_id, name: String(game_id), grade: '4' }) as GiftData
   const map = new Map([10, 20, 9250].map(id => [id, tiered(id)]))
   const purple = { ...theme('P', [10, 20, 9250], []), fixed_reward_gift_ids: [9250] }

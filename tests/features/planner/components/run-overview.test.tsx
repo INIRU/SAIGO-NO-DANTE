@@ -32,8 +32,8 @@ const render = (state: RunState, view: 'overview' | 'theme' = 'overview') => ren
 </NextIntlClientProvider>)
 const part = (html: string, mark: string) => { const start = html.indexOf(mark); const next = html.indexOf('data-run-', start + mark.length); return html.slice(start, next < 0 ? undefined : next) }
 
-describe('REQ-ASSIST-066 the run page shows the run in three columns', () => {
-  it('REQ-ASSIST-066 floors, status and this floor\'s gift record sit side by side, with no tab row or floor banner', () => {
+describe('the run page shows the run in three columns', () => {
+  it('floors, status and this floor\'s gift record sit side by side, with no tab row or floor banner', () => {
     const html = render(run())
     const order = ['data-run-floors', 'data-run-status', 'data-run-record'].map(mark => html.indexOf(mark))
     expect(order.every(index => index > 0)).toBe(true)
@@ -49,8 +49,8 @@ describe('REQ-ASSIST-066 the run page shows the run in three columns', () => {
   })
 })
 
-describe('REQ-ASSIST-067 the floor log lists every floor', () => {
-  it('REQ-ASSIST-067 visited floors show their pack and gifts, the floor being played offers the pack change and next floor, later floors are marked as not reached', () => {
+describe('the floor log lists every floor', () => {
+  it('visited floors show their pack and gifts, the floor being played offers the pack change and next floor, later floors are marked as not reached', () => {
     const floors = part(render(run()), 'data-run-floors')
     expect(floors.match(/data-floor-row="/g)).toHaveLength(5)
     expect(floors).toMatch(/data-floor-row="2"[^>]*data-floor-state="current"/)
@@ -62,7 +62,7 @@ describe('REQ-ASSIST-067 the floor log lists every floor', () => {
     expect(floors.split(messages.planner.run.floorAhead).length - 1).toBe(3)
   })
 
-  it('REQ-ASSIST-067 the last floor ends the record instead of going on', () => {
+  it('the last floor ends the record instead of going on', () => {
     const last = runReducer(run(), { type: 'GO_TO_FLOOR', floor: 5 })
     const floors = part(render(last), 'data-run-floors')
     expect(floors).toContain(messages.planner.run.completeRun)
@@ -70,8 +70,8 @@ describe('REQ-ASSIST-067 the floor log lists every floor', () => {
   })
 })
 
-describe('REQ-ASSIST-066 the overview is where a run starts again', () => {
-  it('REQ-ASSIST-066 leaving the run (reset, completion) or loading a saved run returns to the overview, and reset closes the more menu', () => {
+describe('the overview is where a run starts again', () => {
+  it('leaving the run (reset, completion) or loading a saved run returns to the overview, and reset closes the more menu', () => {
     const client = readFileSync('app/[lang]/planner/run/RunClient.tsx', 'utf8')
     expect(client).toContain("if (state.phase !== 'playing') setView('overview')")
     expect(client).toMatch(/const loadRunSlot = [\s\S]{0,200}setView\('overview'\)/)
@@ -79,8 +79,8 @@ describe('REQ-ASSIST-066 the overview is where a run starts again', () => {
   })
 })
 
-describe('REQ-ASSIST-067 floor rows are read out with what they hold', () => {
-  it('REQ-ASSIST-067 a row is named by its floor and its content, not by a label that hides the pack and gifts', () => {
+describe('floor rows are read out with what they hold', () => {
+  it('a row is named by its floor and its content, not by a label that hides the pack and gifts', () => {
     const floors = part(render(run()), 'data-run-floors')
     expect(floors).not.toMatch(/data-floor-row="\d+"[^>]*aria-label=/)
     expect(floors).toContain('<span class="sr-only">1층</span>')

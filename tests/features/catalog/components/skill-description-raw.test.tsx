@@ -25,8 +25,8 @@ const wrap = (node: React.ReactNode) => renderToStaticMarkup(<KeywordProvider ke
 
 const RAW = '[OnSucceedAttack] 본문\n<coin=1>[SuperCoin]\n<style="highlight">- [Combustion] 1\n- 둘째</style></coin>\n<coin=2>[OnSucceedAttack] 일반</coin>'
 
-describe('REQ-SHARED-020 SkillDescription of raw text', () => {
-  it('REQ-SHARED-020 REQ-SHARED-025 draws the coin blocks as coin sections (octagon and numeral), the unbreakable marker as the SuperCoin keyword, and no raw tags', () => {
+describe('SkillDescription of raw text', () => {
+  it('draws the coin blocks as coin sections (octagon and numeral), the unbreakable marker as the SuperCoin keyword, and no raw tags', () => {
     for (const variant of ['detail', 'compact', 'tooltip'] as const) {
       const html = wrap(<SkillDescription description={RAW} accentColor="#c2b79f" variant={variant} />)
       // The unbreakable marker is the game's [SuperCoin] keyword (name from the reference table, with its tooltip).
@@ -46,22 +46,22 @@ describe('REQ-SHARED-020 SkillDescription of raw text', () => {
     }
   })
 
-  it('REQ-SHARED-020 draws every line of a tag that spans lines without the tag or a highlight colour (REQ-SHARED-022)', () => {
+  it('draws every line of a tag that spans lines without the tag or a highlight colour', () => {
     const html = wrap(<SkillDescription description={RAW} accentColor="#c2b79f" variant="detail" />)
     expect(html).not.toContain('#f8c200')
     expect(html).not.toContain('style=&quot;')
     expect(html).toContain('둘째')
   })
 
-  it('REQ-SHARED-020 draws the older [코인 N] text as before', () => {
+  it('draws the older [코인 N] text as before', () => {
     const html = wrap(<SkillDescription description={'본문\n[코인 1] 파괴 불가 코인\n화상 2 부여'} accentColor="#c2b79f" variant="compact" />)
     expect(html).toContain('파괴 불가 코인')
     expect(html).toContain('화상')
   })
 })
 
-describe('REQ-SHARED-020 uptie change panel with raw text', () => {
-  it('REQ-SHARED-020 shows a removed raw line as plain struck text and an added one as game text', () => {
+describe('uptie change panel with raw text', () => {
+  it('shows a removed raw line as plain struck text and an added one as game text', () => {
     const html = wrap(
       <UptieChangePanel
         level={4}
@@ -77,7 +77,7 @@ describe('REQ-SHARED-020 uptie change panel with raw text', () => {
     expect(html).toMatch(/<s [^>]*>화상 2 \([^)]+\)<\/s>/)
   })
 
-  it('REQ-SHARED-020 leaves a removed line of the older format exactly as written', () => {
+  it('leaves a removed line of the older format exactly as written', () => {
     const html = wrap(<UptieChangePanel level={4} accentColor="#c2b79f" lines={[{ kind: 'removed', coin: 0, text: '[적중시] 화상 2 {{potency}}' }]} />)
     expect(html).toContain('[적중시] 화상 2 {{potency}}')
   })

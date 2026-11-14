@@ -22,15 +22,15 @@ function runBootScript(userAgent: string, hint: string | null) {
   return attrs
 }
 
-describe('REQ-SHARED-017 navbar paints its final shape before hydration', () => {
+describe('navbar paints its final shape before hydration', () => {
   beforeEach(() => { session.value = { data: null, status: 'loading' } })
 
-  it('REQ-SHARED-017 head script marks the platform and a remembered sign-in before paint', () => {
+  it('head script marks the platform and a remembered sign-in before paint', () => {
     expect([...runBootScript('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', '1')].sort()).toEqual(['data-auth-hint', 'data-mac'])
     expect([...runBootScript('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', null)]).toEqual([])
   })
 
-  it('REQ-SHARED-017 renders both shortcut labels and both auth slots while the session loads, chosen by CSS', async () => {
+  it('renders both shortcut labels and both auth slots while the session loads, chosen by CSS', async () => {
     const { default: Navbar } = await import('@/components/layout/Navbar')
     const html = renderToStaticMarkup(<Navbar mainNavLabel="main" />)
     expect(html).toContain('nav-kbd-mac')
@@ -42,7 +42,7 @@ describe('REQ-SHARED-017 navbar paints its final shape before hydration', () => 
     expect(css).toContain('html[data-mac] .nav-kbd-other')
   })
 
-  it('REQ-SHARED-017 shows only the login link once the session is known to be signed out', async () => {
+  it('shows only the login link once the session is known to be signed out', async () => {
     session.value = { data: null, status: 'unauthenticated' }
     const { default: Navbar } = await import('@/components/layout/Navbar')
     const html = renderToStaticMarkup(<Navbar mainNavLabel="main" />)

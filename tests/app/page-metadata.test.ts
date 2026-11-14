@@ -67,8 +67,8 @@ const PAGES: [string, () => Promise<unknown>][] = [
 const LANGS = ['ko', 'en', 'ja'] as const
 const metadataOf = async (load: () => Promise<unknown>, lang: string) => ((await load()) as PageModule).generateMetadata({ params: Promise.resolve({ lang }) })
 
-describe('REQ-SHARED-040 every indexable page describes itself', () => {
-  it.each(PAGES)('REQ-SHARED-040 %s has its own title, description, canonical and share data in ko, en and ja', async (path, load) => {
+describe('every indexable page describes itself', () => {
+  it.each(PAGES)('%s has its own title, description, canonical and share data in ko, en and ja', async (path, load) => {
     for (const lang of LANGS) {
       const metadata = await metadataOf(load, lang)
       const url = `https://saigo-no-dante.com/${lang}${path}`
@@ -93,7 +93,7 @@ describe('REQ-SHARED-040 every indexable page describes itself', () => {
     }
   })
 
-  it('REQ-SHARED-040 no two pages share a title or a description', async () => {
+  it('no two pages share a title or a description', async () => {
     for (const lang of LANGS) {
       const all = await Promise.all(PAGES.map(([, load]) => metadataOf(load, lang)))
       for (const field of ['title', 'description'] as const) {
@@ -103,7 +103,7 @@ describe('REQ-SHARED-040 every indexable page describes itself', () => {
     }
   })
 
-  it('REQ-SHARED-040 the planner, the deck board and the friend code board carry the search terms players use', async () => {
+  it('the planner, the deck board and the friend code board carry the search terms players use', async () => {
     const title = async (path: string, lang: string) => (await metadataOf(PAGES.find(([page]) => page === path)![1], lang)).title
     expect(await title('/planner', 'ko')).toBe('림버스 거울 던전 플래너 — 거던 플랜 짜기')
     expect(await title('/planner', 'en')).toBe('Limbus Company Mirror Dungeon Planner — Floor Plans & Gifts')

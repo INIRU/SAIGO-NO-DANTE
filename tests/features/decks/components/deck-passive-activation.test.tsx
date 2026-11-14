@@ -32,7 +32,7 @@ const bench = identity('bench', [
   passive('battle-of-bench', 'battle', 'stock', 'wrath', 1),
 ], { pride: 6 })
 
-// The static markup shows the battle tab; who a support passive is rated for is REQ-DECKS-025 (rateIdentityPassive).
+// The static markup shows the battle tab; who a support passive is rated for is tested with rateIdentityPassive in tests/features/decks/lib/passive-activation.test.ts.
 const render = (identities: DeckInsightIdentity[], deployedIds?: Set<string>) =>
   renderToStaticMarkup(<DeckInsights identities={identities} sinCounts={{ wrath: 6 }} deployedIds={deployedIds} />)
 const names = (html: string) => [...html.matchAll(/class="deck-passive" data-name="([^"]*)"/g)].map(match => match[1])
@@ -43,26 +43,26 @@ const rate = (html: string, name: string) => {
   return row.match(/class="deck-passive__rate" data-level="(\w+)"(?: title="([^"]*)")?>([^<]*)</)
 }
 
-describe('REQ-DECKS-026 passive activation marker', () => {
+describe('passive activation marker', () => {
   const html = render([fielded, bench], new Set(['fielded']))
 
-  it('REQ-DECKS-026 marks stock and resonance passives with their level in the viewer\'s language and the value as a tooltip', () => {
+  it('marks stock and resonance passives with their level in the viewer\'s language and the value as a tooltip', () => {
     expect(rate(html, 'stock-wrath')?.slice(1)).toEqual(['easy', 'stats.activationTurns:1', 'stats.activation.easy'])
     expect(rate(html, 'res-wrath')?.[1]).toBe('easy')
     expect(rate(html, 'res-wrath')?.[2]).toMatch(/^stats\.activationChance:\d+$/)
     expect(rate(html, 'stock-envy')?.slice(1)).toEqual(['impossible', undefined, 'stats.activation.impossible'])
   })
 
-  it('REQ-DECKS-026 puts impossible and hard first in an identity\'s list and leaves unconditional passives unmarked', () => {
+  it('puts impossible and hard first in an identity\'s list and leaves unconditional passives unmarked', () => {
     expect(names(html)).toEqual(['stock-envy', 'stock-wrath', 'res-wrath', 'plain', 'battle-of-bench'])
     expect(rate(html, 'plain')).toBeNull()
   })
 
-  it('REQ-DECKS-026 leaves a battle passive of a benched identity unmarked', () => {
+  it('leaves a battle passive of a benched identity unmarked', () => {
     expect(rate(html, 'battle-of-bench')).toBeNull()
   })
 
-  it('REQ-DECKS-026 rates every placed identity while nobody is deployed, and nothing without skill decks', () => {
+  it('rates every placed identity while nobody is deployed, and nothing without skill decks', () => {
     const building = render([fielded, bench])
     // The bench identity's own deck is pride, but every placed identity fields wrath through the other one.
     expect(rate(building, 'battle-of-bench')?.[1]).toBe('easy')
@@ -71,16 +71,16 @@ describe('REQ-DECKS-026 passive activation marker', () => {
   })
 })
 
-describe('REQ-DECKS-053 passive list', () => {
+describe('passive list', () => {
   const html = render([fielded], new Set(['fielded']))
 
-  it('REQ-DECKS-053 names each passive with the identity page\'s passive name plate, so passives in a group stand apart', () => {
+  it('names each passive with the identity page\'s passive name plate, so passives in a group stand apart', () => {
     const plates = [...html.matchAll(/class="deck-passive" data-name="([^"]*)"[\s\S]*?data-skill-name-banner[\s\S]*?<span[^>]*>([^<]*)<\/span>/g)]
     expect(plates.map(match => match[2])).toEqual(names(html))
     expect(plates.length).toBe(4)
   })
 
-  it('REQ-DECKS-053 lets a page scroll pass through the passive list (wheel intent, native chaining at its ends)', () => {
+  it('lets a page scroll pass through the passive list (wheel intent, native chaining at its ends)', () => {
     const source = readFileSync(resolve(__dirname, '../../../../features/decks/components/DeckInsights.tsx'), 'utf8')
     expect(source).toMatch(/useWheelIntent\(scrollRef\)/)
     expect(source).toMatch(/className="deck-insights__scroll" ref=\{scrollRef\}/)

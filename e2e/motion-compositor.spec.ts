@@ -48,6 +48,6 @@ test.beforeEach(async ({ page }) => {
   await page.addScriptTag({ content: bundle })
 })
 
-test('REQ-MOTION-028 version 11 draws the three stacked planes as the picture (BT.709 full range)', async ({ page }) => {
+test('version 11 draws the three stacked planes as the picture (BT.709 full range)', async ({ page }) => {
   near(await compose(page, meta, planes), picture.map(clamp))
 })

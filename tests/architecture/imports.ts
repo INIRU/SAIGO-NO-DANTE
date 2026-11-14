@@ -10,7 +10,7 @@ const PUBLIC_FILE = /^\/(?:components|hooks)\/[A-Za-z0-9]+$/
 const USE_CLIENT = /^\s*(?:(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/)\s*)*(['"])use client\1/
 const SKIPPED = /^(tests|e2e)\//
 // `from '…'` (import/export), side-effect `import '…'`, and dynamic `import('…')`.
-// regex, not a parser; a specifier-looking string inside a comment is also read. Switch to the TypeScript AST if that ever bites.
+// Regex, not a parser; a specifier-looking string inside a comment is also read. Switch to the TypeScript AST if that ever bites.
 const SPECIFIER = /\b(?:from|import)\s*\(?\s*(['"])([^'"\n]+)\1/g
 
 function resolve(file: string, specifier: string): string | null {

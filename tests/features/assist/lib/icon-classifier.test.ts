@@ -5,7 +5,7 @@ const labels = ['9001', '9002', '9003', '9991', 'blank']
 // Logits that give these probabilities after the classifier's scale.
 const logits = (probabilities: number[]) => probabilities.map(p => Math.log(p) / ICON_LOGIT_SCALE)
 
-it('REQ-ASSIST-048 reads a slot as the classifier\'s top gift with its lead, and leaves an empty-looking slot unknown', () => {
+it('reads a slot as the classifier\'s top gift with its lead, and leaves an empty-looking slot unknown', () => {
   const read = classifierSlotRead(logits([0.8, 0.15, 0.03, 0.01, 0.01]), labels)
   expect(read && 'id' in read && read.id).toBe('9001')
   expect(read && 'id' in read ? [read.score, read.margin] : []).toEqual([expect.closeTo(0.8, 5), expect.closeTo(0.65, 5)])
@@ -13,7 +13,7 @@ it('REQ-ASSIST-048 reads a slot as the classifier\'s top gift with its lead, and
   expect(classifierSlotRead(logits([0.1, 0.05, 0.05, 0.05, 0.75]), labels)).toBeNull()
 })
 
-it('REQ-ASSIST-048 measures a held top gift only against the other held gifts, never an unheld top one', () => {
+it('measures a held top gift only against the other held gifts, never an unheld top one', () => {
   const probabilities = logits([0.55, 0.4, 0.03, 0.01, 0.01])
   // 9002 is not held: the held 9001 leads the held gifts (9003) by 0.52.
   const held = classifierSlotRead(probabilities, labels, heldLabels(['9001', '9003']))
@@ -25,7 +25,7 @@ it('REQ-ASSIST-048 measures a held top gift only against the other held gifts, n
   expect([...heldLabels(['9993', '9001'])].sort()).toEqual(['9001', '9991'])
 })
 
-it('REQ-ASSIST-048 leaves a fusion to template matching when a held gift is not one of the classifier\'s classes', () => {
+it('leaves a fusion to template matching when a held gift is not one of the classifier\'s classes', () => {
   expect(classifierKnowsHeld(labels, heldLabels(['9001', '9994']))).toBe(true)
   // 9500 was added to the game after the model was trained.
   expect(classifierKnowsHeld(labels, heldLabels(['9001', '9500']))).toBe(false)

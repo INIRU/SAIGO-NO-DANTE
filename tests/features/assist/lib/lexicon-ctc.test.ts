@@ -11,7 +11,7 @@ function probabilities(path: number[], p = 0.9) {
 }
 
 describe('lexicon CTC decoding', () => {
-  it('REQ-ASSIST-035 picks the lexicon name the line spells, with its lead over the runner-up', () => {
+  it('picks the lexicon name the line spells, with its lead over the runner-up', () => {
     const entries = lexiconEntries([{ id: '1', name: '가나다' }, { id: '2', name: '가나라' }, { id: '3', name: '다라' }], alphabet)
     // 가 가 _ 나 _ 다 다 : greedy reads 가나다
     const line = probabilities([1, 1, 0, 2, 0, 3, 3])
@@ -22,7 +22,7 @@ describe('lexicon CTC decoding', () => {
     expect(best.gap).toBeLessThan(1)
   })
 
-  it('REQ-ASSIST-035 keeps a one-glyph misread close to the right name and far from unrelated ones', () => {
+  it('keeps a one-glyph misread close to the right name and far from unrelated ones', () => {
     const entries = lexiconEntries([{ id: '1', name: '가나다' }, { id: '3', name: '다라' }], alphabet)
     // The third glyph is read as 라 with low confidence: 가나다 still leads 다라 by a wide margin.
     const line = probabilities([1, 0, 2, 0, 4], 0.9)
@@ -33,19 +33,19 @@ describe('lexicon CTC decoding', () => {
     expect(best.margin).toBeGreaterThan(3)
   })
 
-  it('REQ-ASSIST-035 reports a large shortfall for text that is no lexicon name', () => {
+  it('reports a large shortfall for text that is no lexicon name', () => {
     const entries = lexiconEntries([{ id: '1', name: '가나' }], alphabet)
     const best = ctcLexiconBest(probabilities([3, 0, 4, 0, 3, 0, 4]), 0, 7, alphabet.length, entries)!
     expect(best.gap).toBeGreaterThan(10)
   })
 
-  it('REQ-ASSIST-035 leaves out names the model cannot spell and ties between identical names', () => {
+  it('leaves out names the model cannot spell and ties between identical names', () => {
     expect(lexiconEntries([{ id: '1', name: '가마' }, { id: '2', name: ' 가나 ' }], alphabet)).toEqual([{ id: '2', name: '가나', labels: [1, 2] }])
     const same = lexiconEntries([{ id: '1', name: '가나' }, { id: '2', name: '가나' }], alphabet)
     expect(ctcLexiconBest(probabilities([1, 0, 2]), 0, 3, alphabet.length, same)!.margin).toBe(0)
   })
 
-  it('REQ-ASSIST-035 scores the requested line of a batch', () => {
+  it('scores the requested line of a batch', () => {
     const entries = lexiconEntries([{ id: '1', name: '가' }, { id: '2', name: '라' }], alphabet)
     const batch = new Float32Array([...probabilities([1, 1, 0]), ...probabilities([4, 0, 4])])
     expect(ctcLexiconBest(batch, 1, 3, alphabet.length, entries)!.id).toBe('2')

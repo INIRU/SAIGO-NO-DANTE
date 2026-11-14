@@ -16,7 +16,7 @@ vi.mock('next-intl/server', async () => {
   }
 })
 
-it('REQ-SHARED-041 the footer links every DB, community, tools, motion and fun page of the menu as a locale-prefixed anchor', async () => {
+it('the footer links every DB, community, tools, motion and fun page of the menu as a locale-prefixed anchor', async () => {
   const { default: Footer } = await import('@/components/layout/Footer')
   const groups = NAV_GROUPS.filter(group => ['nav.db.title', 'nav.community.title', 'nav.tools.title', 'nav.motion.title', 'nav.fun.title'].includes(group.labelKey))
   expect(groups).toHaveLength(5)
@@ -39,7 +39,7 @@ it('REQ-SHARED-041 the footer links every DB, community, tools, motion and fun p
   }
 })
 
-it('REQ-SHARED-041 the footer lists the contact address as a mailto link labelled in the page language', async () => {
+it('the footer lists the contact address as a mailto link labelled in the page language', async () => {
   const { default: Footer } = await import('@/components/layout/Footer')
   const labels: Record<string, string> = { ko: '문의', en: 'Contact', ja: 'お問い合わせ' }
   for (const lang of ['ko', 'en', 'ja']) {

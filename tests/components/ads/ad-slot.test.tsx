@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 let pathname = '/ko/decks/1'
 vi.mock('next/navigation', () => ({ usePathname: () => pathname }))
-// these check the ads as they run with the switch on (REQ-SHARED-097 covers it off)
+// these check the ads as they run with the switch on (ads-off.test.tsx covers it off)
 vi.mock('@/lib/seo/ads', async importOriginal => ({ ...await importOriginal<typeof import('@/lib/seo/ads')>(), ADS_ON: true }))
 import { renderToStaticMarkup } from 'react-dom/server'
 import AdSlot, { AdSlotSpace } from '@/components/ads/AdSlot'
@@ -15,7 +15,7 @@ const root = resolve(__dirname, '../../..')
 const source = (path: string) => readFileSync(resolve(root, path), 'utf8')
 
 describe('ad slot', () => {
-  it('REQ-SHARED-085 draws one display unit of the account in a reserved box', () => {
+  it('draws one display unit of the account in a reserved box', () => {
     pathname = '/ko/decks/1'
     const html = renderToStaticMarkup(<AdSlot slot="1234567890" place="inline" />)
     // push({}) fills the first unprocessed ins.adsbygoogle on the page, not the one that asked: a hidden page-start banner
@@ -29,7 +29,7 @@ describe('ad slot', () => {
     expect(html).not.toContain('data-full-width-responsive')
   })
 
-  it('REQ-SHARED-085 gives each place its own ad unit, so the report shows what each place earns', () => {
+  it('gives each place its own ad unit, so the report shows what each place earns', () => {
     const unit = (place: 'top' | 'inline' | 'left' | 'panel') => renderToStaticMarkup(<AdSlot place={place} />).match(/data-ad-slot="(\d+)"/)?.[1]
     pathname = '/ko/mirror-dungeon'
     expect(unit('top')).toBe('2699879515')
@@ -41,14 +41,14 @@ describe('ad slot', () => {
     expect(source('lib/seo/ads.ts')).toMatch(/rail: '1316313953'/)
   })
 
-  it('REQ-SHARED-085 draws nothing outside development without a unit, and nothing on an ad-free page', () => {
+  it('draws nothing outside development without a unit, and nothing on an ad-free page', () => {
     pathname = '/ko/decks/1'
     expect(renderToStaticMarkup(<AdSlot slot={null} place="inline" />)).toBe('')
     pathname = '/ko/decks/1/edit'
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="inline" />)).toBe('')
   })
 
-  it('REQ-SHARED-085 reserves the space and hides an unfilled unit and the ad of a full-screen workspace', () => {
+  it('reserves the space and hides an unfilled unit and the ad of a full-screen workspace', () => {
     const css = source('components/ads/AdSlot.module.css')
     expect(css).toMatch(/\.topUnit\s*\{[^}]*height:\s*100px/)
     // the in-content banner is a 300x250 rectangle on a phone (owner 2026-11-09)
@@ -59,7 +59,7 @@ describe('ad slot', () => {
       expect(workspaces, flag).toMatch(new RegExp(`\\[data-with-${flag}\\][^{]*\\.site-ad`))
   })
 
-  it('REQ-SHARED-085 has no ad glued above every footer; a detail page or the home puts its banner between its own parts', () => {
+  it('has no ad glued above every footer; a detail page or the home puts its banner between its own parts', () => {
     const layout = source('app/[lang]/layout.tsx')
     expect(layout).not.toMatch(/<AdSlot \/>|<AdSlot place="(top|inline)"/)
     const identity = source('app/[lang]/sinners/[slug]/identities/[id]/_components/IdentityDetailClient.tsx')
@@ -69,7 +69,7 @@ describe('ad slot', () => {
     expect(home.indexOf('<AdSlot place="inline" />')).toBeGreaterThan(home.indexOf('<Official '))
   })
 
-  it('REQ-SHARED-085 puts a second detail banner under the line after a plan\'s final gifts and a deck\'s note, above the related posts', () => {
+  it('puts a second detail banner under the line after a plan\'s final gifts and a deck\'s note, above the related posts', () => {
     // owner, 2026-11-07: "플랜은 최종 기프트 밑에 덱은 스킬 분포 밑에", "선 밑에"
     for (const [page, after, before] of [
       ['app/[lang]/planner/community/[id]/PlanDetailClient.tsx', '<Section id="plan-final">', '{coVisited}'],
@@ -87,7 +87,7 @@ describe('ad slot', () => {
     }
   })
 
-  it('REQ-SHARED-085 puts a 160x600 ad in each empty side margin, standing off the window edge, far from the measured content and never over it', () => {
+  it('puts a 160x600 ad in each empty side margin, standing off the window edge, far from the measured content and never over it', () => {
     const layout = source('app/[lang]/layout.tsx')
     expect(layout).toContain('<AdSlot place="left" />')
     expect(layout).toContain('<AdSlot place="right" />')
@@ -128,7 +128,7 @@ describe('ad slot', () => {
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="inline" />)).toContain('data-ad-slot')
   })
 
-  it('REQ-SHARED-085 puts a banner in the home hero under its links, from 768px wide, kept while the side ads stand', () => {
+  it('puts a banner in the home hero under its links, from 768px wide, kept while the side ads stand', () => {
     pathname = '/ko'
     const html = renderToStaticMarkup(<AdSlot place="hero" />)
     // the home's page-start banner: the list pages' start unit
@@ -144,7 +144,7 @@ describe('ad slot', () => {
     expect(css).toMatch(/:is\(\.top, \.inline, \.panel, \.rail, \.hero\):has\(ins\[data-ad-status="unfilled"\]\)/)
   })
 
-  it('REQ-SHARED-085 puts the phone\'s home start banner under the notice strip, before the new identities', () => {
+  it('puts the phone\'s home start banner under the notice strip, before the new identities', () => {
     // a phone's hero has no room for its banner: the plan detail's start banner stands right after the first screen instead
     const home = source('app/[lang]/(home)/HomeClient.tsx')
     const ad = home.indexOf('<AdSlot place="inline" phoneOnly />')
@@ -153,14 +153,14 @@ describe('ad slot', () => {
     expect(home.slice(ad - 200, ad)).toMatch(/<\/div>\s*(\{\/\*[^*]*\*\/\}\s*)?$/)
   })
 
-  it('REQ-SHARED-085 keeps both side ads in view while scrolling, the owner\'s call against AdSense\'s one-sticky rule (recorded)', () => {
+  it('keeps both side ads in view while scrolling, the owner\'s call against AdSense\'s one-sticky rule (recorded)', () => {
     const code = source('components/ads/AdSlot.tsx')
     expect(code).toContain('support.google.com/adsense/answer/10734935')
     expect(code).not.toMatch(/railScroll/)
     expect(source('DESIGN.md')).toContain('정책 위험이 있다는 것을 알고 정한 배치다')
   })
 
-  it('REQ-SHARED-085 keeps a side ad that loses its room in the page, hidden, so the same ad comes back when the window widens', () => {
+  it('keeps a side ad that loses its room in the page, hidden, so the same ad comes back when the window widens', () => {
     // removing it and asking again after a resize is what AdSense leaves unfilled, which collapsed every ad (owner, 2026-11-07)
     const code = source('components/ads/AdSlot.tsx')
     expect(code).not.toMatch(/if \(rail && offset == null\) return null/)
@@ -170,7 +170,7 @@ describe('ad slot', () => {
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="right" />)).toContain('data-ad-slot="1234567890"')
   })
 
-  it('REQ-SHARED-085 puts a page-start banner under a list page title, before its content, with its place kept while loading', () => {
+  it('puts a page-start banner under a list page title, before its content, with its place kept while loading', () => {
     const header = source('components/ui/PageHeader.tsx')
     expect(header.indexOf('<AdSlot place="top" />')).toBeGreaterThan(header.indexOf('</header>'))
     expect(source('app/[lang]/motion/skills/page.tsx')).toContain('<PageHeader title={t(\'title\')} ad={false} />')
@@ -184,7 +184,7 @@ describe('ad slot', () => {
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="top" />)).toBe('')
   })
 
-  it('REQ-SHARED-085 gives the boards, the identity and E.G.O lists and a sinner page the same page-start banner (shown where the side ads do not fit)', () => {
+  it('gives the boards, the identity and E.G.O lists and a sinner page the same page-start banner (shown where the side ads do not fit)', () => {
     const board = source('features/community/components/BoardHeader.tsx')
     expect(board.indexOf('<AdSlot place="top" />')).toBeGreaterThan(board.indexOf('</header>'))
     const browser = source('features/catalog/components/BrowserHeader.tsx')
@@ -205,7 +205,7 @@ describe('ad slot', () => {
     expect(source('components/ads/AdSlot.tsx')).toMatch(/new ResizeObserver\(tryRequest\)/)
   })
 
-  it('REQ-SHARED-085 puts a small banner under a deck or plan section tabs, before the first heading', () => {
+  it('puts a small banner under a deck or plan section tabs, before the first heading', () => {
     for (const [page, first] of [
       ['app/[lang]/decks/[id]/DeckDetailClient.tsx', '<section id="deck-formation"'],
       ['app/[lang]/planner/community/[id]/PlanDetailClient.tsx', '{plan.description && ('],
@@ -216,13 +216,13 @@ describe('ad slot', () => {
       expect(main, page).toBeGreaterThan(0)
       expect(inline, page).toBeGreaterThan(text.indexOf('sticky-under-nav'))
       expect(inline, page).toBeLessThan(text.indexOf(first))
-      // this one and the lower banner above the related posts (REQ-SHARED-085, second detail banner)
+      // this one and the lower banner above the related posts (second detail banner)
       expect(text.match(/<AdSlot\b/g), page).toHaveLength(2)
     }
     expect(source('components/ads/AdSlot.module.css')).toMatch(/\.inline\s*\{[^}]*margin-top:\s*2\.5rem/)
   })
 
-  it('REQ-SHARED-085 gives the skill motion picker one phone-only banner under its list', () => {
+  it('gives the skill motion picker one phone-only banner under its list', () => {
     const page = source('app/[lang]/motion/skills/page.tsx')
     expect(page.indexOf('<AdSlot place="inline" phoneOnly />')).toBeGreaterThan(page.indexOf('<MotionBrowser />'))
     expect(source('components/ads/AdSlot.module.css')).toMatch(/min-width:\s*768px[^{]*\{\s*\.phoneOnly\s*\{\s*display:\s*none/)
@@ -230,7 +230,7 @@ describe('ad slot', () => {
     expect(renderToStaticMarkup(<AdSlot slot="1234567890" place="inline" phoneOnly />)).toMatch(/class="site-ad [^"]*phoneOnly/)
   })
 
-  it('REQ-SHARED-085 hides the list page-start banner where a side ad stands (the side ads flag the page root)', () => {
+  it('hides the list page-start banner where a side ad stands (the side ads flag the page root)', () => {
     const css = source('components/ads/AdSlot.module.css')
     expect(css).toMatch(/:global\(html\[data-ad-rail-left="on"\]\) \.top,\s*:global\(html\[data-ad-rail-right="on"\]\) \.top\s*\{\s*display:\s*none/)
     expect(source('components/ads/AdSlot.tsx')).toMatch(/dataset\[flag\] = offset == null \? 'off' : 'on'/)
@@ -241,7 +241,7 @@ describe('ad slot', () => {
     expect(renderToStaticMarkup(<AdSlotSpace />)).toContain('aria-hidden')
   })
 
-  it('REQ-SHARED-085 puts one 300x250 ad under the skill info in the skill motion player side panel', () => {
+  it('puts one 300x250 ad under the skill info in the skill motion player side panel', () => {
     const watch = source('features/motion/components/MotionWatch.tsx')
     expect(watch.indexOf('<AdSlot place="panel" />')).toBeGreaterThan(watch.indexOf("t('skillInfo')"))
     expect(source('components/ads/AdSlot.module.css')).toMatch(/\.panelUnit\s*\{[^}]*width:\s*300px[^}]*height:\s*250px/)
@@ -253,7 +253,7 @@ describe('ad slot', () => {
     expect(panel).not.toContain('site-ad')
   })
 
-  it('REQ-SHARED-085 leaves editors, assist, tools, account, admin, legal and error pages without an ad', () => {
+  it('leaves editors, assist, tools, account, admin, legal and error pages without an ad', () => {
     for (const path of ['/ko/decks/new', '/en/decks/abc/edit', '/ko/planner', '/ko/planner/run', '/ko/friends/new', '/ko/login',
       '/ja/mypage', '/ko/admin/users', '/ko/support', '/ko/terms', '/ko/privacy', '/ko/maintenance', '/ko/tools/damage',
       '/ko/random', '/ko/prescript/ranking', '/ko/motion/skills/watch', '/ko/sinners', '/en/sinners/', '/ko/collection', '/ko/users/abc'])

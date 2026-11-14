@@ -10,8 +10,8 @@ const render = (props: Partial<Parameters<typeof GiftConditionDivider>[0]> = {})
   renderToStaticMarkup(<GiftConditionDivider text="호흡 인격 5인 이상" {...props} />)
 const head = (html: string) => html.match(/<header[^>]*>(.*?)<\/header>/)![1]
 
-describe('REQ-MIRROR-DUNGEON-027 gift condition line keeps two tidy rows', () => {
-  it('REQ-MIRROR-DUNGEON-027 the header holds the rules and the title only; chip and status sit in a meta row', () => {
+describe('gift condition line keeps two tidy rows', () => {
+  it('the header holds the rules and the title only; chip and status sit in a meta row', () => {
     const html = render({ scope: 'deployed', status })
     expect(head(html)).toContain('gateTitle')
     expect(head(html)).not.toContain('gateChip')
@@ -23,7 +23,7 @@ describe('REQ-MIRROR-DUNGEON-027 gift condition line keeps two tidy rows', () =>
     expect(html.indexOf('</header>')).toBeLessThan(html.indexOf('gateMeta'))
   })
 
-  it('REQ-MIRROR-DUNGEON-027 no meta row when there is no chip or status', () => {
+  it('no meta row when there is no chip or status', () => {
     expect(render()).not.toContain('gateMeta')
   })
 })

@@ -28,10 +28,10 @@ vi.mock('next/server', async () => ({ ...(await vi.importActual<object>('next/se
 
 import { POST } from '@/app/api/planner/[id]/comments/route'
 
-describe('REQ-PLANNER-055 the database keeps the plan comment count', () => {
+describe('the database keeps the plan comment count', () => {
   beforeEach(() => { state.ops.length = 0; vi.spyOn(console, 'error').mockImplementation(() => {}) })
 
-  it('REQ-PLANNER-055 writing a comment only inserts it, with no count query or md_plans update', async () => {
+  it('writing a comment only inserts it, with no count query or md_plans update', async () => {
     const res = await POST(new NextRequest('http://localhost/api/planner/p1/comments', { method: 'POST', body: JSON.stringify({ content: 'hi' }) }), { params: Promise.resolve({ id: 'p1' }) })
     expect(res.status).toBe(201)
     // the insert's own `.select()` returns the new row; nothing counts rows or touches md_plans

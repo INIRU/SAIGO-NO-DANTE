@@ -17,7 +17,7 @@ const link = (html: string, label: string) => {
   return found && [found[0], found[1], found[2].replaceAll('&amp;', '&')]
 }
 
-it('REQ-COMMUNITY-081 puts the title, the guide, the all-posts button and the create button in one row, with no search field', () => {
+it('puts the title, the guide, the all-posts button and the create button in one row, with no search field', () => {
   const html = header('deck')
   expect(html).toContain('>덱 게시판</h1>')
   expect(html).toContain('data-guide')
@@ -27,14 +27,14 @@ it('REQ-COMMUNITY-081 puts the title, the guide, the all-posts button and the cr
   expect(html).not.toMatch(/<p[ >]/)
 })
 
-it('REQ-COMMUNITY-081 names the plan board buttons for plans and keeps the Assist Mode entry beside them', () => {
+it('names the plan board buttons for plans and keeps the Assist Mode entry beside them', () => {
   const html = header('planner', '어시스트 모드')
   expect(link(html, '전체 플랜 보기')![1]).toBe('/planner/community?browse=all')
   expect(link(html, '새 플랜 만들기')![1]).toBe('/planner')
   expect(link(html, '어시스트 모드')![1]).toBe('/planner/run?entry=board')
 })
 
-it('REQ-COMMUNITY-081 swaps the all-posts button for the way back while the full list is open', () => {
+it('swaps the all-posts button for the way back while the full list is open', () => {
   const html = header('deck')
   expect(link(html, '전체 덱 보기')![2]).toContain('[.community-board:has([data-board-browse])_&]:hidden')
   const back = link(html, '덱 게시판으로')!
@@ -43,7 +43,7 @@ it('REQ-COMMUNITY-081 swaps the all-posts button for the way back while the full
   expect(back[2]).toContain('[.community-board:has([data-board-browse])_&]:flex')
 })
 
-it('REQ-COMMUNITY-081 shows only icons on a phone and labels from md up', () => {
+it('shows only icons on a phone and labels from md up', () => {
   const html = header('deck')
   expect(html.match(/<span class="hidden [^"]*md:inline">[^<]+<\/span>/g)?.length).toBe(2)
   expect(html).toContain('hidden whitespace-nowrap text-[1rem] font-semibold sm:inline">새 덱 만들기')

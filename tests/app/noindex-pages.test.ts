@@ -29,7 +29,7 @@ type RouteModule = { metadata?: Metadata; generateMetadata?: (props: { params: P
 const metadataOf = async (route: RouteModule) =>
   route.metadata ?? route.generateMetadata?.({ params: Promise.resolve({ lang: 'ko', id: 'd1' }), searchParams: Promise.resolve({}) })
 
-describe('REQ-SHARED-037 screens kept out of the index', () => {
+describe('screens kept out of the index', () => {
   // robots.txt allows every path, so each of these has to say noindex itself.
   it.each([
     ['login', () => import('@/app/[lang]/login/page')],
@@ -46,7 +46,7 @@ describe('REQ-SHARED-037 screens kept out of the index', () => {
     ['planner editor', () => import('@/app/[lang]/planner/page')],
     ['planner run', () => import('@/app/[lang]/planner/run/page')],
     ['random', () => import('@/app/[lang]/random/page')],
-  ] as [string, () => Promise<RouteModule>][])('REQ-SHARED-037 %s answers with noindex and its own title', async (_name, load) => {
+  ] as [string, () => Promise<RouteModule>][])('%s answers with noindex and its own title', async (_name, load) => {
     const metadata = await metadataOf(await load())
     expect(metadata?.robots).toMatchObject({ index: false })
     expect(metadata?.title).toBeTruthy()

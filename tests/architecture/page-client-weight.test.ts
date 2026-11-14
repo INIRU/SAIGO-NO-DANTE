@@ -13,7 +13,7 @@ const PAGES = [
 const LATER = /^(@chenglou\/pretext|zod|pako)(\/|$)/
 
 describe('page client weight', () => {
-  it.each(PAGES)('REQ-SHARED-091 %s keeps pretext, zod and pako out of its first load', page => {
+  it.each(PAGES)('%s keeps pretext, zod and pako out of its first load', page => {
     const { packages } = clientGraph(page)
     const offenders = [...packages].filter(([name]) => LATER.test(name))
     expect(offenders, offenders.map(([name, from]) => `${name} ← ${from}`).join('\n')).toEqual([])

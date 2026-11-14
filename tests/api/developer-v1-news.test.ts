@@ -48,7 +48,7 @@ beforeEach(() => {
 })
 
 describe('news on the developer API', () => {
-  it('REQ-NEWS-004 refuses a missing key, an unusable key and an account without the news scope before writing', async () => {
+  it('refuses a missing key, an unusable key and an account without the news scope before writing', async () => {
     expect((await post(item, '', null)).status).toBe(401)
     expect(m.rpc).not.toHaveBeenCalled()
     m.rpc.mockResolvedValue({ data: { status: 429, retry: 60 }, error: null })
@@ -67,7 +67,7 @@ describe('news on the developer API', () => {
     expect(m.revalidate).not.toHaveBeenCalled()
   })
 
-  it('REQ-NEWS-003 creates an item for the key partner, refreshes the calendar and answers with its calendar address', async () => {
+  it('creates an item for the key partner, refreshes the calendar and answers with its calendar address', async () => {
     const response = await post(item)
     expect(response.status).toBe(201)
     expect(await response.json()).toEqual({ data: { id: item.id, created: true, day: '2026-10-06', url: 'https://saigo-no-dante.com/ko/calendar?date=2026-10-06' } })
@@ -81,7 +81,7 @@ describe('news on the developer API', () => {
     expect(m.revalidate).toHaveBeenCalledWith('news', 'max')
   })
 
-  it('REQ-NEWS-003 replaces an item posted again with the same id', async () => {
+  it('replaces an item posted again with the same id', async () => {
     m.existing = { id: 'row-1' }
     const response = await post({ ...item, ends_at: '2026-10-06T20:00:00+09:00' })
     expect(response.status).toBe(200)
@@ -93,7 +93,7 @@ describe('news on the developer API', () => {
     expect(await failed.text()).not.toContain('private database diagnostic')
   })
 
-  it('REQ-NEWS-001 answers a wrong body with the fields that are wrong and stores nothing', async () => {
+  it('answers a wrong body with the fields that are wrong and stores nothing', async () => {
     const response = await post({ ...item, feed: 'steam', content: { ko: { title: '' } } })
     expect(response.status).toBe(400)
     const body = await response.json()
@@ -103,7 +103,7 @@ describe('news on the developer API', () => {
     expect(called('upsert')).toEqual([])
   })
 
-  it('REQ-NEWS-005 validates a dry run without storing it', async () => {
+  it('validates a dry run without storing it', async () => {
     const response = await post(item, '?dry_run=1')
     expect(response.status).toBe(200)
     const { data } = await response.json()
@@ -114,7 +114,7 @@ describe('news on the developer API', () => {
     expect(m.revalidate).not.toHaveBeenCalled()
   })
 
-  it('REQ-ACCOUNT-022 lets an administrator key dry-run but not store or delete without a partner', async () => {
+  it('lets an administrator key dry-run but not store or delete without a partner', async () => {
     access([], null, true)
     expect((await post(item, '?dry_run=1')).status).toBe(200)
     const response = await post(item)
@@ -125,7 +125,7 @@ describe('news on the developer API', () => {
     expect(m.rpc).toHaveBeenLastCalledWith('consume_developer_key', { token_hash: expect.any(String), p_admin_emails: ['owner@example.invalid'] })
   })
 
-  it('REQ-NEWS-006 deletes only the key partner item and refreshes the calendar', async () => {
+  it('deletes only the key partner item and refreshes the calendar', async () => {
     expect((await remove('')).status).toBe(400)
     m.removed = [{ id: 'row-1' }]
     const response = await remove('?id=steam:1')
@@ -137,7 +137,7 @@ describe('news on the developer API', () => {
     expect(m.revalidate).toHaveBeenCalledTimes(1)
   })
 
-  it('REQ-NEWS-006 lets an administrator delete any item by its row id', async () => {
+  it('lets an administrator delete any item by its row id', async () => {
     const id = '00000000-0000-4000-8000-000000000001'
     const request = (query: string) => new Request(`http://localhost/api/admin/news${query}`, { method: 'DELETE' })
     m.admin.mockResolvedValue({ error: true, response: new Response(null, { status: 403 }) })

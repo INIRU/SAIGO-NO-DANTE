@@ -13,7 +13,7 @@ const sinners = [{ id: 'faust', order_num: 2 }, { id: 'yi-sang', order_num: 1 },
 const slot = (sinner_id: string, slot_order: number) => ({ identity_id: `${sinner_id}-x`, sinner_id, name_kr: `${sinner_id} 인격`, rarity: 3, keywords: [],
   game_id: '10101', folder_name: 'Folder', slot_order }) as IdentitySlot
 
-it('REQ-ASSIST-077 shows the run formation in sinner order with formation numbers, dims the bench and offers the code', () => {
+it('shows the run formation in sinner order with formation numbers, dims the bench and offers the code', () => {
   const html = renderToStaticMarkup(<NextIntlClientProvider locale="ko" messages={messages}>
     <CompanionFormation cells={formationRow([slot('faust', 0), slot('yi-sang', 7)], sinners)} code="ABC" width={356} height={300} />
   </NextIntlClientProvider>)
@@ -29,7 +29,7 @@ it('REQ-ASSIST-077 shows the run formation in sinner order with formation number
   expect(html).toMatch(/grid-template-columns:repeat\(6, \d+px\)/)
 })
 
-it('REQ-ASSIST-077 hides the copy button when the run has no formation code', () => {
+it('hides the copy button when the run has no formation code', () => {
   const html = renderToStaticMarkup(<NextIntlClientProvider locale="ko" messages={messages}>
     <CompanionFormation cells={formationRow([], sinners)} code="" width={356} height={300} />
   </NextIntlClientProvider>)

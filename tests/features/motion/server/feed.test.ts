@@ -32,16 +32,16 @@ vi.mock('@supabase/supabase-js', () => ({
   }) }) }) }),
 }))
 
-describe('REQ-MOTION-005 the skill card of a motion', () => {
-  it('REQ-MOTION-005 finds the uptie 4 row, whose image id the database writes with _4', async () => {
+describe('the skill card of a motion', () => {
+  it('finds the uptie 4 row, whose image id the database writes with _4', async () => {
     const { loadMotionSkill } = await import('@/features/motion/server/feed')
     const skill = await loadMotionSkill(1091608, 'ko')
     expect(skill).toMatchObject({ uptie_level: 4, image_id: '1091608_4', description: '4동기화' })
   })
 })
 
-describe('REQ-MOTION-042 the site data of the E.G.O', () => {
-  it('REQ-MOTION-042 hands the catalog the site E.G.O by game id (name in the page language, picture, grade, sin), and the identities their rarity', async () => {
+describe('the site data of the E.G.O', () => {
+  it('hands the catalog the site E.G.O by game id (name in the page language, picture, grade, sin), and the identities their rarity', async () => {
     const { loadMotionSiteData } = await import('@/features/motion/server/feed')
     const site = await loadMotionSiteData('en')
     expect(site.egos).toEqual([{ game_id: '20211', name: 'Ego', image_url: 'https://img/20211.webp', grade: 'ZAYIN', sinner_id: 'faust', sin_affinity: 'gloom' }])
@@ -50,10 +50,10 @@ describe('REQ-MOTION-042 the site data of the E.G.O', () => {
   })
 })
 
-describe('REQ-MOTION-015 a skill id another identity borrows', () => {
+describe('a skill id another identity borrows', () => {
   const row = (game_id: string, name: string) => ({ name, identity: { game_id } })
 
-  it('REQ-MOTION-015 reads the rows of the identity the id belongs to, whatever the other rows are', async () => {
+  it('reads the rows of the identity the id belongs to, whatever the other rows are', async () => {
     const { ownSkillRows } = await import('@/features/motion/server/feed')
     const own = row('10113', '대상 조정 사격'), borrowed = row('10412', '쏘아내겠소 / 언제든지')
     expect(ownSkillRows([borrowed, own], 1011303)).toEqual([own])
@@ -64,8 +64,8 @@ describe('REQ-MOTION-015 a skill id another identity borrows', () => {
   })
 })
 
-describe('REQ-MOTION-042 the skill card of an E.G.O skill', () => {
-  it('REQ-MOTION-042 shapes the highest construe row like an identity skill, in the page language', async () => {
+describe('the skill card of an E.G.O skill', () => {
+  it('shapes the highest construe row like an identity skill, in the page language', async () => {
     const { egoSkillRow } = await import('@/features/motion/server/feed')
     const row = (construe_level: number) => ({ id: 'x', name: '구멍', name_en: 'Le Trou', name_jp: null, skill_type: 'pierce', sin_affinity: 'pride', coins: 1, base_power: 5, coin_power: 5, description: '설명', description_en: 'Text', description_jp: null, skill_order: 1, atk_weight: 1, offense_level: 60, construe_level, coin_list: [], category: 'awakening', ego: { sinner_id: 'faust', game_id: '20211' } })
     expect(egoSkillRow([row(1), row(4)], 'en')).toMatchObject({ name: 'Le Trou', description: 'Text', atk_type: 'pierce', skill_order: 3, uptie_level: 4, image_id: null, identity: { sinner_id: 'faust', game_id: '20211', keywords: null } })
@@ -74,8 +74,8 @@ describe('REQ-MOTION-042 the skill card of an E.G.O skill', () => {
   })
 })
 
-describe('REQ-MOTION-015 a skill saved under another identity\'s sprite id', () => {
-  it('REQ-MOTION-015 takes the one row an identity borrowed, and none when there are several or none', async () => {
+describe('a skill saved under another identity\'s sprite id', () => {
+  it('takes the one row an identity borrowed, and none when there are several or none', async () => {
     const { borrowedRows } = await import('@/features/motion/server/feed')
     const own = { image_id: '1041201', identity: { game_id: '10412' } }, lent = { image_id: '1011303', identity: { game_id: '10412' } }, lent4 = { image_id: '1011303_4', identity: { game_id: '10412' } }
     expect(borrowedRows([own, lent, lent4], '10412')).toEqual([lent, lent4])
@@ -83,12 +83,12 @@ describe('REQ-MOTION-015 a skill saved under another identity\'s sprite id', () 
     expect(borrowedRows([own], '10412')).toEqual([])
   })
 
-  it('REQ-MOTION-015 gives the skill card of 1041206 from that row', async () => {
+  it('gives the skill card of 1041206 from that row', async () => {
     const { loadMotionSkill } = await import('@/features/motion/server/feed')
     expect(await loadMotionSkill(1041206, 'ko')).toMatchObject({ name: '쏘아내겠소 / 언제든지', sin_affinity: 'pride', identity: { game_id: '10412' } })
   })
 
-  it('REQ-MOTION-015 hands the catalog the borrowed row of each identity by its game id', async () => {
+  it('hands the catalog the borrowed row of each identity by its game id', async () => {
     const { loadMotionSiteData } = await import('@/features/motion/server/feed')
     const site = await loadMotionSiteData('ko')
     expect(site.skillBorrowed).toEqual([['10412', { name: '쏘아내겠소 / 언제든지', frame: { sin: 'pride', slot: 3, attack: 'pierce', sprite: 1011303 } }]])

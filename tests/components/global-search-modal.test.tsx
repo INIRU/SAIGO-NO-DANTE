@@ -18,7 +18,7 @@ const row = (hit: Hit) => renderToStaticMarkup(<ResultRow hit={hit} id="r0" acti
 const ego = { type: 'ego' as const, href: '/e/1', label: '적안', names: { ko: '적안', en: 'Red Eyes' } }
 
 describe('global search modal', () => {
-  it('empty state offers sinner shortcuts, no explanatory sentence (REQ-SHARED-053)', () => {
+  it('empty state offers sinner shortcuts, no explanatory sentence', () => {
     const html = renderToStaticMarkup(<SearchModal open onClose={() => {}} />)
     expect(html.match(/href="\/ko\/sinners\/[a-z-]+"/g)).toHaveLength(12)
     expect(html).not.toContain('emptyPromptDescription')
@@ -28,12 +28,12 @@ describe('global search modal', () => {
     expect(html).toContain('role="combobox"')
     expect(html).toContain('role="listbox"')
   })
-  it('marks the matched letters of the label (REQ-SHARED-051)', () => {
+  it('marks the matched letters of the label', () => {
     const html = row({ entry: ego, score: 1, reasons: [{ field: 'label', text: '적안', ranges: [[0, 1]] }] })
     expect(html).toMatch(/<mark[^>]*>적<\/mark>안/)
     expect(html).not.toContain('reasons.')
   })
-  it('names the field and marks it when another name matched (REQ-SHARED-051)', () => {
+  it('names the field and marks it when another name matched', () => {
     const html = row({ entry: ego, score: 1, reasons: [{ field: 'en', text: 'Red Eyes', ranges: [[0, 7]] }] })
     expect(html).toContain('reasons.en')
     expect(html).toMatch(/<mark[^>]*>Red Eye<\/mark>s/)

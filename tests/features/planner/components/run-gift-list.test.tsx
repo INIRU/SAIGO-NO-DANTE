@@ -23,7 +23,7 @@ const render = (value: RunState) => renderToStaticMarkup(<NextIntlClientProvider
 </NextIntlClientProvider>)
 const cell = (html: string, id: number) => { const start = html.indexOf('aria-label="gift-' + id); const next = html.indexOf('aria-label="gift-', start + 1); return start < 0 ? '' : html.slice(start, next < 0 ? undefined : next) }
 
-it('REQ-ASSIST-050 lists this floor plan, final targets and floor-only gifts first in one list with the red mark and no neon', () => {
+it('lists this floor plan, final targets and floor-only gifts first in one list with the red mark and no neon', () => {
   const html = render(state())
   const run = messages.planner.run
   const headings = [run.groupFloorPlan, run.groupTargets, run.pipFloorOnly].map(label => html.indexOf('>' + label + '<'))
@@ -38,7 +38,7 @@ it('REQ-ASSIST-050 lists this floor plan, final targets and floor-only gifts fir
   expect(html).toContain('gift-10')
 })
 
-it('REQ-ASSIST-050 the record column keeps two control rows: keyword tabs, then search, this floor only, the filter button and the count', () => {
+it('the record column keeps two control rows: keyword tabs, then search, this floor only, the filter button and the count', () => {
   const html = render(state())
   const run = messages.planner.run
   // The filter button is there at every width (no sm:hidden), and what it opens starts closed and never unfolds by width.
@@ -60,7 +60,7 @@ it('REQ-ASSIST-050 the record column keeps two control rows: keyword tabs, then 
   expect(run.filterFloor.length).toBeLessThanOrEqual(6)
 })
 
-it('REQ-MIRROR-DUNGEON-014 the gift grid is its own stacking context, so a hovered card (z-index 10) cannot cover the sticky filter row (z-10)', () => {
+it('the gift grid is its own stacking context, so a hovered card (z-index 10) cannot cover the sticky filter row (z-10)', () => {
   const html = render(state())
   // The filter row sticks with z-10 ...
   expect(html).toMatch(/<div role="search"[^>]*class="sticky z-10/)

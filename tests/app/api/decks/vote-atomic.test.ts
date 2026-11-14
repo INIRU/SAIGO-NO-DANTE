@@ -27,7 +27,7 @@ import { POST } from '@/app/api/decks/[id]/vote/route'
 
 const post = () => POST(new NextRequest('http://localhost/api/decks/d1/vote', { method: 'POST' }), { params: Promise.resolve({ id: 'd1' }) })
 
-describe('REQ-DECKS-059 a deck vote changes the row and the count in one call', () => {
+describe('a deck vote changes the row and the count in one call', () => {
   beforeEach(() => {
     state.rpcCalls.length = 0
     state.fromCalls.length = 0
@@ -35,19 +35,19 @@ describe('REQ-DECKS-059 a deck vote changes the row and the count in one call', 
     vi.spyOn(console, 'error').mockImplementation(() => {})
   })
 
-  it('REQ-DECKS-059 calls toggle_deck_vote once and nothing else', async () => {
+  it('calls toggle_deck_vote once and nothing else', async () => {
     const res = await post()
     expect(res.status).toBe(200)
     expect(state.rpcCalls).toEqual([{ name: 'toggle_deck_vote', args: { p_deck_id: 'd1', p_user_id: 'u1' } }])
     expect(state.fromCalls).toEqual([])
   })
 
-  it.each([[true], [false]])('REQ-DECKS-059 returns voted=%s as the function says', async voted => {
+  it.each([[true], [false]])('returns voted=%s as the function says', async voted => {
     state.rpcResult = { data: voted, error: null }
     expect(await (await post()).json()).toEqual({ voted })
   })
 
-  it('REQ-DECKS-059 a function error is a 500 with a fixed message', async () => {
+  it('a function error is a 500 with a fixed message', async () => {
     state.rpcResult = { data: null, error: { message: 'secret db text' } }
     const res = await post()
     expect(res.status).toBe(500)

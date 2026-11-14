@@ -13,8 +13,8 @@ const group = (name: string, gifts: string[] = [], memo = '') => ({ name, gifts,
 const preset = (groups = [group('최우선 먹기', ['1', '2']), group('있으면 좋음', ['3'])], id = 's1'): GiftPreset => ({ id, name: '화상 덱', groups })
 const keys = (count: number, from = 1) => Array.from({ length: count }, (_, i) => String(from + i))
 
-describe('REQ-MIRROR-DUNGEON-019 a preset is a name and up to six named groups', () => {
-  it('REQ-MIRROR-DUNGEON-019 reads stored presets back, dropping broken entries and a chosen preset that no longer exists', () => {
+describe('a preset is a name and up to six named groups', () => {
+  it('reads stored presets back, dropping broken entries and a chosen preset that no longer exists', () => {
     expect(normalizePresets(null)).toEqual({ active: null, list: [] })
     const saved = { active: 'b', list: [preset(), { id: 7 }, 'x', { id: 'c', name: 'x'.repeat(50), groups: 'no' }] }
     expect(normalizePresets(saved)).toEqual({
@@ -24,7 +24,7 @@ describe('REQ-MIRROR-DUNGEON-019 a preset is a name and up to six named groups',
     expect(normalizePresets({ ...saved, active: 's1' }).active).toBe('s1')
   })
 
-  it('REQ-MIRROR-DUNGEON-019 reads the older flat list as a preset with one group and keeps more than five of them', () => {
+  it('reads the older flat list as a preset with one group and keeps more than five of them', () => {
     const old = { active: 'a', list: Array.from({ length: 8 }, (_, i) => ({ id: i ? String(i) : 'a', name: `프리셋 ${i}`, gifts: ['9001', 9002, '9001'] })) }
     const read = normalizePresets(old)
     expect(read.list).toHaveLength(8)
@@ -39,7 +39,7 @@ describe('REQ-MIRROR-DUNGEON-019 a preset is a name and up to six named groups',
     expect(nextPresetId([])).toBe('s1')
   })
 
-  it('REQ-MIRROR-DUNGEON-019 REQ-MIRROR-DUNGEON-022 a new or imported preset takes the first free slot and is chosen; a sixth is refused', () => {
+  it('a new or imported preset takes the first free slot and is chosen; a sixth is refused', () => {
     const start = normalizePresets({ active: 's1', list: [preset(undefined, 's1'), preset(undefined, 's3')] })
     const made = createPreset(start, '프리셋 3')!
     expect(made.active).toBe('s2')
@@ -55,7 +55,7 @@ describe('REQ-MIRROR-DUNGEON-019 a preset is a name and up to six named groups',
     expect(deletePreset(made, 's3').active).toBe('s2')
   })
 
-  it('REQ-MIRROR-DUNGEON-019 trims names, memos, groups and gifts to their limits and keeps a gift in its first group only', () => {
+  it('trims names, memos, groups and gifts to their limits and keeps a gift in its first group only', () => {
     const body = normalizePresetBody({
       name: 'n'.repeat(40),
       groups: [
@@ -73,7 +73,7 @@ describe('REQ-MIRROR-DUNGEON-019 a preset is a name and up to six named groups',
     expect(full.groups.map(item => item.gifts.length)).toEqual([50, 10])
   })
 
-  it('REQ-MIRROR-DUNGEON-019 a gift put in another group moves there, and sixty is the most a preset holds', () => {
+  it('a gift put in another group moves there, and sixty is the most a preset holds', () => {
     const start = preset()
     expect(placeGift(start, '9', 1).groups[1].gifts).toEqual(['3', '9'])
     // Already in the first group: it leaves that group.
@@ -92,7 +92,7 @@ describe('REQ-MIRROR-DUNGEON-019 a preset is a name and up to six named groups',
     expect(placeGift(full, '1', 1).groups[1].gifts).toEqual(['1'])
   })
 
-  it('REQ-MIRROR-DUNGEON-019 a press puts a gift in the chosen group and a second press takes it out', () => {
+  it('a press puts a gift in the chosen group and a second press takes it out', () => {
     const start = preset()
     const added = toggleGift(start, '9', 0)
     expect(added.groups[0].gifts).toEqual(['1', '2', '9'])
@@ -102,7 +102,7 @@ describe('REQ-MIRROR-DUNGEON-019 a preset is a name and up to six named groups',
     expect(removeGift(start, '2').groups[0].gifts).toEqual(['1'])
   })
 
-  it('REQ-MIRROR-DUNGEON-019 groups are added up to six and a preset never has none', () => {
+  it('groups are added up to six and a preset never has none', () => {
     let current = preset([group('a')])
     for (let i = 0; i < 10; i++) current = addGroup(current)
     expect(current.groups).toHaveLength(GIFT_PRESET_GROUP_LIMIT)
@@ -112,22 +112,22 @@ describe('REQ-MIRROR-DUNGEON-019 a preset is a name and up to six named groups',
   })
 })
 
-describe('REQ-MIRROR-DUNGEON-018 check mode lists a preset by group', () => {
-  it('REQ-MIRROR-DUNGEON-018 gives each group its gifts in the order they were placed, skipping gifts the catalog no longer has', () => {
+describe('check mode lists a preset by group', () => {
+  it('gives each group its gifts in the order they were placed, skipping gifts the catalog no longer has', () => {
     const a = gift(1), b = gift(2), c = gift(3)
     const sections = presetSections(preset([group('최우선 먹기', ['3', '없는 기프트', '1'], '2층 전에'), group('', ['2'])]), [a, b, c])
     expect(sections).toEqual([{ name: '최우선 먹기', memo: '2층 전에', gifts: [c, a] }, { name: '', memo: '', gifts: [b] }])
   })
 })
 
-describe('REQ-MIRROR-DUNGEON-021 account presets', () => {
-  it('REQ-MIRROR-DUNGEON-021 turns account rows into presets by slot and ignores rows it cannot read', () => {
+describe('account presets', () => {
+  it('turns account rows into presets by slot and ignores rows it cannot read', () => {
     const rows = [{ slot: 3, name: '둘째', groups: [group('a', ['1'])] }, { slot: 9, name: 'x', groups: [] }, null, { slot: 1, name: '첫째', groups: [group('b')] }]
     expect(presetsFromRows(rows)).toEqual([{ id: 's1', name: '첫째', groups: [group('b')] }, { id: 's3', name: '둘째', groups: [group('a', ['1'])] }])
     expect(presetsFromRows('nope')).toEqual([])
   })
 
-  it('REQ-MIRROR-DUNGEON-021 uploads the first five browser presets, within the limits, and keeps the chosen one chosen', () => {
+  it('uploads the first five browser presets, within the limits, and keeps the chosen one chosen', () => {
     const browser = normalizePresets({ active: '2', list: Array.from({ length: 7 }, (_, i) => ({ id: String(i), name: `p${i}`, gifts: keys(i === 0 ? 80 : 2) })) })
     const account = accountPresets(browser)
     expect(account.list.map(item => item.id)).toEqual(['s1', 's2', 's3', 's4', 's5'])
@@ -136,7 +136,7 @@ describe('REQ-MIRROR-DUNGEON-021 account presets', () => {
     expect(accountPresets({ active: '6', list: browser.list }).active).toBeNull()
   })
 
-  it('REQ-MIRROR-DUNGEON-021 saves only the slots that changed and deletes the ones that are gone', () => {
+  it('saves only the slots that changed and deletes the ones that are gone', () => {
     const first = preset(), second = preset([group('b')], 's2'), third = preset([group('c')], 's4')
     const synced = new Map([first, second, third].map(item => [Number(item.id.slice(1)), presetRequest(item)!]))
     expect(presetSyncPlan(synced, [first, second, third])).toEqual({ puts: [], deletes: [] })
@@ -148,7 +148,7 @@ describe('REQ-MIRROR-DUNGEON-021 account presets', () => {
     expect(presetSyncPlan(new Map(), [first]).puts).toHaveLength(1)
   })
 
-  it('REQ-MIRROR-DUNGEON-021 the request check refuses bodies outside the limits', () => {
+  it('the request check refuses bodies outside the limits', () => {
     const ok = { name: '화상 덱', groups: [group('a', ['9001', '9002'], '메모')] }
     expect(giftPresetBodySchema.safeParse(ok).success).toBe(true)
     expect(giftPresetBodySchema.safeParse({ name: '', groups: [group('')] }).success).toBe(true)
@@ -167,8 +167,8 @@ describe('REQ-MIRROR-DUNGEON-021 account presets', () => {
   })
 })
 
-describe('REQ-MIRROR-DUNGEON-022 preset code', () => {
-  it('REQ-MIRROR-DUNGEON-022 a preset survives the trip through its code', () => {
+describe('preset code', () => {
+  it('a preset survives the trip through its code', () => {
     const source = preset([group('최우선 먹기', ['9001', '9002'], '2층 전에 먹기\n없으면 넘김'), group('', ['9003'])])
     const code = encodePresetCode(source)
     expect(code).toMatch(/^[\w-]+$/)
@@ -178,7 +178,7 @@ describe('REQ-MIRROR-DUNGEON-022 preset code', () => {
     expect(decodePresetCode(encodePresetCode(largest))).toEqual(largest)
   })
 
-  it('REQ-MIRROR-DUNGEON-022 refuses a broken, oversized or out-of-limit code', () => {
+  it('refuses a broken, oversized or out-of-limit code', () => {
     const pack = (value: unknown) => btoa(String.fromCharCode(...deflate(JSON.stringify(value)))).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')
     expect(decodePresetCode('')).toBeNull()
     expect(decodePresetCode('not a code!')).toBeNull()

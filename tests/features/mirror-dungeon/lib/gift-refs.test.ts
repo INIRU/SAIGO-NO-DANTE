@@ -37,7 +37,7 @@ describe('createGiftRefSplitter', () => {
   })
 })
 
-describe('REQ-SHARED-021 gift names in effect text', () => {
+describe('gift names in effect text', () => {
   const en = [
     { id: '9764', name: 'Gift' },
     { id: 'long', name: 'Hourglass of Fate' },
@@ -46,13 +46,13 @@ describe('REQ-SHARED-021 gift names in effect text', () => {
     { id: 'common', name: 'Weapons' },
   ]
 
-  it('REQ-SHARED-021 does not link the gift "Gift" inside "E.G.O Gift owned"', () => {
+  it('does not link the gift "Gift" inside "E.G.O Gift owned"', () => {
     const split = createGiftRefSplitter(en)
     expect(split('E.G.O Gift owned')).toEqual(['E.G.O Gift owned'])
     expect(split('Gifts and gift effects')).toEqual(['Gifts and gift effects'])
   })
 
-  it('REQ-SHARED-021 still links a real long gift name, but only as a whole word', () => {
+  it('still links a real long gift name, but only as a whole word', () => {
     const split = createGiftRefSplitter(en)
     expect(split('Obtain Hourglass of Fate now')).toEqual(['Obtain ', { gift: en[1], text: 'Hourglass of Fate' }, ' now'])
     expect(split('Obtain Mirrorwalker.')).toEqual(['Obtain ', { gift: en[3], text: 'Mirrorwalker' }, '.'])
@@ -60,21 +60,21 @@ describe('REQ-SHARED-021 gift names in effect text', () => {
     expect(split('SuperMirrorwalker')).toEqual(['SuperMirrorwalker'])
   })
 
-  it('REQ-SHARED-021 does not link short Latin names or a single common word bare, but keeps bracket and arrow forms', () => {
+  it('does not link short Latin names or a single common word bare, but keeps bracket and arrow forms', () => {
     const split = createGiftRefSplitter(en)
     expect(split('Cross the line, Weapons ready')).toEqual(['Cross the line, Weapons ready'])
     expect(split('→ [Gift]')).toEqual(['→ ', { gift: en[0], text: 'Gift' }])
     expect(split('[Cross] obtained')).toEqual([{ gift: en[2], text: 'Cross' }, ' obtained'])
   })
 
-  it('REQ-SHARED-021 keeps the Hangul and Kana bare-name rules (3 characters and more)', () => {
+  it('keeps the Hangul and Kana bare-name rules (3 characters and more)', () => {
     const ja = [{ id: 'j', name: '時計の針' }, { id: 'k', name: '指輪' }]
     const split = createGiftRefSplitter(ja)
     expect(split('時計の針を得る')).toEqual([{ gift: ja[0], text: '時計の針' }, 'を得る'])
     expect(split('指輪を得る')).toEqual(['指輪を得る'])
   })
 
-  it('REQ-SHARED-021 keeps the style of a tagged line when a gift name inside it is split out', () => {
+  it('keeps the style of a tagged line when a gift name inside it is split out', () => {
     const split = createGiftRefSplitter(gifts)
     const parts = split('<style="highlight">획득: 신검합일 사용</style>')
     expect(parts).toHaveLength(3)
@@ -87,7 +87,7 @@ describe('REQ-SHARED-021 gift names in effect text', () => {
     expect(parts.map(p => (typeof p === 'string' ? p.replace(/<[^>]*>/g, '') : p.text)).join('')).toBe('획득: 신검합일 사용')
   })
 
-  it('REQ-SHARED-021 never matches a gift name across a tag and leaves tag-only text intact', () => {
+  it('never matches a gift name across a tag and leaves tag-only text intact', () => {
     const split = createGiftRefSplitter(gifts)
     expect(split('<b>신검</b>합일')).toEqual(['<b>신검</b>합일'])
     expect(split('<color=#ff0000>가능성 없음</color>')).toEqual([{ gift: gifts[0], text: '가능성' }, '<color=#ff0000> 없음</color>'])

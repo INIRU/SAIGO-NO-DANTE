@@ -7,15 +7,15 @@ import Dropdown from '@/components/ui/Dropdown'
 const css = readFileSync(resolve(__dirname, '../../../components/ui/Dropdown.module.css'), 'utf8')
 const options = [{ value: 'all', label: '전체' }, { value: 'owned', label: '보유' }]
 
-describe('REQ-SHARED-083 the shared dropdown', () => {
-  it('REQ-SHARED-083 the button marks a value other than the default and reads in the body font', () => {
+describe('the shared dropdown', () => {
+  it('the button marks a value other than the default and reads in the body font', () => {
     const changed = renderToStaticMarkup(<Dropdown value="owned" defaultValue="all" options={options} onChange={() => {}} />)
     expect(changed).toContain('data-active="true"')
     expect(renderToStaticMarkup(<Dropdown value="all" defaultValue="all" options={options} onChange={() => {}} />)).not.toContain('data-active')
     expect(css).toMatch(/\.trigger \{[^}]*font-family: var\(--font-body\)/)
   })
 
-  it('REQ-SHARED-083 the menu grows from the button, the chosen row carries a check, hover is for fine pointers', () => {
+  it('the menu grows from the button, the chosen row carries a check, hover is for fine pointers', () => {
     expect(css).toMatch(/\.menu \{[^}]*transform-origin: top left/)
     expect(css).toMatch(/@keyframes dropdown-in/)
     expect(css).toMatch(/\.item\[aria-checked='true'\] \.check \{ opacity: 1; \}/)

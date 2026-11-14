@@ -11,8 +11,8 @@ import type { Blessing } from '@/features/planner/lib/blessing'
 
 const blessing: Blessing = { baseId: 100, name: '시작의 별', costs: [10, 20, 30], effectsByLevel: [['시작 <k>코스트</k> +150'], [], []] }
 
-describe('REQ-PLANNER-026 game card fonts', () => {
-  it('REQ-PLANNER-026 blessing card: heading title, game-text effects, Bebas cost, no greyscale star', () => {
+describe('game card fonts', () => {
+  it('blessing card: heading title, game-text effects, Bebas cost, no greyscale star', () => {
     const html = renderToStaticMarkup(<ReadOnlyBlessingGrid blessings={[blessing]} selectedBlessings={new Map([[100, 1]])} emptyText="" />)
     expect(html).toMatch(/font-family:var\(--font-heading\)[^>]*>시작의 별</)
     expect(html).toMatch(/font-family:var\(--font-game-text\)[^"]*"[^>]*>(?:(?!<\/div>)[\s\S])*코스트/)
@@ -21,7 +21,7 @@ describe('REQ-PLANNER-026 game card fonts', () => {
     expect(html).not.toContain('&lt;k&gt;')
   })
 
-  it('REQ-PLANNER-026 constraint card: heading title, game-text description, Bebas reward and score', () => {
+  it('constraint card: heading title, game-text description, Bebas reward and score', () => {
     const html = renderToStaticMarkup(<FloorConstraints floor={11} entries={[{ floor: 11, constraints: [] }]} onChange={() => {}} />)
     expect(html).toMatch(/<strong[^>]*var\(--font-heading\)[^>]*>레벨 강화</)
     expect(html).toMatch(/<span[^>]*var\(--font-game-text\)[^>]*>모든 적 레벨 3 증가/)

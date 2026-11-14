@@ -25,36 +25,36 @@ const RAW_DESC = '<style="highlight">[Combustion] 3</style> 부여\n<color=#ff00
 const KEYWORDS: Record<string, KeywordInfo> = { 화상: { desc: RAW_DESC, iconSlug: 'burn', effectType: 'negative' } }
 const wrap = (node: React.ReactNode) => renderToStaticMarkup(<KeywordProvider keywords={KEYWORDS}>{node}</KeywordProvider>)
 
-describe('REQ-SHARED-020 flavor text of raw game text', () => {
-  it('REQ-SHARED-020 draws the tags of a skill flavor as styling, not as text', () => {
+describe('flavor text of raw game text', () => {
+  it('draws the tags of a skill flavor as styling, not as text', () => {
     const html = wrap(<SkillDescription description="" flavorText={'<i>속삭임</i> <color=#ff0000>붉은</color> 끝'} accentColor="#c2b79f" />)
     expect(html).not.toContain('&lt;')
     expect(html).toContain('붉은')
-    // REQ-SHARED-022: the colour tag is read, its colour is not applied.
+    // The colour tag is read, its colour is not applied.
     expect(html).not.toContain('color:#ff0000')
     expect(html).toContain('font-style:italic')
   })
 
-  it('REQ-SHARED-020 leaves a flavor of the older format as written and never turns its words into keywords', () => {
+  it('leaves a flavor of the older format as written and never turns its words into keywords', () => {
     const html = wrap(<SkillDescription description="" flavorText={'화상 입은 [적중시] 이야기'} accentColor="#c2b79f" />)
     expect(html).toContain('화상 입은 [적중시] 이야기')
     expect(html).not.toContain('keyword-token')
   })
 })
 
-describe('REQ-SHARED-020 keyword descriptions with tags', () => {
+describe('keyword descriptions with tags', () => {
   const entry: KeywordEntry = {
     name: '화상', description: RAW_DESC, max_stack: null, icon_slug: 'burn', sin_affinity: null, category: null,
   }
 
-  it('REQ-SHARED-020 shows the keyword card preview as plain text: tags gone, [Id] as its name', () => {
+  it('shows the keyword card preview as plain text: tags gone, [Id] as its name', () => {
     const html = wrap(<KeywordCard keyword={entry} counts={{ identity: 0, ego: 0, gift: 0 }} onClick={() => {}} lang="ko" />)
     expect(html).not.toContain('&lt;')
     expect(html).not.toContain('[Combustion]')
     expect(html).toContain('화상 3 부여')
   })
 
-  it('REQ-SHARED-020 draws the note keyword tooltip description as game text', () => {
+  it('draws the note keyword tooltip description as game text', () => {
     const html = wrap(<KeywordChipDescription keyword="화상" info={KEYWORDS['화상']} />)
     expect(html).not.toContain('&lt;')
     expect(html).not.toContain('[Combustion]')
@@ -63,7 +63,7 @@ describe('REQ-SHARED-020 keyword descriptions with tags', () => {
     expect(html).not.toContain('color:#ff0000')
   })
 
-  it('REQ-SHARED-020 gives the deck identity theme keyword a plain-text title without tags', () => {
+  it('gives the deck identity theme keyword a plain-text title without tags', () => {
     const slot = {
       slot_order: 0,
       gacksung: false,
@@ -78,18 +78,18 @@ describe('REQ-SHARED-020 keyword descriptions with tags', () => {
   })
 })
 
-describe('REQ-SHARED-020 a tag that spans lines keeps applying on every line', () => {
+describe('a tag that spans lines keeps applying on every line', () => {
   const SPAN = '<style="highlight">- 첫째\n- 둘째</style>'
-  // The highlight colour is no longer drawn (REQ-SHARED-022): each line must still lose the tag and keep its text.
+  // The highlight colour is no longer drawn: each line must still lose the tag and keep its text.
   const both = (html: string) => html.includes('첫째') && html.includes('둘째') && !html.includes('#f8c200') && !html.includes('style=&quot;')
 
-  it('REQ-SHARED-020 in the deck identity passive description', () => {
+  it('in the deck identity passive description', () => {
     const html = wrap(<PassiveDescriptionLines text={SPAN} color="#686050" />)
     expect(html).not.toContain('&lt;')
     expect(both(html)).toBe(true)
   })
 
-  it('REQ-SHARED-020 in the gift detail effect, keeping the bullet layout of a highlighted line', () => {
+  it('in the gift detail effect, keeping the bullet layout of a highlighted line', () => {
     const html = wrap(<EffectText text={SPAN} color="#c2b79f" />)
     expect(html).not.toContain('&lt;')
     expect(both(html)).toBe(true)

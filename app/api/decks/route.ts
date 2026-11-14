@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { title, description, tags, identitySlots, egoSlots, content_type } = body
-    // A guest's password for the deck (REQ-COMMUNITY-029); screens from before it existed send none.
+    // A guest's password for the deck; screens from before it existed send none.
     const pin = author.kind === 'guest' ? guestPinOf(body?.pin) : null
     if (pin === false) return NextResponse.json({ error: '비밀번호는 숫자 4~6자리입니다.' }, { status: 400 })
     const mainKeywordsResult = parseDeckMainKeywordsInput(body?.main_keywords)

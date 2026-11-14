@@ -12,7 +12,7 @@ const ego = (sinner: number, local: number, grade: string) => ({ id: 'e-' + sinn
 const identities = ids.flatMap((_, index) => [identity(index + 1, 1), identity(index + 1, 5)])
 const egos = ids.flatMap((_, index) => [ego(index + 1, 1, 'ZAYIN'), ego(index + 1, 3, 'TETH')])
 
-it('REQ-PLANNER-017 loads a formation code into the plan: every identity, its formation order and its E.G.O', () => {
+it('loads a formation code into the plan: every identity, its formation order and its E.G.O', () => {
   const deckSlots = Object.fromEntries(ids.map((id, index) => [id, identities[index * 2 + (index % 2)]]))
   const egoSlots = { 'yi-sang': { ZAYIN: egos[0], TETH: egos[1] }, faust: { ZAYIN: egos[2] } }
   const formationOrder = ['faust', 'yi-sang', 'outis']
@@ -33,11 +33,11 @@ it('REQ-PLANNER-017 loads a formation code into the plan: every identity, its fo
   expect(plan.egoSlots.filter(slot => slot.grade !== 'ZAYIN')).toEqual([{ ego_id: 'e-1-3', sinner_id: 'yi-sang', name_kr: 'E.G.O 1', grade: 'TETH', sin_affinity: 'wrath' }])
 })
 
-it('REQ-PLANNER-017 rejects anything that is not a formation code', () => {
+it('rejects anything that is not a formation code', () => {
   for (const code of ['', 'hello', '!!!', 'H4sIAAAAAAAACg==']) expect(planSlotsFromTeamCode(code, sinners, identities, egos)).toBeNull()
 })
 
-it('REQ-PLANNER-017 copies every identity into the plan\'s formation code, including sinners without a formation number', () => {
+it('copies every identity into the plan\'s formation code, including sinners without a formation number', () => {
   // Bench-only plan: no formation order at all. The code must still carry each chosen identity, not fall back to LCB.
   const deck = ids.map((id, index) => ({ identity_id: 'i-' + (index + 1) + '-5', sinner_id: id, slot_order: index === 0 ? 0 : 99 }))
   const egoSlots = [{ ego_id: 'e-2-3', sinner_id: 'faust', grade: 'TETH' }]

@@ -53,7 +53,7 @@ const POPUP_TITLE = { x: 640, y: 250, width: 640, height: 55 }
  * Name plate of an acquired-gift popup whose plate is not colored (the start and observation popups in the game's black
  * UI theme draw it dark). Found from the popup's bright title text instead; the popup reader still checks the title says
  * the gift was acquired, so a false box costs one read.
- * assumes the game view fills the capture (scaled and centred); a window with borders would need text anchors.
+ * Assumes the game view fills the capture (scaled and centred); a window with borders would need text anchors.
  */
 export function darkPopupPlate(image: ImageData): PopupLabelBox | null {
   const { data, width, height } = image

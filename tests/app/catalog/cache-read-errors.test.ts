@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// A read that fails inside 'use cache' must throw, or the empty result is stored for good (REQ-SHARED-099).
+// A read that fails inside 'use cache' must throw, or the empty result is stored for good.
 const state = vi.hoisted(() => ({ failTable: '' as string, sinner: { id: 'faust', name: 'Faust' } as unknown }))
 
 vi.mock('next/cache', () => ({ cacheLife: vi.fn(), cacheTag: vi.fn() }))
@@ -34,33 +34,33 @@ beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {})
 })
 
-describe('REQ-SHARED-099 sinner page', () => {
+describe('sinner page', () => {
   const run = async () => {
     const { default: Page } = await import('@/app/[lang]/sinners/[slug]/page')
     return Page({ params: Promise.resolve({ lang: 'ko', slug: 'faust' }) })
   }
 
-  it.each(['identities', 'ego'])('REQ-SHARED-099 throws when the %s read fails', async table => {
+  it.each(['identities', 'ego'])('throws when the %s read fails', async table => {
     state.failTable = table
     await expect(run()).rejects.toThrow(`${table} down`)
   })
 
-  it('REQ-SHARED-099 still renders when every read works', async () => {
+  it('still renders when every read works', async () => {
     await expect(run()).resolves.toBeTruthy()
   })
 })
 
-describe('REQ-SHARED-099 mirror dungeon page', () => {
-  it.each(['ego_gifts', 'ego_gift_recipes', 'ego_gift_themes', 'md_events', 'md_event_choices'])('REQ-SHARED-099 throws when the %s read fails', async table => {
+describe('mirror dungeon page', () => {
+  it.each(['ego_gifts', 'ego_gift_recipes', 'ego_gift_themes', 'md_events', 'md_event_choices'])('throws when the %s read fails', async table => {
     state.failTable = table
     const { default: Page } = await import('@/app/[lang]/mirror-dungeon/page')
     await expect(Page({ params: Promise.resolve({ lang: 'ko' }) })).rejects.toThrow(`${table} down`)
   })
 })
 
-describe('REQ-SHARED-099 keywords page', () => {
+describe('keywords page', () => {
   // The page's own try/catch retries once without refs, so a failing table throws out of both attempts.
-  it.each(['keyword_meta', 'identities', 'sinners', 'ego_gifts', 'ego'])('REQ-SHARED-099 throws when the %s read fails', async table => {
+  it.each(['keyword_meta', 'identities', 'sinners', 'ego_gifts', 'ego'])('throws when the %s read fails', async table => {
     state.failTable = table
     const { default: Page } = await import('@/app/[lang]/keywords/page')
     await expect(Page()).rejects.toThrow(`${table} down`)

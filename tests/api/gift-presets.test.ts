@@ -38,7 +38,7 @@ const req = (method: string, body?: unknown, query = '', origin = 'http://localh
 
 beforeEach(() => { calls.length = 0; tableError = null; rpcError = null; profile = 'user-1'; signedIn = true })
 
-it('REQ-MIRROR-DUNGEON-021 lists the session user\'s presets by slot', async () => {
+it('lists the session user\'s presets by slot', async () => {
   const res = await GET(req('GET'))
   expect(await res.json()).toEqual({ presets: [{ slot: 2, name: '화상 덱', groups, updatedAt: 't' }], slots: 5 })
   expect(res.headers.get('cache-control')).toContain('no-store')
@@ -46,13 +46,13 @@ it('REQ-MIRROR-DUNGEON-021 lists the session user\'s presets by slot', async () 
   expect(calls.filter(call => call.op === 'eq').map(call => call.args)).toEqual([['user_id', 'user-1']])
 })
 
-it('REQ-MIRROR-DUNGEON-021 a session without a profile has no presets, and reading never creates one', async () => {
+it('a session without a profile has no presets, and reading never creates one', async () => {
   profile = null
   expect(await (await GET(req('GET'))).json()).toEqual({ presets: [], slots: 5 })
   expect(calls.some(call => call.op === 'from')).toBe(false)
 })
 
-it('REQ-MIRROR-DUNGEON-021 stores a checked preset in the session user\'s slot', async () => {
+it('stores a checked preset in the session user\'s slot', async () => {
   const res = await PUT(req('PUT', { slot: 2, name: '화상 덱', groups, user_id: 'someone-else' }))
   expect(res.status).toBe(200)
   const upsert = calls.find(call => call.op === 'upsert')!
@@ -60,7 +60,7 @@ it('REQ-MIRROR-DUNGEON-021 stores a checked preset in the session user\'s slot',
   expect(upsert.args[1]).toEqual({ onConflict: 'user_id,slot' })
 })
 
-it('REQ-MIRROR-DUNGEON-021 refuses slots and presets outside the limits', async () => {
+it('refuses slots and presets outside the limits', async () => {
   const group = { name: '', gifts: [] as string[], memo: '' }
   for (const body of [
     { slot: 6, name: 'x', groups: [group] },
@@ -77,12 +77,12 @@ it('REQ-MIRROR-DUNGEON-021 refuses slots and presets outside the limits', async 
   expect(calls.some(call => call.op === 'upsert' || call.op === 'delete')).toBe(false)
 })
 
-it('REQ-MIRROR-DUNGEON-021 deletes one slot of the session user', async () => {
+it('deletes one slot of the session user', async () => {
   expect((await DELETE(req('DELETE', undefined, '?slot=3'))).status).toBe(200)
   expect(calls.filter(call => call.op === 'eq').map(call => call.args)).toEqual([['user_id', 'user-1'], ['slot', 3]])
 })
 
-it('REQ-MIRROR-DUNGEON-021 needs a session, and a write from another origin is refused', async () => {
+it('needs a session, and a write from another origin is refused', async () => {
   signedIn = false
   expect((await GET(req('GET'))).status).toBe(401)
   expect((await PUT(req('PUT', { slot: 1, name: 'x', groups }))).status).toBe(401)
@@ -91,7 +91,7 @@ it('REQ-MIRROR-DUNGEON-021 needs a session, and a write from another origin is r
   expect((await DELETE(req('DELETE', undefined, '?slot=1', 'https://evil.example'))).status).toBe(403)
 })
 
-it('REQ-MIRROR-DUNGEON-021 reports a missing table or a failed account lookup as 503, not as an empty list', async () => {
+it('reports a missing table or a failed account lookup as 503, not as an empty list', async () => {
   tableError = { message: 'relation "limbus.gift_presets" does not exist' }
   expect((await GET(req('GET'))).status).toBe(503)
   expect((await PUT(req('PUT', { slot: 1, name: 'x', groups }))).status).toBe(503)

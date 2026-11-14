@@ -43,7 +43,7 @@ it('finds the drawn icon above a plate and accepts it only with a clear lead', (
   expect(acceptedIcon([])).toBeNull()
 })
 
-it('REQ-ASSIST-046 tells plain white icons apart by their outline on the dark slot, and keeps dark icons by their colors', () => {
+it('tells plain white icons apart by their outline on the dark slot, and keeps dark icons by their colors', () => {
   // Like the white leaves 9750, which the inside-only correlation left out of the shortlist in a 2026-09-26 sample.
   const disc = (size: number) => icon(size, (x, y) => Math.hypot(x - size / 2 + 0.5, y - size / 2 + 0.5) < size * 0.35 ? [235, 235, 235] : null)
   const square = (size: number) => icon(size, (x, y) => Math.abs(x - size / 2 + 0.5) < size * 0.3 && Math.abs(y - size / 2 + 0.5) < size * 0.3 ? [235, 235, 235] : null)
@@ -60,7 +60,7 @@ it('REQ-ASSIST-046 tells plain white icons apart by their outline on the dark sl
   expect(templateScore(dark, onSlot(new Uint8ClampedArray(darkRings)), 24, 0, 0)).toBeLessThan(0.6)
 })
 
-it('REQ-ASSIST-046 never lets the small first pass drop a held gift from the ranking', () => {
+it('never lets the small first pass drop a held gift from the ranking', () => {
   const coarse = [iconTemplate('stripes', stripes(24), 24), iconTemplate('rings', rings(24), 24)]
   const fine = new Map([['stripes', iconTemplate('stripes', stripes(48), 48)], ['rings', iconTemplate('rings', rings(48), 48)]])
   // A small pass that prefers the wrong icon (as a 16 px copy can) and keeps only one.

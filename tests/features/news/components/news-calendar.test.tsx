@@ -48,7 +48,7 @@ const part = (html: string, name: 'strip' | 'grid' | 'day' | 'dialog') => {
 beforeEach(() => { m.lang = 'ko'; m.admin = false })
 
 describe('news calendar', () => {
-  it('REQ-NEWS-009 shows the month with today marked and a slip per item on the days that have news, nothing opened', () => {
+  it('shows the month with today marked and a slip per item on the days that have news, nothing opened', () => {
     const html = render()
     for (const shown of ['소식 캘린더', '2026년 10월', '림피가 전한 소식', '/assets/limpi/runner.png', '/assets/news/feed-limbus.png', '/assets/news/feed-hampang.png']) expect(html).toContain(shown)
     const grid = part(html, 'grid')
@@ -61,7 +61,7 @@ describe('news calendar', () => {
     expect(html).not.toContain('>오늘<')
   })
 
-  it('REQ-NEWS-009 gives a phone a strip of every date and the news of today on the page', () => {
+  it('gives a phone a strip of every date and the news of today on the page', () => {
     const html = render()
     const strip = part(html, 'strip')
     expect(strip.match(/<button/g)).toHaveLength(31)
@@ -76,7 +76,7 @@ describe('news calendar', () => {
     expect(part(render({ date: '2026-10-07' }), 'day')).toContain('소식 없음')
   })
 
-  it('REQ-NEWS-009 shows a day in full when it is opened: title, body, author, source, time, media and the original', () => {
+  it('shows a day in full when it is opened: title, body, author, source, time, media and the original', () => {
     const html = render({ date: '2026-10-06' })
     expect(part(html, 'grid')).toMatch(/<button[^>]*aria-pressed="true"[^>]*aria-label="10월 6일 화요일, 3건"/)
     const dialog = part(html, 'dialog')
@@ -91,7 +91,7 @@ describe('news calendar', () => {
     expect(part(render({ date: '2026-10-06' }), 'dialog')).toContain('>삭제<')
   })
 
-  it('REQ-NEWS-009 handles a day with nothing, a day of another month and a failed read', () => {
+  it('handles a day with nothing, a day of another month and a failed read', () => {
     expect(part(render({ date: '2026-10-07' }), 'dialog')).toContain('소식 없음')
     expect(render({ date: '2026-09-30' })).not.toContain('role="dialog"')
     expect(render({ items: null })).toContain('소식을 불러오지 못했습니다.')
@@ -100,7 +100,7 @@ describe('news calendar', () => {
     expect(render({ date: '2026-10-04' })).toContain('>오늘<')
   })
 
-  it('REQ-NEWS-009 writes its own text in ko, en and ja and marks a machine translation', () => {
+  it('writes its own text in ko, en and ja and marks a machine translation', () => {
     m.lang = 'en'
     const english = render({ date: '2026-10-06' })
     for (const shown of ['News calendar', 'News from Limpi', 'October 2026', 'Scheduled maintenance', 'Machine translated', 'Open original']) expect(english).toContain(shown)
@@ -111,7 +111,7 @@ describe('news calendar', () => {
     for (const shown of ['ニュースカレンダー', 'リンピが届けたニュース', '2026年10月', 'ニュースなし']) expect(japanese).toContain(shown)
   })
 
-  it('REQ-NEWS-010 keeps only the chosen feed on the calendar and in the opened day', () => {
+  it('keeps only the chosen feed on the calendar and in the opened day', () => {
     const html = render({ feed: 'hampang', date: '2026-10-06' })
     expect(html).toMatch(/aria-pressed="true"[^>]*>(<img[^>]*>)?햄햄팡팡</)
     expect(part(html, 'grid')).toContain('aria-label="10월 6일 화요일, 1건"')
@@ -122,7 +122,7 @@ describe('news calendar', () => {
     expect(render()).toMatch(/aria-pressed="true"[^>]*>전체</)
   })
 
-  it('REQ-NEWS-010 covers the media of a spoiler item until it is asked for', () => {
+  it('covers the media of a spoiler item until it is asked for', () => {
     const html = render({ date: '2026-10-06' })
     expect(html).toContain('신규 인격 PV</h3>')
     expect(html).toContain('스포일러 보기')

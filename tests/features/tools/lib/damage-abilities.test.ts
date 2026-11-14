@@ -12,7 +12,7 @@ const ENHANCEMENT = [{ ability: 'AtkSkillPowerResultAdderAsStack', value: 1 }]
 const FIXED = [{ ability: 'AtkDamageMultiplier', value: 0.05 }, { ability: 'GiveBuffOnRoundEnd' }, { ability: 'AtkDamageMultiplierGebura', value: 1 }]
 
 describe('readAbilities', () => {
-  it('REQ-TOOLS-020 reads a stack ability as a per-stack percent on the side that takes it', () => {
+  it('reads a stack ability as a per-stack percent on the side that takes it', () => {
     expect(readAbilities(VULNERABLE).effects).toEqual([{ target: 'damage', side: 'target', value: 10, scaled: true }])
     expect(readAbilities(PROTECTION).effects[0].value).toBe(-10)
     expect(readAbilities(LAMANCHALAND).effects.map(effect => effect.side)).toEqual(['self', 'target'])
@@ -40,7 +40,7 @@ describe('readAbilities', () => {
 })
 
 describe('gift modifiers', () => {
-  it('REQ-TOOLS-021 reads damage and power entries of what the attacker deals and leaves damage taken out', () => {
+  it('reads damage and power entries of what the attacker deals and leaves damage taken out', () => {
     expect(readGiftModifiers([
       { target: 'damage', value: 0.005, per: 'coin' }, { target: 'power', value: 1 }, { target: 'take_damage', value: -0.1 }, { target: 'speed', value: 1 },
     ])).toEqual([
@@ -54,7 +54,7 @@ describe('gift modifiers', () => {
 describe('applying the effects', () => {
   const modifier = (effects: ReturnType<typeof readAbilities>['effects'], stacks?: number): SavedModifier =>
     ({ id: 1, name: 'x', target: 'damage', value: 0, effects, ...(stacks ? { stacks } : {}) })
-  it('REQ-TOOLS-022 turns stacks into the damage factor the formula takes', () => {
+  it('turns stacks into the damage factor the formula takes', () => {
     const modifiers = coinModifiers([modifier(readAbilities(VULNERABLE).effects, 5)], 1)
     expect(modifiers).toEqual([{ target: 'damage', value: 0.5 }])
     expect(coinDamage({ power: 10, offenseLevel: 55, defenseLevel: 55, physicalResist: 1, sinResist: 1, modifiers }).damage).toBe(15)
@@ -89,7 +89,7 @@ describe('the picker list', () => {
     'ko',
     { 취약: VULNERABLE, 이상한: LAMANCHALAND, 고정: FIXED, 몰라: [{ ability: 'DamageSomethingNew', value: 1 }] },
   )
-  it('REQ-TOOLS-023 offers a keyword by its game values, one row per side it acts on, with its own maximum', () => {
+  it('offers a keyword by its game values, one row per side it acts on, with its own maximum', () => {
     const rows = sources.keywords.filter(row => row.name === '이상한')
     expect(rows.map(row => [row.side, row.effects?.length])).toEqual([['self', 1], ['target', 1]])
     expect(sources.keywords.find(row => row.name === '취약')).toMatchObject({ side: 'target', stack: null, maxStack: 10 })

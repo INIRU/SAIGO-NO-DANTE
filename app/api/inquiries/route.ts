@@ -11,7 +11,7 @@ export async function GET() {
   const userId = await findOrCreateSupabaseUser(db, auth.session.user!.email!)
   if (!userId)
     return NextResponse.json({ error: '계정을 확인하지 못했습니다.' }, { status: 500 })
-  // whole threads feed the list preview; fine for short support threads, page it if threads grow long.
+  // Whole threads feed the list preview; fine for short support threads, page it if threads grow long.
   const { data, error } = await db
     .schema('limbus')
     .from('inquiries')

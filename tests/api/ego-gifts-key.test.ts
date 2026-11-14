@@ -30,8 +30,8 @@ const get = (query = '') => GET(new Request('http://localhost/api/ego-gifts' + q
 
 beforeEach(() => { queries.length = 0; found = gift })
 
-describe('REQ-DECKS-014 one gift for a note label', () => {
-  it('REQ-DECKS-014 returns the whole gift for a uuid key (the id a note block carries), with the + and ++ effects the list leaves out', async () => {
+describe('one gift for a note label', () => {
+  it('returns the whole gift for a uuid key (the id a note block carries), with the + and ++ effects the list leaves out', async () => {
     const res = await get('?key=' + ID)
     expect(res.status).toBe(200)
     expect(await res.json()).toMatchObject({ id: ID, name: '불꽃놀이', effect_plus: 'b', effect_plusplus: 'c' })
@@ -39,19 +39,19 @@ describe('REQ-DECKS-014 one gift for a note label', () => {
     expect(queries[0].select).toContain('effect_plusplus_jp')
   })
 
-  it('REQ-DECKS-014 looks any other key up by name (older note tokens), digits included', async () => {
+  it('looks any other key up by name (older note tokens), digits included', async () => {
     await get('?key=' + encodeURIComponent('불꽃놀이'))
     expect(queries[0].filters).toEqual([['name', '불꽃놀이']])
     await get('?key=9250')
     expect(queries[1].filters).toEqual([['name', '9250']])
   })
 
-  it('REQ-DECKS-014 answers 404 when no gift matches', async () => {
+  it('answers 404 when no gift matches', async () => {
     found = null
     expect((await get('?key=0')).status).toBe(404)
   })
 
-  it('REQ-DECKS-014 keeps the light list when no key is given', async () => {
+  it('keeps the light list when no key is given', async () => {
     const res = await get()
     expect(await res.json()).toEqual([{ name: '불꽃놀이' }])
     expect(queries[0].select).not.toContain('effect_plus')

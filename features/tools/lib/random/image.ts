@@ -53,7 +53,7 @@ function prepareClone(board: HTMLElement) {
 
 /**
  * The identity board as a PNG download (html2canvas is loaded only when the button is used). Throws when the image cannot be made.
- * the E.G.O board's small text comes out smeared in html2canvas, so only the identity cards are saved.
+ * The E.G.O board's small text comes out smeared in html2canvas, so only the identity cards are saved.
  */
 export async function saveBoardImage(board: HTMLElement, fileName: string): Promise<void> {
   const html2canvas = (await import('html2canvas')).default

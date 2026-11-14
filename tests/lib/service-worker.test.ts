@@ -52,7 +52,7 @@ describe('service worker image freshness', () => {
     await Promise.all(tasks)
     expect(put).toHaveBeenCalledOnce()
   })
-  it('REQ-SHARED-070 refreshes mutable images but leaves hashed chunks to the browser cache and APIs untouched', () => {
+  it('refreshes mutable images but leaves hashed chunks to the browser cache and APIs untouched', () => {
     const { api } = worker()
     expect(api.classifyRequest(new Request('https://site.test/_next/image?url=x'))).toBe('stale-while-revalidate')
     expect(api.classifyRequest(new Request('https://site.test/icons/a.webp'))).toBe('stale-while-revalidate')
@@ -67,8 +67,8 @@ describe('service worker image freshness', () => {
   })
 })
 
-describe('REQ-SHARED-049 stale image copies are dropped', () => {
-  it('REQ-SHARED-049 deletes the v5 caches on activation, where Safari kept image copies drawn with black instead of transparency', async () => {
+describe('stale image copies are dropped', () => {
+  it('deletes the v5 caches on activation, where Safari kept image copies drawn with black instead of transparency', async () => {
     const handlers: Record<string, (event: unknown) => void> = {}
     const deleted: string[] = []
     const cache = { keys: vi.fn().mockResolvedValue([]), delete: vi.fn() }
@@ -112,8 +112,8 @@ async function respond(handlers: Record<string, (event: unknown) => void>, event
   return answer && await answer
 }
 
-describe('REQ-SHARED-070 the worker stays off the page and script path', () => {
-  it('REQ-SHARED-070 answers a page with the navigation preload response and stores nothing', async () => {
+describe('the worker stays off the page and script path', () => {
+  it('answers a page with the navigation preload response and stores nothing', async () => {
     const { handlers, fetch, caches } = installed()
     const response = await respond(handlers, { request: navigation(), preloadResponse: Promise.resolve(new Response('page')) })
     expect(await response!.text()).toBe('page')
@@ -121,7 +121,7 @@ describe('REQ-SHARED-070 the worker stays off the page and script path', () => {
     expect(caches.open).not.toHaveBeenCalled()
   })
 
-  it('REQ-SHARED-070 fetches the page itself without a preload, and shows the offline page only when the network fails', async () => {
+  it('fetches the page itself without a preload, and shows the offline page only when the network fails', async () => {
     const { handlers, fetch } = installed()
     fetch.mockResolvedValueOnce(new Response('from network'))
     expect(await (await respond(handlers, { request: navigation(), preloadResponse: Promise.resolve(undefined) }))!.text()).toBe('from network')
@@ -129,12 +129,12 @@ describe('REQ-SHARED-070 the worker stays off the page and script path', () => {
     expect(await (await respond(handlers, { request: navigation(), preloadResponse: Promise.resolve(undefined) }))!.text()).toBe('offline page')
   })
 
-  it('REQ-SHARED-070 leaves script chunks to the browser', async () => {
+  it('leaves script chunks to the browser', async () => {
     const { handlers } = installed()
     expect(await respond(handlers, { request: new Request('https://site.test/_next/static/chunks/a.js') })).toBeUndefined()
   })
 
-  it('REQ-SHARED-070 turns navigation preload on and drops every saigo cache but v7 on activation', async () => {
+  it('turns navigation preload on and drops every saigo cache but v7 on activation', async () => {
     const { handlers, deleted, enable } = installed(['saigo-images-v6', 'saigo-static-v6', 'saigo-pages-v6', 'saigo-images-v7', 'other-app'])
     let done: Promise<unknown> = Promise.resolve()
     handlers.activate({ waitUntil: (p: Promise<unknown>) => { done = p } })

@@ -18,8 +18,8 @@ const brokenStorage = () => ({
   removeItem: () => { throw new Error('blocked') },
 })
 
-describe('REQ-TOOLS-018 recent rolls', () => {
-  it('REQ-TOOLS-018 keeps the newest first and at most ten', () => {
+describe('recent rolls', () => {
+  it('keeps the newest first and at most ten', () => {
     let list: RecentRoll[] = []
     for (let i = 0; i < 14; i++) list = pushRecent(list, entry(`seed${i}`, i))
     expect(list).toHaveLength(RECENT_LIMIT)
@@ -27,7 +27,7 @@ describe('REQ-TOOLS-018 recent rolls', () => {
     expect(RECENT_LIMIT).toBe(10)
   })
 
-  it('REQ-TOOLS-018 replaces an entry with the same seed and moves it to the front', () => {
+  it('replaces an entry with the same seed and moves it to the front', () => {
     const list = pushRecent(pushRecent(pushRecent([], entry('a')), entry('b')), entry('c'))
     const next = pushRecent(list, { ...entry('a', 99), q: 's=a&rr=s1.1' })
     expect(next.map(item => item.seed)).toEqual(['a', 'c', 'b'])
@@ -35,7 +35,7 @@ describe('REQ-TOOLS-018 recent rolls', () => {
     expect(list.map(item => item.seed)).toEqual(['c', 'b', 'a'])
   })
 
-  it('REQ-TOOLS-018 stores and reads back through storage, and clears', () => {
+  it('stores and reads back through storage, and clears', () => {
     const storage = memoryStorage()
     expect(readRecent(storage)).toEqual([])
     const list = pushRecent([], entry('stored', 5))
@@ -45,21 +45,21 @@ describe('REQ-TOOLS-018 recent rolls', () => {
     expect(readRecent(storage)).toEqual([])
   })
 
-  it('REQ-TOOLS-018 treats broken stored values as an empty list', () => {
+  it('treats broken stored values as an empty list', () => {
     for (const raw of ['not json', '{}', '[1,2]', '[{"seed":1}]', 'null', '"x"']) expect(parseRecent(raw)).toEqual([])
     const good = entry('keep')
     expect(parseRecent(JSON.stringify([good, { seed: 'BAD SEED', q: 'x' }, good]))).toEqual([good])
     expect(parseRecent(JSON.stringify(Array.from({ length: 30 }, (_, i) => entry(`n${i}`))))).toHaveLength(RECENT_LIMIT)
   })
 
-  it('REQ-TOOLS-018 keeps working when the browser refuses storage', () => {
+  it('keeps working when the browser refuses storage', () => {
     const storage = brokenStorage()
     expect(readRecent(storage)).toEqual([])
     expect(writeRecent([entry('x')], storage)).toBe(false)
     expect(() => clearRecent(storage)).not.toThrow()
   })
 
-  it('REQ-TOOLS-018 summarises a roll as its link query plus twelve portraits and their numbers', () => {
+  it('summarises a roll as its link query plus twelve portraits and their numbers', () => {
     const { snapshot, result } = newRoll({ sinners: SINNERS, identities: IDENTITIES, egos: EGOS }, {
       seed: 'thumb', settings: { identityEnabled: true, egoEnabled: true, keywords: [], rarity: null, deploy: { min: 3, max: 3 } }, marks: [], collectionCode: null, previous: null,
     }, null)

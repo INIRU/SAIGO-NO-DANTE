@@ -8,7 +8,7 @@ const items = [
   { kind: 'deck' as const, id: 'b', title: 'B', position: 1 },
 ]
 
-describe('REQ-COMMUNITY-040 series order', () => {
+describe('series order', () => {
   it('sorts by position', () => {
     expect(orderSeriesItems(items).map(item => item.id)).toEqual(['a', 'b', 'c'])
   })
@@ -33,7 +33,7 @@ describe('REQ-COMMUNITY-040 series order', () => {
   })
 })
 
-describe('REQ-COMMUNITY-042 series request shapes', () => {
+describe('series request shapes', () => {
   it('requires a trimmed title of 1 to 60 characters', () => {
     expect(seriesCreateSchema.safeParse({ title: '  ' }).success).toBe(false)
     expect(seriesCreateSchema.safeParse({ title: 'x'.repeat(61) }).success).toBe(false)

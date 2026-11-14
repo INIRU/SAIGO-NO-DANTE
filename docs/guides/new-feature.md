@@ -1,7 +1,10 @@
 # 새 기능 만들기
 
+새 기능(또는 기능의 큰 덩어리)을 `features/<기능>/`에 만드는 순서다. 폴더 경계는 `tests/architecture/boundaries.test.ts`가 검사하고, 이 문서는 그 규칙을 따라 하기 쉬운 순서로 풀어 쓴 것이다.
 
+## 1. 계획부터
 
+코드를 쓰기 전에 무엇을 왜 만드는지, 만들거나 고칠 파일, 확인할 방법을 정한다. 기능 폴더 이름은 다른 기능과 겹치지 않는 짧은 영어 이름으로 짓는다.
 
 ## 2. 폴더 만들기
 
@@ -42,7 +45,7 @@ features/<기능>/
 
 ## 5. 테스트는 `tests/` 아래에
 
-단위 테스트는 소스 옆이 아니라 `tests/<소스 경로>/<이름>.test.ts`에만 둔다. 예를 들어 `features/friends/lib/codes.ts`의 테스트는 `tests/features/friends/lib/` 아래에 둔다. 테스트는 기능 내부를 직접 가져와도 된다. 테스트 이름에는 요구사항 번호(`REQ-…`)를 넣는다. E2E는 `e2e/<이름>.spec.ts`다. 순서는 [기여 방법](../../CONTRIBUTING.md)대로 실패하는 테스트를 먼저 쓰고, 실패하는 것을 확인한 뒤 구현한다.
+단위 테스트는 소스 옆이 아니라 `tests/<소스 경로>/<이름>.test.ts`에만 둔다. 예를 들어 `features/friends/lib/codes.ts`의 테스트는 `tests/features/friends/lib/` 아래에 둔다. 테스트는 기능 내부를 직접 가져와도 된다. E2E는 `e2e/<이름>.spec.ts`다. 순서는 [기여 방법](../../CONTRIBUTING.md)대로 실패하는 테스트를 먼저 쓰고, 실패하는 것을 확인한 뒤 구현한다.
 
 ## 6. 경계 검사로 확인한다
 
@@ -54,3 +57,4 @@ npx vitest run tests/architecture/boundaries.test.ts
 
 ## 7. 문서와 기록
 
+환경 변수를 더했다면 [환경 변수](../reference/env.md)에 적는다.

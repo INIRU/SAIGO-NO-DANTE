@@ -14,7 +14,7 @@ vi.mock('@/lib/supabase/admin', () => ({
 }))
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }))
 
-it('REQ-ADMIN-006 the admin announcement list is ordered by creation date, not by last save', async () => {
+it('the admin announcement list is ordered by creation date, not by last save', async () => {
   const { GET } = await import('@/app/api/admin/announcements/route')
   await GET()
   expect(order).toHaveBeenCalledWith('created_at', { ascending: false })

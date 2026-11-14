@@ -25,18 +25,18 @@ const rows = (count: number, start = 0) => Array.from({ length: count }, (_, i) 
 
 beforeEach(() => { pages = []; calls.length = 0 })
 
-describe('REQ-SHARED-026 reading every skill and passive', () => {
-  it('REQ-SHARED-026 joins the pages into one list', async () => {
+describe('reading every skill and passive', () => {
+  it('joins the pages into one list', async () => {
     pages = [{ data: rows(1000), error: null }, { data: rows(365, 1000), error: null }, { data: [], error: null }]
     expect(await getAllPassives()).toHaveLength(1365)
   })
 
-  it.each([['skills', getAllSkills], ['passives', getAllPassives]] as const)('REQ-SHARED-026 throws when a later page of %s fails instead of returning the rows read so far', async (_table, read) => {
+  it.each([['skills', getAllSkills], ['passives', getAllPassives]] as const)('throws when a later page of %s fails instead of returning the rows read so far', async (_table, read) => {
     pages = [{ data: rows(1000), error: null }, { data: null, error: { message: 'timeout' } }]
     await expect(read()).rejects.toThrow(/timeout/)
   })
 
-  it.each([['skills', getAllSkills], ['passives', getAllPassives]] as const)('REQ-SHARED-026 orders %s by id last, so rows with equal sort keys do not move between pages', async (table, read) => {
+  it.each([['skills', getAllSkills], ['passives', getAllPassives]] as const)('orders %s by id last, so rows with equal sort keys do not move between pages', async (table, read) => {
     pages = [{ data: rows(3), error: null }, { data: [], error: null }]
     await read()
     expect(calls[0].table).toBe(table)

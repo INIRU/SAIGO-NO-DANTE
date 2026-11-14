@@ -16,7 +16,7 @@ const settings = (extra: Partial<CommunitySettings> = {}): CommunitySettings => 
 })
 
 describe('profile settings rows', () => {
-  it('REQ-COMMUNITY-094 shows the browser notification switch, or its state when it cannot be used', () => {
+  it('shows the browser notification switch, or its state when it cannot be used', () => {
     const ko = communityCopy.ko
     pushState.state = 'on'
     expect(renderToStaticMarkup(<ProfileSettings initial={settings()} onSaved={async () => {}} />).match(/aria-checked="true"/g)).toHaveLength(5)
@@ -29,7 +29,7 @@ describe('profile settings rows', () => {
     pushState.state = 'off'
   })
 
-  it('REQ-COMMUNITY-090 shows visibility and notification settings as named switches without a paragraph', () => {
+  it('shows visibility and notification settings as named switches without a paragraph', () => {
     const html = renderToStaticMarkup(<ProfileSettings initial={settings()} onSaved={async () => {}} />)
     const ko = communityCopy.ko
     for (const label of [ko.visibility, ko.publicFollowing, ko.publicFollowers, ko.notifyComments, ko.notifyFollows, ko.notifyPosts]) expect(html).toContain(label)
@@ -40,7 +40,7 @@ describe('profile settings rows', () => {
     expect(html).not.toContain('<p')
   })
 
-  it('REQ-COMMUNITY-090 locks the list switches while the profile is private', () => {
+  it('locks the list switches while the profile is private', () => {
     const html = renderToStaticMarkup(<ProfileSettings initial={settings({ public_profile: false })} onSaved={async () => {}} />)
     expect(html.match(/role="switch"[^>]*disabled=""|disabled=""[^>]*role="switch"/g)).toHaveLength(2)
   })
@@ -65,7 +65,7 @@ const db = {
 } as unknown as Parameters<typeof loadCommunityProfile>[0]
 
 describe('community profile settings', () => {
-  it('REQ-COMMUNITY-089 returns the settings to the owner only', async () => {
+  it('returns the settings to the owner only', async () => {
     expect((await loadCommunityProfile(db, 'u1', true))?.settings).toEqual(settings())
     expect((await loadCommunityProfile(db, 'u1', false))?.settings).toBeUndefined()
   })

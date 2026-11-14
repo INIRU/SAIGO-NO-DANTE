@@ -347,7 +347,7 @@ export default function DeckBuilderClient({ sinners, identities, egos, skills, p
     })
   }
 
-  // A new guest deck takes a password, asked for when the browser's key is gone (REQ-COMMUNITY-031).
+  // A new guest deck takes a password, asked for when the browser's key is gone.
   const needsPin = authStatus === 'unauthenticated' && !editMode
 
   const handleSave = async () => {

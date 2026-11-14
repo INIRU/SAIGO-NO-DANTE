@@ -19,13 +19,13 @@ const deck = (extra: Partial<DeckSummary>): DeckSummary => ({
   id: 'd1', user_id: 'u1', title: '덱', description: null, tags: [], vote_count: 0, view_count: 0, created_at: '2026-10-15T00:00:00Z', ...extra,
 })
 
-describe('REQ-DECKS-020 deck card author', () => {
-  it('REQ-DECKS-020 puts the author avatar before the name', () => {
+describe('deck card author', () => {
+  it('puts the author avatar before the name', () => {
     const html = renderToStaticMarkup(<DeckCard deck={deck({ username: '작성자', avatar_url: 'https://x/a.webp', profile_public: true })} />)
     expect(html).toMatch(/<img src="https:\/\/x\/a\.webp"[^>]*>[\s\S]*?작성자/)
   })
 
-  it('REQ-DECKS-020 links the name to the profile only when the profile is public', () => {
+  it('links the name to the profile only when the profile is public', () => {
     expect(renderToStaticMarkup(<DeckCard deck={deck({ username: '작성자', profile_public: true })} />)).toContain('href="/users/u1"')
     const hidden = renderToStaticMarkup(<DeckCard deck={deck({ username: '작성자', profile_public: false })} />)
     expect(hidden).not.toContain('/users/u1')

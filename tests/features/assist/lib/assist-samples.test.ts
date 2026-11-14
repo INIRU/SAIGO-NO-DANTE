@@ -38,7 +38,7 @@ it('keeps known metadata fields only and rejects malformed samples', () => {
     { detection: { gifts: true } }, { candidates: Array(21).fill('1') }, { userAgent: 'x'.repeat(401) }, { ocr: { engine: 'paddle' } }, { language: 'fr' }])
     expect(parseSampleMeta({ ...valid, ...change })).toBeNull()
   expect(parseSampleMeta(null)).toBeNull()
-  // REQ-ASSIST-069: the read diagnosis of a failed fusion is a short string or absent.
+  // The read diagnosis of a failed fusion is a short string or absent.
   expect(parseSampleMeta({ ...valid, diagnosis: 'v1;d=1' })).toEqual({ ...valid, diagnosis: 'v1;d=1' })
   for (const diagnosis of ['x'.repeat(601), 5, null, { v: 1 }]) expect(parseSampleMeta({ ...valid, diagnosis })).toBeNull()
   expect(parseSampleMeta([valid])).toBeNull()
@@ -106,7 +106,7 @@ it('uploads the whole group of a failed action with the frames just before and a
   await offer(160); await offer(200)
   expect(uploads).toEqual([])
   await offer(240)
-  // REQ-ASSIST-069: the diagnosis given with the failure travels in the sample's metadata.
+  // The diagnosis given with the failure travels in the sample's metadata.
   expect(metas.at(-1)).toMatchObject({ reason: 'fusion-materials', candidates: ['9108'], diagnosis: 'v1;d=0;n=2/3' })
   expect(uploads).toEqual([{ reason: 'fusion-materials', frames: ['frame40', 'frame80', 'frame120', 'frame160', 'frame200', 'frame240'] }])
   vi.unstubAllGlobals(); vi.restoreAllMocks()
@@ -114,7 +114,7 @@ it('uploads the whole group of a failed action with the frames just before and a
 
 const root = (file: string) => readFileSync(resolve(__dirname, '../../../..', file), 'utf8')
 
-it('REQ-ASSIST-062 asks again under the training consent and marks the samples sent under it', async () => {
+it('asks again under the training consent and marks the samples sent under it', async () => {
   expect(SAMPLES_STORAGE_KEY).toBe('limbus-assist-samples-v3')
   // A choice made under the earlier text (180 days, then deleted) does not carry over.
   expect(readSampleConsent({ getItem: key => key === 'limbus-assist-samples-v2' ? 'on' : null })).toBeNull()
@@ -130,7 +130,7 @@ it('REQ-ASSIST-062 asks again under the training consent and marks the samples s
   for (const consent of ['3', 0, 2.5, 1000]) expect(parseSampleMeta({ ...valid, consent })).toBeNull()
 })
 
-it('REQ-ASSIST-062 the consent text says the frames train the recognizer, warns about whole-screen sharing and promises no deletion date, in every language', () => {
+it('the consent text says the frames train the recognizer, warns about whole-screen sharing and promises no deletion date, in every language', () => {
   const words = { ko: ['학습', '전체 화면'], en: ['train', 'entire screen'], ja: ['学習', '画面全体'] }
   for (const [lang, expected] of Object.entries(words)) {
     const hint: string = JSON.parse(root(`messages/${lang}.json`)).planner.run.samplesHint
@@ -139,7 +139,7 @@ it('REQ-ASSIST-062 the consent text says the frames train the recognizer, warns 
   }
 })
 
-it('REQ-ASSIST-063 only samples from before the training consent expire, 180 days after they were received', () => {
+it('only samples from before the training consent expire, 180 days after they were received', () => {
   const received = '2026-09-28T07:47:00.000Z'
   expect(sampleExpiresAt({ created_at: received, meta: {} })).toBe(Date.parse('2027-03-27T07:47:00.000Z'))
   expect(sampleExpiresAt({ created_at: received, meta: { consent: 2 } })).toBe(Date.parse('2027-03-27T07:47:00.000Z'))

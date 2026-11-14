@@ -53,7 +53,7 @@ it('shows only the planned pack, its poster beside the plan gifts for it, dimmin
   expect(list).not.toContain('gift-10')
 })
 
-it('REQ-ASSIST-042 groups this floor plan gifts, final targets and the rest, and marks every floor-only gift with the red warning', () => {
+it('groups this floor plan gifts, final targets and the rest, and marks every floor-only gift with the red warning', () => {
   const html = render(runReducer(started(), { type: 'SET_FLOOR_THEME', themeId: 'A' }))
   expect(html).toContain('data-gift-grid')
   // Headings mark the plan gifts, so no neon outline is drawn.
@@ -125,7 +125,7 @@ it('treats ingredients of an owned recipe result as owned in the floor list with
   expect(state.giftInventory).toEqual(['40'])
 })
 
-it('REQ-ASSIST-083 shows the floor memo of the plan in short, its gift block as a gift label', () => {
+it('shows the floor memo of the plan in short, its gift block as a gift label', () => {
   const memo = '!limbus-note:v1\n' + JSON.stringify({ type: 'doc', content: [
     { type: 'paragraph', content: [{ type: 'text', text: '보스 전에 챙기기' }] },
     { type: 'noteAsset', attrs: { kind: 'gift', id: '20' } },

@@ -164,7 +164,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   // Signed-out visitors own a guest deck when this browser's key wrote it.
   const guest = useGuestPosts(authStatus === 'unauthenticated' && !deck?.user_id), guestPosts = guest.posts
   const guestOwner = authStatus === 'unauthenticated' && !!guestPosts.data?.decks.some(post => post.id === id)
-  // A guest deck this browser has no key for: its author takes it back with the deck's password (REQ-COMMUNITY-031).
+  // A guest deck this browser has no key for: its author takes it back with the deck's password.
   const canRecover = authStatus === 'unauthenticated' && !!deck?.guest_tag && guest.keyRead && !guestPosts.isLoading && !guestOwner
   const [confirmDelete, setConfirmDelete] = useState(false)
   const { voted, voteCount, setVoteCount, voting, handleVote, bookmarked, bookmarking, handleBookmark } = useDeckReactions({ id, authStatus, initialVoteCount: initialDeck?.vote_count ?? 0 })

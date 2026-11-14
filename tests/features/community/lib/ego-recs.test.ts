@@ -20,14 +20,14 @@ describe('E.G.O recommender', () => {
   ], catalog)
   const ask = (extra: Partial<Parameters<typeof suggestEgos>[1]> = {}) => suggestEgos(model, { identity: 'IA', board: ['IB'], now: NOW, ...extra })
 
-  it('REQ-DECKS-044 ranks the sinner\'s E.G.O by how often posts fielding this identity equip it, leaving ZAYIN out, and counts those posts', () => {
+  it('ranks the sinner\'s E.G.O by how often posts fielding this identity equip it, leaving ZAYIN out, and counts those posts', () => {
     const { items } = ask()
     expect(items.map(item => item.id)).not.toContain('Z')
     expect(items[0]).toMatchObject({ id: 'T-burn', count: 6 })
     expect(items.map(item => item.id).indexOf('T-sink')).toBeGreaterThan(0)
   })
 
-  it('REQ-DECKS-044 does not offer an E.G.O whose grade slot the sinner has filled, nor the one already equipped', () => {
+  it('does not offer an E.G.O whose grade slot the sinner has filled, nor the one already equipped', () => {
     const ids = ask({ equipped: ['T-burn'] }).items.map(item => item.id)
     expect(ids).not.toContain('T-burn')
     expect(ids).not.toContain('T-sink')
@@ -36,7 +36,7 @@ describe('E.G.O recommender', () => {
     expect(ask({ equipped: ['Z'] }).items.map(item => item.id)).toContain('T-burn')
   })
 
-  it('REQ-DECKS-044 gives readable reasons (keyword, sin) first, the board members it goes with first, and the board\'s archetype', () => {
+  it('gives readable reasons (keyword, sin) first, the board members it goes with first, and the board\'s archetype', () => {
     const { items, archetype } = ask()
     expect(archetype.keywords).toEqual(['화상'])
     expect(items[0].reasons[0]).toBe('keyword:화상')
@@ -45,7 +45,7 @@ describe('E.G.O recommender', () => {
     expect(items[0].partners.length).toBeLessThanOrEqual(3)
   })
 
-  it('REQ-DECKS-044 still ranks when no post equips anything: by kit fit, with a boost for a new E.G.O nobody equips', () => {
+  it('still ranks when no post equips anything: by kit fit, with a boost for a new E.G.O nobody equips', () => {
     const empty = buildEgoModel([], catalog)
     const { items } = suggestEgos(empty, { identity: 'IA', board: ['IB'], now: NOW })
     expect(items.map(item => item.id)).toContain('H-new')

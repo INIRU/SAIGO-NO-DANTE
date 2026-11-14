@@ -27,7 +27,7 @@ function jsonCalls(source: string) {
 // A zod validation message (`issues[0].message`) is for the user and stays.
 const leaks = (call: string) => /[^\]]\.message\b/.test(call.replace(/issues\[0\]\.message/g, '')) || /(?:\berror:\s*|[{,]\s*)message\s*[,}\s]/.test(call)
 
-it('REQ-SHARED-100 no API route puts a database or exception message in a response body', () => {
+it('no API route puts a database or exception message in a response body', () => {
   const hits = routes(api).flatMap(file => jsonCalls(readFileSync(file, 'utf8')).filter(leaks).map(call => `${relative(root, file)}: ${call.replace(/\s+/g, ' ')}`))
   expect(hits).toEqual([])
 })

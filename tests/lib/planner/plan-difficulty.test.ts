@@ -14,7 +14,7 @@ it('stores and shows a plan with its hardest planned floor', () => {
 })
 
 // A plan with normal and hard floors is shown as "노말/하드" and stored as hard: the normal filter found nothing at all.
-it('REQ-PLANNER-021 a difficulty filter finds every plan shown with that difficulty, a normal/hard plan under both', () => {
+it('a difficulty filter finds every plan shown with that difficulty, a normal/hard plan under both', () => {
   const mixed = computeDifficultySummary([1, 2, 3, 4, 5].map(floor => ({ floor, theme_id: 't' + floor, difficulty: floor < 4 ? 'normal' : 'hard' })), 'hard')
   expect(planDifficultyBadge('hard', mixed).labelKeys).toEqual(['normal', 'hard'])
   expect(planMatchesDifficulty('hard', mixed, 'normal')).toBe(true)

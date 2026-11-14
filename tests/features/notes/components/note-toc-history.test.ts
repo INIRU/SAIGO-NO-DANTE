@@ -3,7 +3,7 @@ import { jumpToHeading } from '@/features/notes/components/NoteToc'
 
 afterEach(() => vi.unstubAllGlobals())
 
-it('REQ-COMMUNITY-057 a contents link scrolls to its heading and swaps the address, leaving no back-button step', () => {
+it('a contents link scrolls to its heading and swaps the address, leaving no back-button step', () => {
   const scrollIntoView = vi.fn()
   const replaceState = vi.fn(), pushState = vi.fn()
   vi.stubGlobal('document', { getElementById: (id: string) => id === 'note-a' ? { scrollIntoView } : null })

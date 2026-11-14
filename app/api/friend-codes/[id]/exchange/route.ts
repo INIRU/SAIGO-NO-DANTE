@@ -6,7 +6,7 @@ import { FRIEND_CODE_RE, fail } from '@/features/friends'
 import { isAuthorOf, isBlocked } from '@/features/friends/server'
 import { isUuid } from '@/lib/utils/uuid'
 
-/** A viewer gives their own friend code to an 'exchange' post (support or want) and gets the author's code back (REQ-COMMUNITY-021). */
+/** A viewer gives their own friend code to an 'exchange' post (support or want) and gets the author's code back. */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params

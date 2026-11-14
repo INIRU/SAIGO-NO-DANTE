@@ -7,7 +7,7 @@ const widths = (html: string) => (html.match(/srcSet="([^"]*)"/)?.[1] ?? '').spl
 const src = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/ego-gifts/a.webp'
 
 describe('fixed-size images', () => {
-  it('REQ-SHARED-096 keeps the smallest width for each of 1x, 2x and 3x screens', () => {
+  it('keeps the smallest width for each of 1x, 2x and 3x screens', () => {
     const all = [64, 96, 128, 256, 384, 640, 750, 828, 1080, 1200].map(w => `/i?w=${w} ${w}w`).join(', ')
     expect(trimFixedSrcSet(all, 120)).toBe('/i?w=128 128w, /i?w=256 256w, /i?w=384 384w')
     expect(trimFixedSrcSet(all, 40)).toBe('/i?w=64 64w, /i?w=96 96w, /i?w=128 128w')
@@ -15,7 +15,7 @@ describe('fixed-size images', () => {
     expect(trimFixedSrcSet('/i?w=64 64w, /i?w=96 96w', 200)).toBe('/i?w=96 96w')
   })
 
-  it('REQ-SHARED-096 a QuietImage of one fixed size carries three widths, not every width the site knows', () => {
+  it('a QuietImage of one fixed size carries three widths, not every width the site knows', () => {
     // a 120px gift sent ten widths of about 190 characters each: 762KB of a plan page's 2.8MB HTML were srcset
     expect(widths(renderToStaticMarkup(<QuietImage src={src} alt="" fill sizes="120px" />))).toHaveLength(3)
     expect(widths(renderToStaticMarkup(<QuietImage src={src} alt="" fill sizes="2rem" />)).length).toBeLessThanOrEqual(3)

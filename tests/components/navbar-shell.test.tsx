@@ -31,14 +31,14 @@ const render = (element: React.ReactElement, pathname: string | null) => {
   return renderToStaticMarkup(element)
 }
 
-describe('REQ-SHARED-024 the navbar body is part of the static shell on every route', () => {
-  it('REQ-SHARED-024 the locale layout does not put the whole navbar behind a Suspense boundary', () => {
+describe('the navbar body is part of the static shell on every route', () => {
+  it('the locale layout does not put the whole navbar behind a Suspense boundary', () => {
     const layout = readFileSync('app/[lang]/layout.tsx', 'utf8')
     expect(layout).not.toContain('NavbarFallback')
     expect(layout).toMatch(/<div className="site-navigation"><Navbar [^>]*\/><\/div>/)
   })
 
-  it('REQ-SHARED-024 logo, menu, search button, language button and login slot render without reading the pathname', async () => {
+  it('logo, menu, search button, language button and login slot render without reading the pathname', async () => {
     const { default: Navbar } = await import('@/components/layout/Navbar')
     // No Suspense above: if any part of the body needed the pathname, this render would hang instead of returning markup.
     const html = render(<Navbar mainNavLabel="main" />, null)
@@ -53,7 +53,7 @@ describe('REQ-SHARED-024 the navbar body is part of the static shell on every ro
     expect(html).toContain('nav-auth-user')
   })
 
-  it('REQ-SHARED-024 the menu groups show the same bar before and after the pathname arrives', async () => {
+  it('the menu groups show the same bar before and after the pathname arrives', async () => {
     const { NavbarGroups } = await import('@/components/layout/NavbarIslands')
     for (const island of [<NavbarGroups key="g" />]) {
       const pending = render(<Suspense fallback={null}>{island}</Suspense>, null)
@@ -63,7 +63,7 @@ describe('REQ-SHARED-024 the navbar body is part of the static shell on every ro
     }
   })
 
-  it('REQ-SHARED-024 only the pathname-dependent mark is filled in late: the current group underline', async () => {
+  it('only the pathname-dependent mark is filled in late: the current group underline', async () => {
     const { NavbarGroups } = await import('@/components/layout/NavbarIslands')
     const groupsHere = render(<NavbarGroups />, '/sinners/yi-sang')
     const groupsElsewhere = render(<NavbarGroups />, '/nowhere')
@@ -72,20 +72,20 @@ describe('REQ-SHARED-024 the navbar body is part of the static shell on every ro
     expect(groupsHere.length - groupsElsewhere.length).toBeLessThan(400)
   })
 
-  it('REQ-SHARED-024 the language button shows its label without the pathname, only the option list reads it', async () => {
+  it('the language button shows its label without the pathname, only the option list reads it', async () => {
     const { default: LanguageSwitcher } = await import('@/components/ui/LanguageSwitcher')
     const html = render(<LanguageSwitcher />, null)
     expect(html).toContain('한국어')
     expect(html).toContain('aria-haspopup="listbox"')
   })
 
-  it('REQ-SHARED-024 a slow search modal chunk suspends only its own boundary, not the navbar or the page around it', async () => {
+  it('a slow search modal chunk suspends only its own boundary, not the navbar or the page around it', async () => {
     const { default: NavbarSearchModal } = await import('@/components/layout/NavbarSearchModal')
     const html = render(<Suspense fallback={<i>OUTER-FALLBACK</i>}><NavbarSearchModal open preload onClose={() => {}} /></Suspense>, '/ko')
     expect(html).not.toContain('OUTER-FALLBACK')
   })
 
-  it('REQ-SHARED-024 the mobile menu sheet marks the current page and is not part of the closed navbar markup', async () => {
+  it('the mobile menu sheet marks the current page and is not part of the closed navbar markup', async () => {
     const { default: Navbar } = await import('@/components/layout/Navbar')
     const { default: NavbarMobileSheet } = await import('@/components/layout/NavbarMobileSheet')
     expect(render(<Navbar mainNavLabel="main" />, null)).not.toContain('id="mobile-navigation-menu"')

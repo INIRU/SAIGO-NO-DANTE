@@ -65,32 +65,32 @@ beforeEach(() => {
 })
 
 describe('loadRising', () => {
-  it('REQ-COMMUNITY-074 returns one row of the biggest risers of the board and of identities, each with its multiplier', async () => {
+  it('returns one row of the biggest risers of the board and of identities, each with its multiplier', async () => {
     const result = await loadRising('deck')
     // d1, d3, d6 and d8 are below the evidence of eight recent visitors or did not rise; the three biggest by (rise − 1) × √recent are d4, d2, d7.
     expect(result.posts.map(item => item.post.id)).toEqual(['d4', 'd7', 'd2'])
     expect(state.asked.decks).not.toContain('d3')
   })
 
-  it('REQ-COMMUNITY-079 shows the biggest multiplier first, not the order they were picked in', async () => {
+  it('shows the biggest multiplier first, not the order they were picked in', async () => {
     const result = await loadRising('deck')
     // By score d2 (×2.5, more visitors) comes before d7 (×2.7); shown, the larger multiplier leads.
     expect(result.posts.map(item => item.rise)).toEqual([4.6, 2.7, 2.5])
   })
 
-  it('REQ-COMMUNITY-079 fills the row from thinner evidence when the stricter floor leaves it short', async () => {
+  it('fills the row from thinner evidence when the stricter floor leaves it short', async () => {
     state.gone = new Set(['d4'])
     // Without d4 (deleted) only d2 and d7 have eight recent visitors; d8 (five, ×2.7) comes in under the relaxed floor, ahead of d6 and d1.
     expect((await loadRising('deck')).posts.map(item => item.post.id)).toEqual(['d7', 'd8', 'd2'])
   })
 
-  it('REQ-COMMUNITY-074 lets a new post and a new identity rise like any other, like a live ranking', async () => {
+  it('lets a new post and a new identity rise like any other, like a live ranking', async () => {
     state.fresh = new Set(['d4', 'i3'])
     expect((await loadRising('deck')).posts.map(item => item.post.id)).toContain('d4')
     expect((await loadRising('planner')).identities.map(item => item.identity.id)).toContain('i3')
   })
 
-  it('REQ-COMMUNITY-079 leaves a section out when fewer than three qualify, and a deleted post counts as missing', async () => {
+  it('leaves a section out when fewer than three qualify, and a deleted post counts as missing', async () => {
     state.rows.deck = [row('d4', 20, 8), row('d2', 30, 40)]
     expect((await loadRising('deck')).posts).toEqual([])
     state.rows.deck = [row('d4', 20, 8), row('d2', 30, 40), row('d7', 12, 10)]
@@ -98,37 +98,37 @@ describe('loadRising', () => {
     expect((await loadRising('deck')).posts).toEqual([])
   })
 
-  it('REQ-COMMUNITY-079 fills the place of a deleted riser with the next one instead of dropping the row', async () => {
+  it('fills the place of a deleted riser with the next one instead of dropping the row', async () => {
     // d4 rose the most but was deleted; d9 (×2.6 on ten visitors) is next in line and takes its place.
     state.rows.deck = [row('d4', 20, 8), row('d2', 30, 40), row('d7', 12, 10), row('d9', 10, 8)]
     state.gone = new Set(['d4'])
     expect((await loadRising('deck')).posts.map(item => item.post.id)).toEqual(['d7', 'd9', 'd2'])
   })
 
-  it('REQ-COMMUNITY-074 reads plans from the plan table', async () => {
+  it('reads plans from the plan table', async () => {
     const result = await loadRising('planner')
     expect(result.posts.map(item => item.post.id)).toEqual(['p1', 'p2', 'p3'])
     expect(state.asked.md_plans).toEqual(expect.arrayContaining(['p1', 'p2', 'p3']))
   })
 
-  it('REQ-COMMUNITY-076 shows how many recent posts of its own board field each identity, and skips the LCB defaults', async () => {
+  it('shows how many recent posts of its own board field each identity, and skips the LCB defaults', async () => {
     const plans = await loadRising('planner')
     expect(plans.identities.map(item => [item.identity.id, item.count])).toEqual([['i1', 3], ['i3', 3], ['i4', 3]])
     expect((await loadRising('deck')).identities).toEqual([])
   })
 
-  it('REQ-COMMUNITY-078 asks only for the posts of its own board, and never for identity visits', async () => {
+  it('asks only for the posts of its own board, and never for identity visits', async () => {
     await loadRising('deck')
     expect(state.asks.map(ask => ask.post_kind)).toEqual(['deck'])
   })
 
-  it('REQ-COMMUNITY-074 is cached under the board list tag', async () => {
+  it('is cached under the board list tag', async () => {
     await loadRising('planner')
     expect(state.life).toHaveLength(1)
     expect(state.tags).toEqual(expect.arrayContaining(['plans-list']))
   })
 
-  it('REQ-COMMUNITY-074 throws when the database function is missing, so the shelf is hidden', async () => {
+  it('throws when the database function is missing, so the shelf is hidden', async () => {
     state.rpcError = { message: 'function limbus.discovery_rising_windows does not exist' }
     await expect(loadRising('deck')).rejects.toThrow()
   })
