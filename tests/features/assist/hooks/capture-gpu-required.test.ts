@@ -13,7 +13,7 @@ const BLOCKS = ['unsupported', 'unavailable', 'failed'] as const
 it('refuses screen recognition without WebGPU instead of reading on the CPU', () => {
   const hook = read('features/assist/hooks/useAssistCapture.ts')
   // Checked before the screen is shared, and again once the workers settle (cpuFallback) while running.
-  expect(hook).toMatch(/const block = await gpuBlocked\(\)\s+if \(run !== generation\.current\) return\s+setGpu\(block\)\s+if \(block\) \{\s+setStatus\('idle'\)\s+return block/)
+  expect(hook).toMatch(/const block = await gpuBlocked\(\)\s+if \(run !== generation\.current\) return null\s+setGpu\(block\)\s+if \(block\) \{\s+setStatus\('idle'\)\s+return block/)
   expect(hook.indexOf('await gpuBlocked()')).toBeLessThan(hook.indexOf('getDisplayMedia('))
   expect(hook).toContain("status === 'running' ? cpuFallback(ocrEngine, inference) : null")
   // Before the worker reports its backend the GPU models may still load: that gap is not a CPU fallback (it stopped

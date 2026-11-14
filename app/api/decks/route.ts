@@ -175,6 +175,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/** Undoes a deck whose later writes failed; the answer stays the caller's, a failed undo is only logged (the deck is left half-written). */
+async function rollbackDeck(admin: ReturnType<typeof createAdminClient>, deckId: string) {
+  const { error } = await admin.schema('limbus').from('decks').delete().eq('id', deckId)
+  if (error) console.error('[decks] rollback failed', deckId, error)
+}
+
 export async function POST(request: NextRequest) {
   try {
     const admin = createAdminClient()
@@ -190,7 +196,8 @@ export async function POST(request: NextRequest) {
     })
     if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (body === null) return NextResponse.json({ error: '요청 형식이 올바르지 않습니다.' }, { status: 400 })
     const { title, description, tags, identitySlots, egoSlots, content_type } = body
     // A guest's password for the deck; screens from before it existed send none.
     const pin = author.kind === 'guest' ? guestPinOf(body?.pin) : null
@@ -241,7 +248,7 @@ export async function POST(request: NextRequest) {
       const { error: identityInsertError } = await insertDeckIdentities(next => admin.schema('limbus').from('deck_identities').insert(next), rows)
       if (identityInsertError) {
         // Rollback: delete the parent deck
-        await admin.schema('limbus').from('decks').delete().eq('id', deck.id)
+        await rollbackDeck(admin, deck.id)
         console.error('[decks] database error', identityInsertError)
         return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
       }
@@ -256,7 +263,7 @@ export async function POST(request: NextRequest) {
       const { error: egoInsertError } = await admin.schema('limbus').from('deck_egos').insert(rows)
       if (egoInsertError) {
         // Rollback: delete the parent deck (cascades to deck_identities)
-        await admin.schema('limbus').from('decks').delete().eq('id', deck.id)
+        await rollbackDeck(admin, deck.id)
         console.error('[decks] database error', egoInsertError)
         return NextResponse.json({ error: '요청을 처리하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
       }
@@ -267,7 +274,7 @@ export async function POST(request: NextRequest) {
       ? await admin.schema('limbus').rpc('community_record_deck', { p_deck_id: deck.id, p_user_id: userId })
       : { error: await recordGuestAuthorship(admin, author, 'deck', deck.id, pin) }
     if (activityError) {
-      await admin.schema('limbus').from('decks').delete().eq('id', deck.id)
+      await rollbackDeck(admin, deck.id)
       return NextResponse.json({ error: '덱을 저장하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
     }
 

@@ -13,6 +13,7 @@ import { parseDeckMainKeywordsInput } from '@/lib/decks/keyword-rules'
 import { encodeTeamCode } from '@/lib/decks/team-code'
 import { normalizeUptie } from '@/features/decks'
 import { fetchEgoAttackSkillsByEgoId, type EgoAttackSkill } from '@/features/decks/server'
+import { isNoRow } from '@/lib/supabase/no-row'
 
 
 // The detail page already has the deck from its first view: `?part=viewer` sends only what that lacks.
@@ -177,13 +178,18 @@ export async function DELETE(
     const userId = author.kind === 'user' ? author.userId : null
 
     // 소유권 확인
-    const { data: deck } = await admin
+    const { data: deck, error: deckError } = await admin
       .schema('limbus')
       .from('decks')
       .select('id, user_id')
       .eq('id', id)
       .single()
 
+    // A read that failed is not a deck that is gone: only "no row" answers 404.
+    if (deckError && !isNoRow(deckError)) {
+      console.error('[deck delete] ownership read failed', deckError)
+      return NextResponse.json({ error: '덱을 삭제하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
+    }
     if (!deck) {
       return NextResponse.json({ error: '덱을 찾을 수 없습니다.' }, { status: 404 })
     }
@@ -256,19 +262,23 @@ export async function PATCH(
     })
     if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
     const problem = patchBodyProblem(body)
     if (problem) return NextResponse.json({ error: problem }, { status: 400 })
     const { title, description, tags, identitySlots, egoSlots, content_type } = body
 
     // 소유권 확인 (관리자는 소유자가 아니어도 수정 가능, 단 소유자 변경 불가)
-    const { data: deck } = await admin
+    const { data: deck, error: deckError } = await admin
       .schema('limbus')
       .from('decks')
       .select('id, user_id, tags, main_keywords')
       .eq('id', id)
       .single()
 
+    if (deckError && !isNoRow(deckError)) {
+      console.error('[deck update] ownership read failed', deckError)
+      return NextResponse.json({ error: '덱을 수정하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
+    }
     if (!deck) {
       return NextResponse.json({ error: '덱을 찾을 수 없습니다.' }, { status: 404 })
     }

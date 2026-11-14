@@ -41,7 +41,9 @@ export function useNotifications(enabled: boolean, onFresh: (items: Notification
         if (!fresh.length) return
         localStorage.setItem(TOASTED_KEY, fresh[0].at!)
         announce.current(fresh)
-      } catch {}
+      } catch {
+        // Storage blocked: no toast this time; the list itself is already shown.
+      }
     })
   }, undefined, REFRESH_MS)
   const open = useCallback(async () => {

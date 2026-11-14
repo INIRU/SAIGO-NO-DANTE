@@ -25,7 +25,12 @@ export async function PATCH(
     )
   const { discord_everyone, ...body } = parsed.data
   const db = createAdminClient().schema('limbus')
-  const { data: before } = await db.from('announcements').select('published').eq('id', id).maybeSingle()
+  const { data: before, error: beforeError } = await db.from('announcements').select('published').eq('id', id).maybeSingle()
+  // Without it a published announcement looks like a draft being published, and Discord gets it again.
+  if (beforeError) {
+    console.error('[admin announcements] read before save failed', beforeError)
+    return NextResponse.json({ error: '공지를 저장하지 못했습니다.' }, { status: 500 })
+  }
   const { data, error } = await db
     .from('announcements')
     .update({

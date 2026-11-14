@@ -26,6 +26,7 @@ export async function POST(request: Request) {
 }
 
 async function purgeExpired() {
-  await createAdminClient().schema('limbus').from('assist_reports').delete()
+  const { error } = await createAdminClient().schema('limbus').from('assist_reports').delete()
     .lt('created_at', new Date(Date.now() - KEEP_MS).toISOString())
+  if (error) console.error('[assist-reports] purge failed', error)
 }

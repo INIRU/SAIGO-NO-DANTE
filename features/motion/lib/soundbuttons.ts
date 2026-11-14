@@ -78,7 +78,7 @@ export class SoundButtons {
   async play(l: VoiceLink): Promise<void> {
     this.stop();
     const token = this.token;
-    if (!this.ctx) { const AC = window.AudioContext || (window as any).webkitAudioContext; this.ctx = new AC(); }
+    if (!this.ctx) { const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); }
     const ctx = this.ctx!;
     if (!this.master) {
       this.master = ctx.createGain();

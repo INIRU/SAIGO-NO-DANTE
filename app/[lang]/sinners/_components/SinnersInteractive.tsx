@@ -14,12 +14,12 @@ export default function SinnersInteractive({ children }: { children: React.React
     <div className="min-h-screen pt-[5.5rem] pb-16 px-6 max-w-7xl mx-auto relative">
 
       <div className="relative" style={{ zIndex: 1 }}>
-        <PageHeader title={t('sinners.title' as any)} description={t('sinners.subtitle' as any)} actions={
+        <PageHeader title={t('sinners.title')} description={t('sinners.subtitle')} actions={
           // The home hero's framed buttons: one gold line on the octagon frame, the game's yellow glow on hover and focus.
           <nav className="flex flex-wrap gap-3">
             {[
-              { href: '/sinners/identities', label: t('sinners.viewAllIdentities' as any) },
-              { href: '/sinners/ego', label: t('sinners.viewAllEgo' as any) },
+              { href: '/sinners/identities', label: t('sinners.viewAllIdentities') },
+              { href: '/sinners/ego', label: t('sinners.viewAllEgo') },
             ].map(link => (
               <Link key={link.href} href={link.href} className="group frame frame-strong frame-glow press flex min-h-[3.25rem] items-center gap-2 px-3 font-[family-name:var(--font-heading)] text-[0.9375rem] text-[var(--gold-light)] [--frame-w:0.875rem]">
                 {link.label}
