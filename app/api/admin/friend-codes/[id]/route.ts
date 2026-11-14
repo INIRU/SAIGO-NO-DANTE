@@ -28,7 +28,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         // 23505: already barred.
         if (blocked.error && blocked.error.code !== '23505') throw blocked.error
         // Every post of the barred author goes, not only the reported one.
-        const rest = await db.from('friend_posts').delete().eq(post.data.user_id ? 'user_id' : 'key_hash', post.data.user_id ?? post.data.key_hash)
+        const rest = await db.from('friend_posts').delete().eq(post.data.user_id ? 'user_id' : 'key_hash', (post.data.user_id ?? post.data.key_hash) as string)
         if (rest.error) throw rest.error
       } else {
         const removed = await db.from('friend_posts').delete().eq('id', id)

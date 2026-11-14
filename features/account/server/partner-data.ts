@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag } from 'next/cache'
 import { publicSupabase } from '@/lib/supabase/public'
+import type { Database } from '@/lib/supabase/database.types'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { isUuid } from '@/lib/utils/uuid'
 
@@ -16,7 +17,7 @@ const EGO = 'id, game_id, sinner_id, folder_name, name_kr, name_en, name_jp, gra
 const EGO_SKILLS = 'ego_skills(id, name, name_en, name_jp, skill_type, category, sin_affinity, coins, base_power, coin_power, description, description_en, description_jp, skill_order, construe_level, atk_weight, offense_level, mental_consume)'
 
 /** Table, list columns, extra columns of the one-item read, order and cache tag per partner catalog. */
-const CATALOGS: Record<string, { table: string; columns: string; detail?: string; order: string[]; tag: string }> = {
+const CATALOGS: Record<string, { table: keyof Database['limbus']['Tables']; columns: string; detail?: string; order: string[]; tag: string }> = {
   identities: { table: 'identities', columns: IDENTITY, detail: `acquisition, break_section, base_hp, hp_per_level, ${SKILLS}, ${PASSIVES}`, order: ['sinner_id', 'game_id'], tag: CACHE_TAGS.identities },
   egos: {
     table: 'ego',
@@ -61,12 +62,12 @@ export async function loadCatalog(resource: string): Promise<Row[]> {
   cacheLife('max')
   const catalog = CATALOGS[resource]
   cacheTag(catalog.tag, CACHE_TAGS.gameData)
-  let query = db().from(catalog.table).select(catalog.columns)
+  let query = db().from(catalog.table as 'identities').select(catalog.columns)
   for (const column of catalog.order) query = query.order(column)
   const { data, error } = await query
   // Errors are thrown so that a failed read is never cached as an empty catalog.
   if (error) throw new Error(error.message)
-  return data as unknown as Row[]
+  return data as Row[]
 }
 
 /** One identity or E.G.O with its skills and passives; null when it does not exist. */
@@ -75,9 +76,9 @@ export async function loadCatalogItem(resource: 'identities' | 'egos', id: strin
   cacheLife('max')
   const catalog = CATALOGS[resource]
   cacheTag(catalog.tag, CACHE_TAGS.gameData)
-  const { data, error } = await db().from(catalog.table).select(`${catalog.columns}, ${catalog.detail}`).eq('id', id).maybeSingle()
+  const { data, error } = await db().from(catalog.table as 'identities').select(`${catalog.columns}, ${catalog.detail}`).eq('id', id).maybeSingle()
   if (error) throw new Error(error.message)
-  return data as unknown as Row | null
+  return data as Row | null
 }
 
 const FORMATION_IDENTITY = `id, game_id, sinner_id, folder_name, name_kr, name_en, name_jp, rarity, slash_res, pierce_res, blunt_res, ${SKILLS}`
@@ -91,7 +92,7 @@ export async function loadDeckDetail(id: string): Promise<Row | null> {
     .eq('id', id)
     .maybeSingle()
   if (error) throw new Error(error.message)
-  return data as unknown as Row | null
+  return data as Row | null
 }
 
 /** A public plan plus the identities and E.G.O its JSON refers to, for presentPlan. */
@@ -109,5 +110,5 @@ export async function loadPlanDetail(id: string): Promise<{ plan: Row; identitie
     db().from('ego').select(FORMATION_EGO).in('id', ids(plan.egos, 'ego_id')),
   ])
   if (identities.error || egos.error) throw new Error((identities.error ?? egos.error)!.message)
-  return { plan, identities: identities.data as unknown as Row[], egos: egos.data as unknown as Row[] }
+  return { plan, identities: identities.data as Row[], egos: egos.data as Row[] }
 }

@@ -10,9 +10,10 @@ import { writeAuditLog } from '@/lib/audit'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { parseDeckMainKeywordsInput } from '@/lib/decks/keyword-rules'
-import { encodeTeamCode } from '@/lib/decks/team-code'
+import { encodeTeamCode, type TeamCodeSinner } from '@/lib/decks/team-code'
 import { normalizeUptie } from '@/features/decks'
 import { fetchEgoAttackSkillsByEgoId, type EgoAttackSkill } from '@/features/decks/server'
+import { isNoRow } from '@/lib/supabase/no-row'
 
 
 // The detail page already has the deck from its first view: `?part=viewer` sends only what that lacks.
@@ -74,13 +75,13 @@ export async function GET(
   const sinnerIds = [
     ...new Set(
       deck.deck_identities
-        .map(di => (di.identities as unknown as SlotIdentity)?.sinner_id)
+        .map(di => (di.identities as SlotIdentity)?.sinner_id)
         .filter((x): x is string => Boolean(x))
     ),
   ]
 
   type DeckEgoRow = { grade: string; ego: { id: string; sinner_id: string; grade: string; name_kr: string | null; sin_affinity: string | null; folder_name: string | null; image_url: string | null; cost: number[] | null; game_id: string | null; ego_skills?: EgoAttackSkill[] | null } | null }
-  const deckEgoRows = (deck.deck_egos ?? []) as unknown as DeckEgoRow[]
+  const deckEgoRows = (deck.deck_egos ?? []) as DeckEgoRow[]
   const egoSinnerIds = [
     ...new Set(deckEgoRows.map(r => r.ego?.sinner_id).filter((x): x is string => Boolean(x))),
   ]
@@ -100,10 +101,10 @@ export async function GET(
   const deckSlots: Record<string, { id: string; sinner_id: string; game_id: string | null } | undefined> = {}
   const formationEntries: { sinnerId: string; order: number }[] = []
   for (const di of deck.deck_identities) {
-    const id_ = di.identities as unknown as SlotIdentity
+    const id_ = di.identities as SlotIdentity
     if (!id_?.sinner_id) continue
     deckSlots[id_.sinner_id] = id_
-    if (di.slot_order !== 99) formationEntries.push({ sinnerId: id_.sinner_id, order: di.slot_order + 1 })
+    if (di.slot_order !== 99) formationEntries.push({ sinnerId: id_.sinner_id, order: di.slot_order! + 1 })
   }
   formationEntries.sort((a, b) => a.order - b.order)
 
@@ -121,7 +122,7 @@ export async function GET(
   }
 
   const deckCode = encodeTeamCode({
-    sinners,
+    sinners: sinners as TeamCodeSinner[],
     deckSlots,
     egoSlots,
     formationOrder: formationEntries.map(entry => entry.sinnerId),
@@ -134,7 +135,7 @@ export async function GET(
     const session = await getServerSession(authOptions)
     if (session?.user?.email) {
       const adminClient = createAdminClient()
-      const { data: { user: deckOwner } } = await adminClient.auth.admin.getUserById(deck.user_id)
+      const { data: { user: deckOwner } } = await adminClient.auth.admin.getUserById(deck.user_id!)
       isOwner = deckOwner?.email === session.user.email
       isAdmin = session.user.isAdmin === true
     }
@@ -177,13 +178,18 @@ export async function DELETE(
     const userId = author.kind === 'user' ? author.userId : null
 
     // 소유권 확인
-    const { data: deck } = await admin
+    const { data: deck, error: deckError } = await admin
       .schema('limbus')
       .from('decks')
       .select('id, user_id')
       .eq('id', id)
       .single()
 
+    // A read that failed is not a deck that is gone: only "no row" answers 404.
+    if (deckError && !isNoRow(deckError)) {
+      console.error('[deck delete] ownership read failed', deckError)
+      return NextResponse.json({ error: '덱을 삭제하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
+    }
     if (!deck) {
       return NextResponse.json({ error: '덱을 찾을 수 없습니다.' }, { status: 404 })
     }
@@ -256,19 +262,23 @@ export async function PATCH(
     })
     if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
     const problem = patchBodyProblem(body)
     if (problem) return NextResponse.json({ error: problem }, { status: 400 })
     const { title, description, tags, identitySlots, egoSlots, content_type } = body
 
     // 소유권 확인 (관리자는 소유자가 아니어도 수정 가능, 단 소유자 변경 불가)
-    const { data: deck } = await admin
+    const { data: deck, error: deckError } = await admin
       .schema('limbus')
       .from('decks')
       .select('id, user_id, tags, main_keywords')
       .eq('id', id)
       .single()
 
+    if (deckError && !isNoRow(deckError)) {
+      console.error('[deck update] ownership read failed', deckError)
+      return NextResponse.json({ error: '덱을 수정하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
+    }
     if (!deck) {
       return NextResponse.json({ error: '덱을 찾을 수 없습니다.' }, { status: 404 })
     }

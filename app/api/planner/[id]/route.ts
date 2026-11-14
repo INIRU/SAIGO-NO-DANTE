@@ -7,6 +7,7 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { writeAuditLog } from '@/lib/audit'
 import { normalizeFloorPlanDifficulty, normalizePlanDifficulty } from '@/lib/planner/floor-difficulty'
 import { storedPlanDifficulty } from '@/lib/planner/strip-plan-for-list'
+import type { TablesUpdate } from '@/lib/supabase/database.types'
 
 
 // GET /api/planner/[id] — 플랜 상세
@@ -58,7 +59,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
     if (!plan || !(await ownsPost(admin, author, 'plan', plan))) return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 })
 
-    const body = await req.json()
+    const body = await req.json().catch(() => null)
+    if (body === null) return NextResponse.json({ error: '요청 형식이 올바르지 않습니다.' }, { status: 400 })
     const allowed = ['title', 'description', 'difficulty', 'deck', 'egos', 'floor_plan', 'gift_inventory', 'tags']
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
     for (const key of allowed) {
@@ -78,7 +80,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       updates.difficulty = storedPlanDifficulty(updates.floor_plan, normalizePlanDifficulty(planDifficulty))
     }
 
-    const { error } = await admin.schema('limbus').from('md_plans').update(updates).eq('id', id)
+    const { error } = await admin.schema('limbus').from('md_plans').update(updates as TablesUpdate<'md_plans'>).eq('id', id)
     if (error) {
       console.error('[planner/[id]]', error.message)
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -29,7 +29,7 @@ export async function sendPushes(db: Db, notes: PushNote[]) {
     .select('endpoint,p256dh,auth,lang,user_id,profiles!inner(notify_comments,notify_follows,notify_posts,suspended)')
     .in('user_id', [...new Set(notes.map(note => note.to))])
   if (error || !data) return
-  const subscriptions = data as unknown as Subscription[]
+  const subscriptions = data as Subscription[]
   const gone: string[] = []
   await Promise.all(notes.flatMap(note => subscriptions
     .filter(sub => sub.user_id === note.to && sub.profiles && !sub.profiles.suspended && sub.profiles[SETTING[note.kind]])
@@ -57,9 +57,11 @@ export function pushForComment(postType: 'deck' | 'plan', commentId: string) {
   return quietly(async () => {
     const db = createAdminClient()
     const [table, posts, key] = postType === 'deck' ? ['deck_comments', 'decks', 'deck_id'] as const : ['md_plan_comments', 'md_plans', 'plan_id'] as const
+    // The column list is built from `key`, so the client cannot read it from the select string.
     const { data: comment } = await db.schema('limbus').from(table).select(`user_id,parent_id,content,${key}`).eq('id', commentId).maybeSingle()
+      .overrideTypes<{ user_id: string | null; parent_id: string | null; content: string | null } & Partial<Record<typeof key, string>>, { merge: false }>()
     if (!comment?.user_id) return
-    const postId = String((comment as Record<string, unknown>)[key])
+    const postId = String(comment[key])
     const [{ data: post }, parent, actor] = await Promise.all([
       db.schema('limbus').from(posts).select('user_id,title').eq('id', postId).maybeSingle(),
       comment.parent_id ? db.schema('limbus').from(table).select('user_id').eq('id', comment.parent_id).maybeSingle().then(result => result.data) : null,

@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database, TablesInsert } from '@/lib/supabase/database.types'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import type { SeriesItem, SeriesPostKind, SeriesSummary, SeriesView } from '@/features/community/lib/series-order'
 import { seriesChoiceSchema } from './series-schema'
 
 // Any client works: reads are public (RLS), writes need the service role.
-type Db = SupabaseClient
+type Db = SupabaseClient<Database>
 
 const postTable = (kind: SeriesPostKind) => (kind === 'deck' ? 'decks' : 'md_plans')
 const postColumn = (kind: SeriesPostKind) => (kind === 'deck' ? 'deck_id' : 'plan_id')
@@ -107,7 +108,7 @@ async function applyPostSeries(
     const last = await db.schema('limbus').from('series_items').select('position').eq('series_id', seriesId).order('position', { ascending: false }).limit(1)
     if (last.error) return { ok: false, status: 500, error: 'Series unavailable' }
     const position = last.data?.length ? last.data[0].position + 1 : 0
-    const added = await db.schema('limbus').from('series_items').insert({ series_id: seriesId, [column]: postId, position })
+    const added = await db.schema('limbus').from('series_items').insert({ series_id: seriesId, [column]: postId, position } as TablesInsert<'series_items'>)
     if (added.error) return { ok: false, status: 500, error: 'Series unavailable' }
   }
   for (const id of [before, seriesId]) if (id) revalidateSeries(id, [{ kind, id: postId }])

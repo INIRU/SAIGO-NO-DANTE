@@ -11,13 +11,15 @@ type Refusal = { status: number; error: string; retry?: number };
 export async function consumeApiKey(authorization: string | null): Promise<{ access: KeyAccess; refusal?: undefined } | { refusal: Refusal }> {
   const token = readApiKey(authorization);
   if (!token) return { refusal: { status: 401, error: "Bearer API key required" } };
-  const { data, error } = await createAdminClient()
+  const { data: result, error } = await createAdminClient()
     .schema("limbus")
     .rpc("consume_developer_key", {
       token_hash: hashApiKey(token),
       p_admin_emails: adminEmails(),
     });
   if (error) throw error;
+  // The function returns jsonb, which the generated types leave as Json.
+  const data = result as { status: number; retry?: number; partner?: string; scopes?: string[]; admin?: boolean; remaining?: number };
   if (data.status !== 200)
     return { refusal: { status: data.status, error: data.status === 429 ? "Rate limit exceeded" : "Key unavailable", retry: data.retry ?? 60 } };
   return { access: { partner: data.partner ?? null, scopes: data.scopes ?? [], admin: data.admin === true, remaining: data.remaining ?? null } };

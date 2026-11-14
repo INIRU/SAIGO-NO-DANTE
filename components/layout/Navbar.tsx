@@ -47,7 +47,9 @@ export default function Navbar({ mainNavLabel }: NavbarProps) {
     try {
       if (sessionStatus === 'authenticated') localStorage.setItem(NAV_AUTH_HINT_KEY, '1')
       else localStorage.removeItem(NAV_AUTH_HINT_KEY)
-    } catch {}
+    } catch {
+      // Storage blocked: the hint only saves a flash on the next load.
+    }
   }, [sessionStatus])
 
   // 스크롤 숨김

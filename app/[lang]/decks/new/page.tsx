@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import DeckBuilderWrapper from './DeckBuilderWrapper'
 import { buildEditMode } from '@/features/decks'
 import type { SupportedLang } from '@/lib/i18n/types'
+import { isNoRow } from '@/lib/supabase/no-row'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: SupportedLang }> }): Promise<Metadata> {
   const { lang } = await params
@@ -23,7 +24,7 @@ export default async function NewDeckPage({ params, searchParams }: { params: Pr
   // 포크 모드: 원본 덱 데이터 로드
   if (forkId) {
     const supabase = createAdminClient()
-    const { data: deck } = await supabase
+    const { data: deck, error: deckError } = await supabase
       .schema('limbus')
       .from('decks')
       .select(`
@@ -34,6 +35,8 @@ export default async function NewDeckPage({ params, searchParams }: { params: Pr
       .eq('id', forkId)
       .single()
 
+    // A deck that is gone (or an id that names none) opens the empty builder; a read that failed is an error page, not a silent empty builder.
+    if (deckError && !isNoRow(deckError)) throw deckError
     if (deck) {
       const { identitySlotIds, gacksungSlots, upties, skillDistribution, formationOrder, egoSlotIds } = buildEditMode({
         deckIdentities: deck.deck_identities, deckEgos: deck.deck_egos, identities, egos,

@@ -17,7 +17,9 @@ interface Input<G extends Gift, R extends Recipe, T extends Theme, I extends Ide
   eventChoices: { effects?: unknown; selection_condition?: string | null }[]
 }
 
-const list = (value: unknown): any[] => (Array.isArray(value) ? value : [])
+// Rows come from stored JSON: the element type is what the caller reads from it, and unknown where it reads nothing.
+const list = <T = unknown>(value: unknown): T[] => (Array.isArray(value) ? value : [])
+type Row = Record<string, unknown>
 
 /** 플랜 상세 화면이 실제로 쓰는 기프트·레시피·인격·에고만 남긴다(전체 카탈로그를 클라이언트로 보내지 않기 위해). */
 export function trimPlanDetailCatalog<G extends Gift, R extends Recipe, T extends Theme, I extends Identity, E extends Ego>(input: Input<G, R, T, I, E>) {
@@ -26,7 +28,7 @@ export function trimPlanDetailCatalog<G extends Gift, R extends Recipe, T extend
   const add = (value: unknown) => { const n = parseInt(String(value), 10); if (Number.isInteger(n)) ids.add(n) }
 
   const themeById = new Map(themes.map(theme => [String(theme.id), theme]))
-  for (const entry of list(plan.floor_plan)) {
+  for (const entry of list<Row | null | undefined>(plan.floor_plan)) {
     list(entry?.gift_ids).forEach(add)
     const theme = entry?.theme_id != null ? themeById.get(String(entry.theme_id)) : undefined
     ;[...(theme?.fixed_reward_gift_ids ?? []), ...(theme?.specific_ego_gift_ids ?? [])].forEach(add)
@@ -35,7 +37,7 @@ export function trimPlanDetailCatalog<G extends Gift, R extends Recipe, T extend
   for (const key of list(plan.gift_inventory)) add(String(key).replace(/^[a-z]+_/, ''))
   for (const event of input.events) list(event.gift_ids).forEach(add)
   for (const choice of input.eventChoices) {
-    for (const effect of list(choice.effects)) if (effect?.gift_id) add(effect.gift_id)
+    for (const effect of list<Row | null | undefined>(choice.effects)) if (effect?.gift_id) add(effect.gift_id)
     for (const match of choice.selection_condition?.match(/\d+/g) ?? []) add(match)
   }
   const description = plan.description ?? ''
@@ -54,8 +56,8 @@ export function trimPlanDetailCatalog<G extends Gift, R extends Recipe, T extend
     }
   }
 
-  const deckIdentityIds = new Set(list(plan.deck).flatMap(slot => resolvePlannerIdentity(slot, identities)?.id ?? []))
-  const egoIds = new Set(list(plan.egos).flatMap(slot => resolvePlannerEgo(slot, egos)?.id ?? []))
+  const deckIdentityIds = new Set(list<Row>(plan.deck).flatMap(slot => resolvePlannerIdentity(slot, identities)?.id ?? []))
+  const egoIds = new Set(list<Row>(plan.egos).flatMap(slot => resolvePlannerEgo(slot, egos)?.id ?? []))
   return {
     gifts: gifts.filter(gift => ids.has(gift.game_id)),
     recipes: recipes.filter(recipe => keptRecipes.has(recipe)),

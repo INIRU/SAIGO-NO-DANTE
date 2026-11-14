@@ -17,7 +17,7 @@ export async function getSinners(): Promise<Sinner[]> {
     .select('*')
     .order('order_num')
   if (error) throw error
-  return data ?? []
+  return (data ?? []) as Sinner[]
 }
 
 /** Row ids are UUIDs; any other id in a URL names nothing (and would make the query itself fail). */
@@ -33,7 +33,7 @@ export async function getSinnerById(id: string): Promise<Sinner | null> {
     .eq('id', id)
     .maybeSingle()
   if (error) throw error
-  return data
+  return data as Sinner | null
 }
 
 export async function getIdentities(sinnerId?: string): Promise<Identity[]> {
@@ -41,7 +41,7 @@ export async function getIdentities(sinnerId?: string): Promise<Identity[]> {
   if (sinnerId) q = q.eq('sinner_id', sinnerId)
   const { data, error } = await q.order('rarity').order('name_kr')
   if (error) throw error
-  return data ?? []
+  return (data ?? []) as Identity[]
 }
 
 export async function getLatestIdentities(limit = 6): Promise<IdentityWithSinner[]> {
@@ -53,7 +53,8 @@ export async function getLatestIdentities(limit = 6): Promise<IdentityWithSinner
     .order('release_date', { ascending: false })
     .limit(limit)
   if (error) throw error
-  return (data ?? []) as IdentityWithSinner[]
+  // The embedded sinner selects fewer columns than Sinner has (no `name`), so the row type cannot be compared with it.
+  return (data ?? []) as unknown as IdentityWithSinner[]
 }
 
 export async function getIdentityById(id: string): Promise<Identity | null> {
@@ -65,7 +66,7 @@ export async function getIdentityById(id: string): Promise<Identity | null> {
     .eq('id', id)
     .maybeSingle()
   if (error) throw error
-  return data
+  return data as Identity | null
 }
 
 export async function getSanityConditions(identityId: string): Promise<SanityCondition[]> {
@@ -107,7 +108,7 @@ export async function getPanicInfo(panicTypeId: number): Promise<PanicType | nul
     .eq('id', panicTypeId)
     .maybeSingle()
   if (error) throw error
-  return data
+  return data as PanicType | null
 }
 
 // Whole tables are read page by page: a failed page throws (never a partial list), and `id` is the last sort key so
@@ -134,7 +135,7 @@ export async function getSkills(identityId: string): Promise<Skill[]> {
     .order('variant_order')
     .order('id')
   if (error) throw error
-  return data ?? []
+  return (data ?? []) as Skill[]
 }
 
 export async function getAllPassives(): Promise<Passive[]> {
@@ -156,7 +157,7 @@ export async function getPassives(identityId: string): Promise<Passive[]> {
     .order('passive_order')
     .order('uptie_level')
   if (error) throw error
-  return data ?? []
+  return (data ?? []) as Passive[]
 }
 
 export function withEgoStage<T extends { stage_levels?: { construe_level: number | null }[] }>({ stage_levels, ...row }: T) {
@@ -222,8 +223,9 @@ export async function getEGOById(id: string): Promise<EGO | null> {
   // presentation model, not a second JSONB copy of the same skills.
   const { data: relSkills, error: skillsError } = skillsRes
   if (skillsError) throw skillsError
-  data.ego_skills = []
-  data.ego_cor_skills = []
+  const ego = data as typeof data & Pick<EGO, 'ego_skills' | 'ego_cor_skills'>
+  ego.ego_skills = []
+  ego.ego_cor_skills = []
 
   if (relSkills && relSkills.length > 0) {
     const parseDescription = (desc: string | null | undefined, suffix: string) => {
@@ -275,11 +277,11 @@ export async function getEGOById(id: string): Promise<EGO | null> {
     const awakening = relSkills.filter(s => s.category === 'awakening').map(toEGOSkill)
     const corrosion = relSkills.filter(s => s.category === 'corrosion').map(toEGOSkill)
 
-    data.ego_skills = awakening
-    data.ego_cor_skills = corrosion
+    ego.ego_skills = awakening
+    ego.ego_cor_skills = corrosion
   }
 
-  return data
+  return ego as EGO
 }
 
 // ── 브라우저용 전체 인격 (스킬 요약 포함) ──────────────────────────────────
@@ -322,7 +324,7 @@ export async function getAllIdentitiesForBrowser(): Promise<IdentityBrowserItem[
 
   // 4. 합치기
   return (identities ?? []).map(id => {
-    const sinner = id.sinner as unknown as { id: string; name_kr: string; order_num: number }
+    const sinner = id.sinner as { id: string; name_kr: string; order_num: number }
     const sk = skillMap.get(id.id)
     return {
       id: id.id,
@@ -367,7 +369,7 @@ export async function getAllEGOsForBrowser(): Promise<EGOBrowserItem[]> {
   if (error) throw error
 
   return (data ?? []).map(e => {
-    const sinner = e.sinner as unknown as { id: string; name_kr: string; order_num: number }
+    const sinner = e.sinner as { id: string; name_kr: string; order_num: number }
     return {
       id: e.id,
       sinner_id: e.sinner_id,
@@ -375,7 +377,7 @@ export async function getAllEGOsForBrowser(): Promise<EGOBrowserItem[]> {
       name_kr: e.name_kr,
       name_en: e.name_en,
       name_jp: e.name_jp,
-      grade: e.grade,
+      grade: e.grade as string,
       max_construe_level: withEgoStage(e).max_construe_level,
       sin_affinity: e.sin_affinity as SinType | null,
       keywords: e.keywords,
@@ -395,5 +397,5 @@ export async function getEgoGiftsForNotes(): Promise<EgoGiftNote[]> {
     .from('ego_gifts')
     .select('name, name_en, name_jp, keyword, grade, image_url, effect_base, effect_base_en, effect_base_jp, activation_condition')
   if (error) throw error
-  return data ?? []
+  return (data ?? []) as EgoGiftNote[]
 }

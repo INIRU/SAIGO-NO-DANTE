@@ -1,4 +1,5 @@
 'use client'
+import type { ComponentProps } from 'react'
 import dynamic from 'next/dynamic'
 import DeckBuilderSkeleton from '@/features/decks/components/DeckBuilderSkeleton'
 
@@ -7,7 +8,6 @@ const Inner = dynamic(() => import('./DeckBuilderClient'), {
   loading: () => <DeckBuilderSkeleton />,
 })
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function DeckBuilderWrapper(props: any) {
+export default function DeckBuilderWrapper(props: ComponentProps<typeof Inner>) {
   return <Inner {...props} />
 }

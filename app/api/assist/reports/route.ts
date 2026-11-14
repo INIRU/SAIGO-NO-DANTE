@@ -1,6 +1,7 @@
 import { after, NextResponse } from 'next/server'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { toJson } from '@/lib/supabase/json'
 import { parseAssistReport } from '@/features/assist'
 
 const KEEP_MS = 180 * 86_400_000
@@ -19,13 +20,14 @@ export async function POST(request: Request) {
   try { report = parseAssistReport(JSON.parse(raw)) } catch { report = null }
   if (!report) return NextResponse.json({ error: 'invalid report' }, { status: 400 })
   const { session, counts, corrections, ...meta } = report
-  const { error } = await createAdminClient().schema('limbus').from('assist_reports').insert({ session, meta, counts, corrections })
+  const { error } = await createAdminClient().schema('limbus').from('assist_reports').insert({ session, meta, counts, corrections: toJson(corrections) })
   if (error) return NextResponse.json({ error: 'not saved' }, { status: 500 })
   after(purgeExpired)
   return new NextResponse(null, { status: 204 })
 }
 
 async function purgeExpired() {
-  await createAdminClient().schema('limbus').from('assist_reports').delete()
+  const { error } = await createAdminClient().schema('limbus').from('assist_reports').delete()
     .lt('created_at', new Date(Date.now() - KEEP_MS).toISOString())
+  if (error) console.error('[assist-reports] purge failed', error)
 }

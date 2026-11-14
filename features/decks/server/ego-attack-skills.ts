@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/supabase/database.types'
 
 export type EgoAttackSkill = {
   skill_type: string | null
@@ -8,7 +9,7 @@ export type EgoAttackSkill = {
 }
 
 /** The attack skills of the given E.G.O, by ego id. A read error throws, so no caller can cache an empty result as if it were real. */
-export async function fetchEgoAttackSkillsByEgoId(supabase: SupabaseClient, egoIds: string[]): Promise<Map<string, EgoAttackSkill[]>> {
+export async function fetchEgoAttackSkillsByEgoId(supabase: SupabaseClient<Database>, egoIds: string[]): Promise<Map<string, EgoAttackSkill[]>> {
   const skillsByEgoId = new Map<string, EgoAttackSkill[]>()
   if (egoIds.length === 0) return skillsByEgoId
 

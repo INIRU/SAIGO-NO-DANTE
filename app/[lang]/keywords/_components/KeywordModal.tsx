@@ -70,7 +70,7 @@ export default function KeywordModal({
   const name = keywordName(kw, lang)
   const desc = kw.description ? keywordDesc(kw, lang) : ''
   const iconUrl = resolveKeywordIconUrl(kw.name, kw.icon_slug)
-  const sin = normalizeSin(kw.sin_affinity)
+  const sin = normalizeSin(kw.sin_affinity ?? null)
   // The keyword's own gifts first, then gifts that only mention it; lower grades first inside each.
   const gifts = [...relatedGifts].sort((a, b) =>
     Number(b.keyword === kw.name) - Number(a.keyword === kw.name) || (GRADE_RANK[a.grade] ?? 9) - (GRADE_RANK[b.grade] ?? 9))

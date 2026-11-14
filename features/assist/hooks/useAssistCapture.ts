@@ -519,12 +519,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     setError(null)
     if (mobileBlocked() || !canCapture()) {
       setStatus('unsupported')
-      return
+      return null
     }
     const run = generation.current
     setStatus('requesting')
     const block = await gpuBlocked()
-    if (run !== generation.current) return
+    if (run !== generation.current) return null
     setGpu(block)
     if (block) {
       setStatus('idle')
@@ -534,14 +534,14 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     try {
         display = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 60 } }, audio: false })
     } catch (reason) {
-      if (run !== generation.current) return
+      if (run !== generation.current) return null
       setError(reason instanceof Error ? reason.message : 'Screen sharing unavailable')
       setStatus('error')
-      return
+      return null
     }
     if (run !== generation.current) {
       display.getTracks().forEach(track => track.stop())
-      return
+      return null
     }
 
     try {
@@ -555,7 +555,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       element.srcObject = display
       video.current = element
       await element.play()
-      if (run !== generation.current) return
+      if (run !== generation.current) return null
 
       setStatus('loading')
       const vision = new Worker('/models/assist-scene/scene-worker.js', { type: 'module' })
@@ -1978,12 +1978,14 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       }
       vision.onerror = () => fail('Scene worker failed')
       vision.postMessage({ type: 'init', ...references.current })
+      return null
     } catch (reason) {
-      if (run !== generation.current) return
+      if (run !== generation.current) return null
       cleanup()
       resetReadings()
       setError(reason instanceof Error ? reason.message : 'Screen sharing unavailable')
       setStatus('error')
+      return null
     }
   }, [cleanup, stop, resetReadings, language])
 

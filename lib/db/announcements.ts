@@ -17,7 +17,7 @@ export async function getAnnouncementsForLang(
     .order('created_at', { ascending: false })
     .limit(100)
   if (error) throw error
-  return data ?? []
+  return (data ?? []) as AnnouncementRow[]
 }
 /** The public list (pinned first, newest first), cached until an announcement is saved. A failed read is not cached. */
 export async function getCachedAnnouncements(lang: 'ko' | 'en' | 'ja'): Promise<AnnouncementRow[]> {
@@ -44,5 +44,5 @@ export async function getPopupAnnouncementForLang(lang: 'ko' | 'en' | 'ja'): Pro
     .limit(1)
     .maybeSingle()
   if (error) throw error
-  return data
+  return data as AnnouncementRow | null
 }

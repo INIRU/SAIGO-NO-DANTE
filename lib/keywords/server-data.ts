@@ -30,10 +30,10 @@ const KEYWORD_META_SELECTS = [
 
 async function loadKeywordData(): Promise<Record<string, KeywordInfo>> {
   const supabase = createAdminClient()
-  const allData: any[] = []
+  const allData: unknown[] = []
 
   const fetchKeywordRows = async (selectColumns: string) => {
-    const rows: any[] = []
+    const rows: unknown[] = []
     let from = 0
     while (true) {
       const { data, error } = await supabase

@@ -52,7 +52,9 @@ export async function POST(request: Request) {
     .from('support_messages')
     .insert({ inquiry_id: data.id, author_role: 'user', author_id: userId, body: parsed.data.content, created_at: now })
   if (first.error) {
-    await db.schema('limbus').from('inquiries').delete().eq('id', data.id)
+    // The answer stays the same; an inquiry left without its first message is logged.
+    const { error: rollbackError } = await db.schema('limbus').from('inquiries').delete().eq('id', data.id)
+    if (rollbackError) console.error('[inquiries] rollback failed', data.id, rollbackError)
     return NextResponse.json({ error: '문의를 저장하지 못했습니다.' }, { status: 500 })
   }
   return NextResponse.json(data, { status: 201 })

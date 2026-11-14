@@ -19,7 +19,7 @@ export default async function CoVisitedLane({ kind, id, lang, exclude }: { kind:
     <RecommendationLane id="co-visited" title={t('coVisited')} count={posts.length}>
       {posts.map(post => (
         <div key={post.id} className="min-w-0">
-          {kind === 'deck' ? <DeckCard deck={post as unknown as DeckSummary} NotePreview={NoteCardPreview} /> : <PlanCard plan={post as unknown as PlanSummary} NotePreview={NoteCardPreview} />}
+          {kind === 'deck' ? <DeckCard deck={post as DeckSummary} NotePreview={NoteCardPreview} /> : <PlanCard plan={post as PlanSummary} NotePreview={NoteCardPreview} />}
         </div>
       ))}
     </RecommendationLane>

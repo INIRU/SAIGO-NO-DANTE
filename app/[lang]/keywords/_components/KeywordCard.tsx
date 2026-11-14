@@ -18,7 +18,8 @@ export interface KeywordEntry {
   description: string | null
   max_stack: number | null
   icon_slug: string | null
-  sin_affinity: string | null
+  // The keywords page does not read this column; a row has none.
+  sin_affinity?: string | null
   category: string | null
   name_en?: string | null
   name_jp?: string | null
@@ -70,7 +71,7 @@ export default function KeywordCard({ keyword: kw, counts, onClick, lang, compac
     )
   }
 
-  const sin = normalizeSin(kw.sin_affinity)
+  const sin = normalizeSin(kw.sin_affinity ?? null)
   const stats = [
     { label: kt('keyword.stat.identities', lang), value: counts.identity },
     { label: 'E.G.O', value: counts.ego },

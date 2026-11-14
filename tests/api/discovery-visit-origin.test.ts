@@ -40,6 +40,16 @@ it('records a same-site visit when the app sits behind an https proxy', async ()
   expect(res.headers.get('set-cookie')).toMatch(/Secure/i)
 })
 
+it('answers a body that is not JSON with 400', async () => {
+  const res = await POST(new NextRequest('http://saigo-no-dante.com/api/discovery/visit', {
+    method: 'POST',
+    body: '{bad',
+    headers: { 'content-type': 'application/json', host: 'saigo-no-dante.com', origin: 'https://saigo-no-dante.com', 'x-forwarded-proto': 'https' },
+  }))
+  expect(res.status).toBe(400)
+  expect(upserts).toHaveLength(0)
+})
+
 it('still refuses a visit sent from another site', async () => {
   const res = await visit({ origin: 'https://evil.example', 'x-forwarded-proto': 'https' })
   expect(res.status).toBe(403)
