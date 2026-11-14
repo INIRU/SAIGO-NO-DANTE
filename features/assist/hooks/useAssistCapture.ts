@@ -4,15 +4,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { VisualCandidates, VisualReference } from '@/features/assist/lib/embedding-match'
 import { effectGiftIds, eventScreenEvidence, matchOcrCandidates, type OcrCatalog,
   type OcrWord } from '@/features/assist/lib/ocr-match'
-import { acquiredGiftFromPopup, acquisitionFloor, AUTO_ACQUIRE_EXCLUDED_GIFT_IDS, popupCandidateIds, popupHeaderEvidence, popupPurchaseHeader, showsAcquiredHeader, type PopupLabelRead } from '@/features/assist/lib/popup-evidence'
+import { acquisitionFloor, popupCandidateIds, popupHeaderEvidence, popupPurchaseHeader, showsAcquiredHeader, type PopupLabelRead } from '@/features/assist/lib/popup-evidence'
 import type { RecipePopupEvidence } from '@/lib/planner/fusion'
 import type { ShopShelf } from '@/features/assist/lib/shop-shelf'
 import type { OwnedGridRead } from '@/features/assist/lib/owned-grid'
 import type { FormationRead } from '@/features/assist/lib/formation-bar'
-import { gameTextPieces } from '@/features/assist/lib/text-normalize'
 import { SCREEN_CHANGE, THUMB_HEIGHT, THUMB_WIDTH, greyThumb, thumbDifference } from '@/features/assist/lib/screen-change'
 import { TAPE_EVERY_MS, TAPE_WIDTH } from '@/features/assist/lib/frame-tape'
-import { EMPTY_PICK, RESULT_HEADERS, choiceBands, distinctBoxes, cursorSeen, listMissing, listShown, type CursorSample, type EventPick } from '@/features/assist/lib/event-pick'
+import { EMPTY_PICK, RESULT_HEADERS, choiceBands, cursorSeen, listMissing, listShown, type CursorSample, type EventPick } from '@/features/assist/lib/event-pick'
 import type { StableScene } from '@/features/assist/lib/scene-state'
 import { cpuFallback, type GpuBlock } from '@/features/assist/lib/device'
 import { RECOGNITION_PROFILES, type RecognitionMode } from '@/features/assist/lib/recognition-profile'
@@ -22,11 +21,17 @@ import { AssistReportTally, sendAssistReport, type ReportAction } from '@/featur
 import { EMPTY_SALE_STATE, isSellWindow, readSaleStep, sellCost, sellGiftId, sellQuestion } from '@/features/assist/lib/sell-evidence'
 import { readSkillExchange } from '@/features/assist/lib/skill-exchange'
 import { acquisitionSeq, acquisitionsToRelease, continuesFusionDialog, dialogForResult, dialoglessFusionResult, fusionAnchors, fusionConfirmation, fusionDiagnosis, fusionDialogClosed, fusionMaterials, onFusionScreen, showsFusionTitle, fusionWheelAnchors, fusionWheelCrop, fusionWheelResultBox, isFusionSelectionScreen, wheelSelectionSize, emptyWheelResult, popupEndBefore, sameWheelSignature, type FusionAnchors, type FusionDialogEvidence, type FusionRead, type SeenDialog, type WheelAnchors } from '@/features/assist/lib/fusion-evidence'
-import { BLESSING_SCENE, blessingSpent, onBlessingScreen, showsBlessingScreen } from '@/features/assist/lib/blessing-screen'
-import { BONUS_PLACES, bonusCardThemes, offerKey, type ClearBonusCard, type ClearBonusOffer } from '@/features/assist/lib/clear-bonus'
+import { BLESSING_SCENE, onBlessingScreen, showsBlessingScreen } from '@/features/assist/lib/blessing-screen'
+import { BONUS_PLACES, bonusCardThemes, offerKey, type ClearBonusOffer } from '@/features/assist/lib/clear-bonus'
 import { onRunEndScreen, RUN_END_SCENE, showsRunEndScreen } from '@/features/assist/lib/run-end-screen'
 import { isVerbose, plog } from '@/features/assist/lib/assist-log'
-import { parseFusionSlots, WHEEL_FRAMES, WHEEL_KEEP_MS, WHEEL_CROP_WIDTH, WHEEL_AFTER_DIALOG_MS, WHEEL_BEFORE_DIALOG_MS, wheelReadOrder, DIALOGLESS_WHEEL_MS, CAPACITY_KEEP_MS, wheelSignature, showsWheel, resultBoxBand, sameAnchors, FUSION_HOLD_MS, SCREEN_HOLD_MS, OCR_READ_FAILURES, SCENE_READ_FAILURES, OCR_REBUILD_MS, OCR_STABLE_MS, ocrRebuildsAfterRead, ocrErrorAction, parseShopShelf, mobileBlocked, gpuBlocked, canCapture, validMatches, runFrameTask, type WheelFrame, type PopupAcquisition, type GiftSale, type SkillExchangeView, type FloorThemeObservation, type PopupFrame, type PopupPending, type OpenFrame, type FrameTask } from '@/features/assist/lib/capture-helpers'
+import { fusionCandidateIds, knownCapacity, popupDialogCount, popupDialogMaterials, wheelCapacityChoice } from '@/features/assist/lib/fusion-capture'
+import { choiceListBoxes, cursorRegion, readableOptionCount } from '@/features/assist/lib/event-list-read'
+import { pickReadyPopup, popupReadSummary, staleFrames, weakestPopupFrame } from '@/features/assist/lib/popup-frames'
+import { floorReadVerdict, mergeOcrEngines, parseBlessingLevels, parseBonusCards, parseCursorSample, parseFormationIds, parseOcrBackend, parseOwnedGifts,
+  parsePopupRead, parseThemeReads } from '@/features/assist/lib/capture-answers'
+import { addAcquisition, addFusion, addSales, bonusWithNames, nextBlessings, nextClearBonus, nextSkillExchange, nextWorkCounts, patchFusion } from '@/features/assist/lib/capture-lists'
+import { parseFusionSlots, WHEEL_FRAMES, WHEEL_KEEP_MS, WHEEL_CROP_WIDTH, WHEEL_AFTER_DIALOG_MS, WHEEL_BEFORE_DIALOG_MS, wheelReadOrder, DIALOGLESS_WHEEL_MS, wheelSignature, showsWheel, resultBoxBand, sameAnchors, FUSION_HOLD_MS, SCREEN_HOLD_MS, OCR_READ_FAILURES, SCENE_READ_FAILURES, OCR_REBUILD_MS, OCR_STABLE_MS, ocrRebuildsAfterRead, ocrErrorAction, parseShopShelf, mobileBlocked, gpuBlocked, canCapture, validMatches, runFrameTask, type WheelFrame, type PopupAcquisition, type GiftSale, type SkillExchangeView, type FloorThemeObservation, type PopupFrame, type PopupPending, type OpenFrame, type FrameTask } from '@/features/assist/lib/capture-helpers'
 export { OCR_READ_FAILURES, OCR_REBUILD_MS, OCR_STABLE_MS, ocrRebuildsAfterRead, ocrErrorAction, runFrameTask }
 export type { PopupAcquisition, GiftSale, FloorThemeObservation }
 import { captureEvidence, named, noteShopDialog, screenTags, type CaptureStatus, type OcrCandidates, type ShopDialog } from '@/features/assist/lib/capture-evidence'
@@ -232,9 +237,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
   samplesRef.current = samples
   const heldRef = useRef(heldGiftIds)
   heldRef.current = heldGiftIds
-  /** Gifts a fusion can use: held ones by catalog id (enhancement suffixes dropped) and the vestiges, never auto-recorded. */
-  const fusionCandidates = () => [...new Set([...heldRef.current.map(key => String(parseInt(key, 10))).filter(id => id !== 'NaN'),
-    ...AUTO_ACQUIRE_EXCLUDED_GIFT_IDS])]
+  const fusionCandidates = () => fusionCandidateIds(heldRef.current)
   const sampleState = useRef({ prediction, mode, detection, inference, ocrEngine, floor })
   sampleState.current = { prediction, mode, detection, inference, ocrEngine, floor }
   const readSampleContext = () => {
@@ -567,13 +570,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         setError(message)
         setStatus('error')
       }
-      const publishAcquisition = (evidence: PopupAcquisition) => setPopupAcquisitions(items =>
-        items.some(item => item.token === evidence.token) ? items : [...items.slice(-15), evidence])
-      const publishFusion = (evidence: FusionEvidence) => setFusionEvidence(items =>
-        [...items.filter(item => item.token !== evidence.token).slice(-7), evidence])
-      /** Later sightings of a published dialog (last seen, closed) update its entry. */
-      const updateFusion = (token: string, change: Partial<FusionEvidence>) => setFusionEvidence(items =>
-        items.some(item => item.token === token) ? items.map(item => item.token === token ? { ...item, ...change } : item) : items)
+      const publishAcquisition = (evidence: PopupAcquisition) => setPopupAcquisitions(items => addAcquisition(items, evidence))
+      const publishFusion = (evidence: FusionEvidence) => setFusionEvidence(items => addFusion(items, evidence))
+      const updateFusion = (token: string, change: Partial<FusionEvidence>) => setFusionEvidence(items => patchFusion(items, token, change))
       /**
        * On a fusion screen the result popup can be confirmed before the confirmation dialog's materials are; the gift is
        * held briefly so it reaches the run together with that evidence. Never dropped: released on evidence, on the
@@ -615,17 +614,13 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         }
         if (fusionMaterials(dialog.reads, dialog.count, dialog.capacity).length === dialog.count) finishFusionDialog()
       }
-      /**
-       * The shop capacity of a result without a seen dialog before any dialog this session: the layout whose reads name more
-       * materials (the 3- and 5-slot positions nearly coincide, so both name the same icons when both find them). Decided
-       * as soon as the states read so far name two materials, or with whatever was read (`force`).
-       */
+      // The shop capacity of a result without a seen dialog before any dialog this session (wheelCapacityChoice): decided
+      // as soon as the states read so far name two materials, or with whatever was read (`force`).
       const decideCapacity = (dialog: NonNullable<typeof fusionDialog.current>, force: boolean) => {
         if (!dialog.undecided) return
-        const named = (size: number) => fusionMaterials(dialog.wheel.flatMap(item => item.reads[size] ? [item.reads[size]!] : []), size, size).length
-        const three = named(3), five = named(5)
-        if (!force && Math.max(three, five) < 2) return
-        dialog.capacity = five > three ? 5 : 3
+        const decided = wheelCapacityChoice(dialog.wheel, force)
+        if (decided === null) return
+        dialog.capacity = decided
         dialog.count = dialog.capacity
         dialog.undecided = false
         takeWheelReads(dialog)
@@ -688,16 +683,6 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         }
         releaseHeld()
       }
-      // Materials read so far on the confirmation dialog this popup follows, for telling look-alike recipe results apart.
-      const popupDialogMaterials = (capturedAt: number) => {
-        const dialog = fusionDialog.current
-        return dialog && dialog.firstAt <= capturedAt && capturedAt - dialog.lastSeenAt <= 4000
-          ? fusionMaterials(dialog.reads, dialog.count, dialog.capacity) : []
-      }
-      const popupDialogCount = (capturedAt: number) => {
-        const dialog = fusionDialog.current
-        return dialog && dialog.firstAt <= capturedAt && capturedAt - dialog.lastSeenAt <= 4000 ? dialog.count : undefined
-      }
       const finishPopup = (requestId: number) => {
         const pending = popupPending.current.get(requestId)
         if (!pending?.ocr || !pending.icon) return
@@ -722,11 +707,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           popupEvidence.current.delete(episode)
         }
         // Frames of one popup must agree: two different icons, names, or effect owners abstain.
-        const icons = [...new Set(merged.icons)]
-        const effects = [...new Set(merged.effects)]
-        const header = merged.headers.join('\n')
-        const verdict = icons.length > 1 ? null : acquiredGiftFromPopup({ header, labels: merged.labels, iconGiftId: icons[0] ?? null,
-          effectGiftIds: effects, gifts: catalog.gifts })
+        const { icons, effects, header, verdict } = popupReadSummary(merged, catalog.gifts)
         const resolve = resolvePopupRef.current
         const inFusion = onFusionScreen(latestLabel.current, fusionTitleAt.current, Date.now()) ||
           (fusionWanted.current !== null && Date.now() - fusionWanted.current.at < 20_000)
@@ -734,7 +715,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         const giftId = resolve && popupHeaderEvidence(header)
           ? resolve({ ...popupCandidateIds({ header, labels: merged.labels, iconGiftIds: icons, effectGiftIds: effects,
             lexiconGiftIds: inFusion ? [...new Set(merged.lexicon)] : [], gifts: catalog.gifts }),
-            materials: popupDialogMaterials(pending.capturedAt), materialCount: popupDialogCount(pending.capturedAt) }, verdict, inFusion)
+            materials: popupDialogMaterials(fusionDialog.current, pending.capturedAt), materialCount: popupDialogCount(fusionDialog.current, pending.capturedAt) }, verdict, inFusion)
           : verdict
         if (!giftId) {
           // The shop's purchase confirmation sits where the acquisition popup then appears, so both look like one popup:
@@ -796,21 +777,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         }
         popupPending.current.delete(requestId)
       }
-      const popupStale = (pending: PopupPending | undefined) => !pending || Date.now() - pending.capturedAt > 8000
       const takePopup = (queue: { current: PopupFrame[] }): PopupFrame | null => {
-        let best: PopupFrame | null = null
-        let bestPriority = -1
-        for (const item of [...queue.current]) {
-          const pending = popupPending.current.get(item.requestId)
-          if (!pending || popupStale(pending)) {
-            dropPopup(item.requestId)
-            continue
-          }
-          if (pending.readyAt <= Date.now() && pending.priority > bestPriority) {
-            best = item
-            bestPriority = pending.priority
-          }
-        }
+        const { best, stale } = pickReadyPopup(queue.current, popupPending.current, Date.now())
+        for (const requestId of stale) dropPopup(requestId)
         if (best) queue.current = queue.current.filter(other => other !== best)
         return best
       }
@@ -866,10 +835,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
               closeRest()
               return
             }
-            const boxes = distinctBoxes((evidence.choiceBoxes ?? []).filter(box => box.left >= 0.45 * width && box.left <= 0.75 * width))
-            const first = boxes.length ? catalog.choices.find(item => item.id === boxes[0].choiceId) : undefined
-            const options = first ? new Set(catalog.choices.filter(item => item.eventId === first.eventId)
-              .map(item => gameTextPieces(item.texts[0] ?? '').join('')).filter(text => [...text].length >= 4)).size : 0
+            const boxes = choiceListBoxes(evidence.choiceBoxes ?? [], width)
+            const options = readableOptionCount(catalog.choices, boxes[0]?.choiceId)
             const shown = listShown(state, choiceBands(boxes, width, height), at,
               { resultPage: read.words.some(word => RESULT_HEADERS.has(word.text.trim())), options })
             state = shown.state
@@ -914,24 +881,10 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
       }
       /** Stale frames go first; a full queue then gives up its lowest-priority, weakest frame to a better one. */
       const makePopupRoom = (priority: number, quality: number) => {
-        for (const item of [...popupQueue.current, ...popupVisionQueue.current]) {
-          if (popupStale(popupPending.current.get(item.requestId))) dropPopup(item.requestId)
-        }
+        for (const requestId of staleFrames([...popupQueue.current, ...popupVisionQueue.current], popupPending.current, Date.now())) dropPopup(requestId)
         while (popupQueue.current.length >= 8 || popupVisionQueue.current.length >= 8) {
           const full = popupQueue.current.length >= 8 ? popupQueue.current : popupVisionQueue.current
-          let weakest: number | null = null
-          let weakestPriority = priority
-          let weakestQuality = quality
-          for (const item of full) {
-            const pending = popupPending.current.get(item.requestId)
-            const itemPriority = pending?.priority ?? -1
-            const itemQuality = pending?.quality ?? 0
-            if (itemPriority < weakestPriority || (itemPriority === weakestPriority && itemQuality < weakestQuality)) {
-              weakest = item.requestId
-              weakestPriority = itemPriority
-              weakestQuality = itemQuality
-            }
-          }
+          const weakest = weakestPopupFrame(full, popupPending.current, priority, quality)
           if (weakest === null) return false
           dropPopup(weakest)
         }
@@ -1041,12 +994,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         setOcrStatus('loading')
         const alive = (lane: OcrLane) => run === generation.current && ocrPool.current === pool && pool.lanes.includes(lane)
         const publishEngine = () => {
-          const engines = pool.lanes.map(lane => lane.engine)
-          if (engines.some(engine => !engine)) { setOcrEngine(engines.find(Boolean) ?? null); return }
-          const all = engines as OcrEngineStatus[]
-          const paddle = all.every(engine => engine.engine === 'paddle')
-          setOcrEngine({ engine: paddle ? 'paddle' : 'tesseract', adapter: paddle ? all[0].adapter : '', loading: all.some(engine => engine.loading),
-            ...(all.find(engine => engine.reason)?.reason ? { reason: all.find(engine => engine.reason)!.reason } : {}) })
+          setOcrEngine(mergeOcrEngines(pool.lanes.map(lane => lane.engine)))
         }
         const dropInFlight = (lane: OcrLane) => {
           if (lane.inFlight && popupPending.current.has(lane.activeRequest)) popupPending.current.delete(lane.activeRequest)
@@ -1276,10 +1224,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             }
           }
           if (result.type === 'backend') {
-            lane.engine = { engine: result.engine === 'paddle' ? 'paddle' : 'tesseract',
-              adapter: result.engine === 'paddle' && typeof result.adapter === 'string' ? result.adapter.slice(0, 60) : '',
-              loading: result.engine !== 'paddle' && result.loading === true,
-              ...(typeof result.reason === 'string' ? { reason: result.reason.slice(0, 40) } : {}) }
+            lane.engine = parseOcrBackend(result)
             publishEngine()
           } else if (result.type === 'ready') {
             lane.ready = true
@@ -1315,15 +1260,9 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                 : { gifts: [], events: [], choices: [], scopedChoices: [], outcomeEventIds: [], choiceEventIds: [], bodyEventIds: [] }
               const want = detectionRef.current
               if (want.events && capture.width && capture.height) {
-                // the game's list is right of the middle (its name lines start at 0.57 of the width): lines elsewhere are
-                // not its buttons (a whole-screen share also holds the terminal and its PiP)
                 const ocrWidth = capture.width * Math.min(1, 1920 / capture.width)
-                const boxes = distinctBoxes(('choiceBoxes' in matches ? matches.choiceBoxes ?? [] : [])
-                  .filter(box => box.left >= 0.45 * ocrWidth && box.left <= 0.75 * ocrWidth))
-                // how many options of that event can be read (a name of 4 or more glyphs): one of several alone is the one taken
-                const choice = boxes.length ? ocrReferences.current?.choices.find(item => item.id === boxes[0].choiceId) : undefined
-                const options = choice ? new Set(ocrReferences.current!.choices.filter(item => item.eventId === choice.eventId)
-                  .map(item => gameTextPieces(item.texts[0] ?? '').join('')).filter(text => [...text].length >= 4)).size : 0
+                const boxes = choiceListBoxes('choiceBoxes' in matches ? matches.choiceBoxes ?? [] : [], ocrWidth)
+                const options = readableOptionCount(ocrReferences.current?.choices ?? [], boxes[0]?.choiceId)
                 const resultPage = result.words.some(word => RESULT_HEADERS.has(word.text.trim()))
                 if (boxes.length) {
                   const shown = listShown(pickState.current, choiceBands(boxes, capture.width, capture.height, Math.min(1, 1920 / capture.width)), capture.at, { resultPage, options })
@@ -1354,7 +1293,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                   themeReferences.current ?? [], factor, bonusTitleBar.current)
                 if (names.size) {
                   bonusNames.current = { names, at: capture.at }
-                  setClearBonus(current => current && named(current.cards, names) !== current.cards ? { ...current, cards: named(current.cards, names) } : current)
+                  setClearBonus(current => bonusWithNames(current, names))
                 }
               }
               if (want.gifts) readSale(result.text, result.words, capture)
@@ -1416,7 +1355,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
                   item.lastAt >= pending.capturedAt - DIALOGLESS_WHEEL_MS && showsWheel(item, wheelReference.current)), pending.capturedAt, 600)
                 if (!wheel.length) continue
                 // The session's shop capacity; before any dialog was seen, decided after reading the states in both layouts.
-                const known = lastCapacity.current && capture.at - lastCapacity.current.at < CAPACITY_KEEP_MS ? lastCapacity.current.capacity : null
+                const known = knownCapacity(lastCapacity.current, capture.at)
                 const capacity = known ?? 3
                 wheelFrames.current = wheelFrames.current.filter(item => !wheel.includes(item))
                 for (const item of fusionDialog.current?.wheel.splice(0) ?? []) item.frame.close()
@@ -1491,11 +1430,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             typeof result.header === 'string' && typeof result.label === 'string' && Array.isArray(result.labelWords)) {
             lane.inFlight = false
             const pending = popupPending.current.get(result.requestId!)
-            // Older worker bundles send only the raw plate read and no effect panel.
-            const labels = Array.isArray(result.labels) && result.labels.every(read => typeof read?.text === 'string' &&
-              Array.isArray(read.words)) ? result.labels : [{ text: result.label, words: result.labelWords }]
-            const body = typeof result.body === 'string' ? result.body : ''
-            const lexiconId = typeof result.lexicon?.id === 'string' ? result.lexicon.id : null
+            const { labels, body, lexiconId } = parsePopupRead({ label: result.label, labelWords: result.labelWords, labels: result.labels,
+              body: result.body, lexicon: result.lexicon })
             if (pending) { pending.ocr = { header: result.header, labels, body, lexiconId }; finishPopup(result.requestId!) }
             flushOcrPopup()
           } else if (result.type === 'exploreResult' && mine) {
@@ -1504,20 +1440,16 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             exploreCapture.current = null
             const floorSeen = typeof result.floorText === 'string' ? explorationFloor(result.floorText) : null
             bannerRecent = floorSeen !== null
-            const reads = Array.isArray(result.themeReads) ? result.themeReads.filter(Array.isArray).map(read =>
-              read.filter(word => typeof word?.text === 'string')) : []
+            const reads = parseThemeReads(result.themeReads)
             const { ids: themeIds, certain } = themeReferences.current ? explorationThemeReads(reads, themeReferences.current) : { ids: [], certain: false }
             // A single exact pack read may confirm, but only under a floor number that is the current or next floor, or
             // that an earlier capture also read: one misread digit must not jump the run ahead.
             let floorAgreed = false
             if (capture && capture.requestId === result.requestId && floorSeen !== null) {
-              const previous = lastFloorRead.current
-              const elapsed = previous ? capture.at - previous.at : -1
-              const runFloor = currentFloor.current
-              floorAgreed = (runFloor !== null && (floorSeen === runFloor || floorSeen === runFloor + 1)) ||
-                (previous?.floor === floorSeen && elapsed > 0 && elapsed <= 180000)
-              if (previous?.floor === floorSeen && elapsed >= 1000 && elapsed <= 60000) setObservedFloor(floorSeen)
-              if (!previous || capture.at > previous.at) lastFloorRead.current = { floor: floorSeen, at: capture.at }
+              const verdict = floorReadVerdict({ floor: floorSeen, at: capture.at, previous: lastFloorRead.current, runFloor: currentFloor.current })
+              floorAgreed = verdict.agreed
+              if (verdict.observed) setObservedFloor(floorSeen)
+              if (verdict.keep) lastFloorRead.current = { floor: floorSeen, at: capture.at }
             }
             // Unreadable captures neither confirm nor break the chain; a different readable scene restarts it.
             if (capture && capture.requestId === result.requestId && floorSeen !== null && themeIds.length &&
@@ -1693,7 +1625,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         const now = Date.now()
         if (inFlight.current || popupVisionQueue.current.length || !worker.current || !onFusionScreen(latestLabel.current, fusionTitleAt.current, now)) return false
         // The shop capacity of this session when known; otherwise both layouts (the first fusion of a session).
-        const capacities = lastCapacity.current && now - lastCapacity.current.at < CAPACITY_KEEP_MS ? [lastCapacity.current.capacity] : [3, 5]
+        const known = knownCapacity(lastCapacity.current, now)
+        const capacities = known !== null ? [known] : [3, 5]
         const after = lastDialogAt.current + WHEEL_AFTER_DIALOG_MS
         const state = [...wheelFrames.current].reverse().find(item => item.lastAt > after && capacities.some(capacity => !item.reads[capacity]) &&
           showsWheel(item, wheelReference.current))
@@ -1752,10 +1685,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             if (run !== generation.current || !worker.current) { frame.close(); inFlight.current = false; return }
             const requestId = ++ocrRequestId.current
             cursorRequest.current = { requestId, at: Date.now() }
-            // the buttons and a margin around them (the cursor's hot spot is its tip; the nib hangs below and right)
-            const margin = 60 * Math.min(frame.width / 1920, frame.height / 1080)
-            const left = Math.min(...bands.map(band => band.left)) - margin, top = Math.min(...bands.map(band => band.top)) - margin
-            const region = { x: left, y: top, width: Math.max(...bands.map(band => band.right)) + margin - left, height: Math.max(...bands.map(band => band.bottom)) + margin - top }
+            const region = cursorRegion(bands, frame.width, frame.height)
             worker.current.postMessage({ type: 'cursor', requestId, frame, region }, [frame])
           } catch { inFlight.current = false }
           return
@@ -1864,8 +1794,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
             const text = popupQueue.current.length, image = popupVisionQueue.current.length
             const frames = new Set([...popupQueue.current, ...popupVisionQueue.current].map(item => item.requestId)).size
             const analyzing = Number(inFlight.current) + (ocrPool.current?.lanes.filter(lane => lane.inFlight).length ?? 0)
-            setQueueStatus(current => current.analyzing === analyzing && current.frames === frames && current.text === text &&
-              current.image === image ? current : { analyzing, frames, text, image })
+            setQueueStatus(current => nextWorkCounts(current, { analyzing, frames, text, image }))
           }, 500)
           const Processor = (globalThis as unknown as { MediaStreamTrackProcessor?: new (options: { track: MediaStreamTrack }) =>
             { readable: ReadableStream<VideoFrame> } }).MediaStreamTrackProcessor
@@ -1961,8 +1890,8 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
         } else if (result.type === 'cursor' && cursorRequest.current?.requestId === result.requestId) {
           inFlight.current = false
           const cursor = (result as { cursor?: { x?: unknown; y?: unknown; pressed?: unknown } | null }).cursor
-          if (cursor && typeof cursor.x === 'number' && typeof cursor.y === 'number' && Number.isFinite(cursor.x) && Number.isFinite(cursor.y)) {
-            const sample = { at: cursorRequest.current?.at ?? Date.now(), x: cursor.x, y: cursor.y, pressed: cursor.pressed === true }
+          const sample = parseCursorSample(cursor, cursorRequest.current?.at ?? Date.now())
+          if (sample) {
             cursorSamples.current = [...cursorSamples.current.filter(item => sample.at - item.at < 4000), sample]
             pickState.current = cursorSeen(pickState.current, sample)
             dlog('cursor', Math.round(sample.x), Math.round(sample.y), sample.pressed, pickState.current.hits.length)
@@ -1972,19 +1901,20 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           inFlight.current = false
           const ids = (result as { ids?: unknown }).ids
           const at = formationRequest.current?.at ?? Date.now()
-          if (Array.isArray(ids) && ids.length === 12 && ids.every(id => id === null || typeof id === 'string') && FORMATION_BAR_SCENES.has(latestLabel.current ?? ''))
-            setFormation({ ids: ids as (string | null)[], observedAt: at })
+          const formationIds = parseFormationIds(ids)
+          if (formationIds && FORMATION_BAR_SCENES.has(latestLabel.current ?? ''))
+            setFormation({ ids: formationIds, observedAt: at })
           else dlog('formation-miss', { scene: latestLabel.current, read: Array.isArray(ids) ? ids.length : null })
           flushVisionPopup()
         } else if (result.type === 'blessings' && blessingRequest.current?.requestId === result.requestId) {
           inFlight.current = false
           const levels = (result as { levels?: unknown }).levels
           dlog('blessings-read', Array.isArray(levels) ? levels.join('') : null)
-          if (Array.isArray(levels) && levels.length === 10 && levels.every(level => Number.isInteger(level) && level >= 0 && level <= 3)) {
-            const key = levels.join('')
+          const cardLevels = parseBlessingLevels(levels)
+          if (cardLevels) {
+            const key = cardLevels.join('')
             if (key === lastBlessingRead.current)
-              setBlessings(current => current && current.levels.join('') === key ? current
-                : { levels: levels as number[], spent: blessingSpent(levels as number[]), observedAt: blessingRequest.current?.at ?? Date.now() })
+              setBlessings(current => nextBlessings(current, cardLevels, key, blessingRequest.current?.at ?? Date.now()))
             lastBlessingRead.current = key
           } else lastBlessingRead.current = ''
           flushVisionPopup()
@@ -1992,28 +1922,26 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
           inFlight.current = false
           const { cards, titleBar } = result as { cards?: unknown; titleBar?: unknown }
           if (typeof titleBar === 'number' && Number.isFinite(titleBar)) bonusTitleBar.current = titleBar
-          const valid = Array.isArray(cards) && cards.every(card => card && typeof card.place === 'number' && Array.isArray(card.gifts) &&
-            card.gifts.every((gift: unknown) => typeof gift === 'string'))
+          const bonusCards = parseBonusCards(cards)
           // a read with no gifts at all (cards still sliding in, or every row empty) changes nothing
-          dlog('bonus-read', !valid ? 'invalid' : latestLabel.current !== 'theme_select' ? `scene ${latestLabel.current}`
-            : (cards as ClearBonusCard[]).map(card => `${card.place}:${card.gifts.length}`).join(' '))
-          if (valid && latestLabel.current === 'theme_select' && (cards as ClearBonusCard[]).some(card => card.gifts.length)) {
-            const key = offerKey(cards as ClearBonusCard[])
+          dlog('bonus-read', !bonusCards ? 'invalid' : latestLabel.current !== 'theme_select' ? `scene ${latestLabel.current}`
+            : bonusCards.map(card => `${card.place}:${card.gifts.length}`).join(' '))
+          if (bonusCards && latestLabel.current === 'theme_select' && bonusCards.some(card => card.gifts.length)) {
+            const key = offerKey(bonusCards)
             if (key === lastBonusRead.current) {
               const names = bonusNames.current && Date.now() - bonusNames.current.at < 15_000 ? bonusNames.current.names : null
-              const read = names ? named(cards as ClearBonusCard[], names) : cards as ClearBonusCard[]
-              setClearBonus(current => current && offerKey(current.cards) === key && current.floor === selectionHeader.current ? current
-                : { floor: selectionHeader.current, cards: read, observedAt: bonusRequest.current?.at ?? Date.now() })
+              const read = names ? named(bonusCards, names) : bonusCards
+              setClearBonus(current => nextClearBonus(current, key, read, selectionHeader.current, bonusRequest.current?.at ?? Date.now()))
             }
             lastBonusRead.current = key
           } else lastBonusRead.current = ''
           flushVisionPopup()
         } else if (result.type === 'owned-grid' && gridRequest.current?.requestId === result.requestId) {
           inFlight.current = false
-          const gifts = (result as { gifts?: unknown }).gifts
+          const ownedGifts = parseOwnedGifts((result as { gifts?: unknown }).gifts)
           const at = gridRequest.current?.at ?? Date.now()
-          if (Array.isArray(gifts) && gifts.every(gift => typeof gift === 'string') && latestLabel.current === 'sell')
-            setOwnedGrid({ gifts: gifts as string[], observedAt: at })
+          if (ownedGifts && latestLabel.current === 'sell')
+            setOwnedGrid({ gifts: ownedGifts, observedAt: at })
           flushVisionPopup()
         } else if (result.type === 'fusion-slots' && wheelRequest.current?.requestId === result.requestId) {
           inFlight.current = false
@@ -2059,15 +1987,11 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     }
   }, [cleanup, stop, resetReadings, language])
 
-  /** The skill replacement window stays shown until 1.5 s of reads without it, so one missed read does not flicker. */
+  /** The skill replacement window (nextSkillExchange): shown until 1.5 s of reads without it. */
   function readSkillWindow(text: string, at: number) {
     const read = readSkillExchange(text)
     if (read) skillWindowAt.current = at
-    setSkillExchange(previous => {
-      if (!read) return previous && at - previous.seenAt > 1500 ? null : previous
-      // A read with misread counts keeps the last counts of the same sinner.
-      return { sinner: read.sinner, current: read.current ?? (previous?.sinner === read.sinner ? previous.current : null), seenAt: at }
-    })
+    setSkillExchange(previous => nextSkillExchange(previous, read, at))
   }
 
   /** Shop sales from one full-frame read; the decision is readSaleStep (features/assist/lib/sell-evidence.ts). */
@@ -2082,8 +2006,7 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     if (step.state.dialog || isSellWindow(text)) sampleRecorder.current?.begin('sale')
     if (step.sold.length) settleSample('sale', 'sale', null)
     else if (!step.state.dialog && sellQuestion(text)) settleSample('sale', 'sale', { reason: 'sale-unresolved' })
-    if (step.sold.length) setGiftSales(items => [...items, ...step.sold.map(sale =>
-      ({ giftId: sale.giftId, token: `sell:${sale.at}:${sale.giftId}`, capturedAt: sale.at }))].slice(-8))
+    if (step.sold.length) setGiftSales(items => addSales(items, step.sold))
   }
 
   // Reports also leave with the page and every 15 minutes of a long capture.
