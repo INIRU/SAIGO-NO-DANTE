@@ -83,14 +83,24 @@ def site_frequency():
     return counts
 
 
-def unicode_range(codes):
+def unicode_range(codes, earlier=frozenset()):
+    # The browser takes, per character, the first piece in --font-pretendard whose range has it. A range may span
+    # characters an earlier piece already has: they never reach this piece, and the declaration gets much shorter.
     ranges = []
     for code in sorted(codes):
-        if ranges and ranges[-1][1] == code - 1:
+        if ranges and all(gap in earlier for gap in range(ranges[-1][1] + 1, code)):
             ranges[-1][1] = code
         else:
             ranges.append([code, code])
     return ','.join(f'U+{a:X}' if a == b else f'U+{a:X}-{b:X}' for a, b in ranges)
+
+
+def parse_range(value):
+    codes = set()
+    for part in value.split(','):
+        first, _, last = part[2:].partition('-')
+        codes.update(range(int(first, 16), int(last or first, 16) + 1))
+    return codes
 
 
 def write_subset(codes, name):
@@ -116,7 +126,7 @@ def in_blocks(code, blocks):
     return any(a <= code <= b for a, b in blocks)
 
 
-def declaration(name, file, variable, codes, preload, doc, fallback=True):
+def declaration(name, file, variable, codes, preload, doc, fallback=True, earlier=frozenset()):
     options = [
         f"  src: '../public/fonts/pretendard/{file}',",
         "  weight: '45 920',",
@@ -127,9 +137,10 @@ def declaration(name, file, variable, codes, preload, doc, fallback=True):
         # Only the metric-matched Arial fallback: a system Hangul font here would draw every syllable before the
         # Hangul pieces that follow in --font-pretendard get a chance.
         *([] if fallback else ['  adjustFontFallback: false,']),
-        f"  declarations: [{{ prop: 'unicode-range', value: '{unicode_range(codes)}' }}],",
+        f"  declarations: [{{ prop: 'unicode-range', value: '{unicode_range(codes, earlier)}' }}],",
     ]
-    return f"/** {doc} */\nexport const {name} = localFont({{\n" + '\n'.join(options) + '\n})\n'
+    # Only pretendardPieces leaves the module, so each piece is a plain const.
+    return f"/** {doc} */\nconst {name} = localFont({{\n" + '\n'.join(options) + '\n})\n'
 
 
 def main():
@@ -156,18 +167,27 @@ def main():
         pieces.append(write_subset(codes, f'PretendardVariable-hangul-{index + 1}.woff2'))
     claimed = latin_kept | symbols_kept | set().union(*pieces)
     ext_kept = write_subset(cmap - claimed, 'PretendardVariable-ext.woff2') - claimed
+    write_module(latin_kept, pieces, symbols_kept, ext_kept)
 
+
+def write_module(latin_kept, pieces, symbols_kept, ext_kept):
     parts = [declaration('pretendardLatin', 'PretendardVariable-latin.woff2', '--font-pretendard-latin', latin_kept, True,
                          'Latin, punctuation, common UI symbols, CJK punctuation and jamo: preloaded on every page.')]
+    earlier = set(latin_kept)
     for index, codes in enumerate(pieces):
         doc = ('The most frequent syllables on the site (UI text first): preloaded on every page.' if index == 0 else
                f'Hangul piece {index + 1} by site frequency: downloaded when a page shows one of its syllables.')
         parts.append(declaration(f'pretendardHangul{index + 1}', f'PretendardVariable-hangul-{index + 1}.woff2',
-                                 f'--font-pretendard-hangul-{index + 1}', codes, index == 0, doc, fallback=False))
+                                 f'--font-pretendard-hangul-{index + 1}', codes, index == 0, doc, fallback=False,
+                                 earlier=frozenset(earlier)))
+        earlier |= codes
     parts.append(declaration('pretendardSymbols', 'PretendardVariable-symbols.woff2', '--font-pretendard-symbols',
-                             symbols_kept, False, 'Other symbols, compatibility jamo, units and full-width forms.', fallback=False))
+                             symbols_kept, False, 'Other symbols, compatibility jamo, units and full-width forms.', fallback=False,
+                             earlier=frozenset(earlier)))
+    earlier |= symbols_kept
     parts.append(declaration('pretendardExt', 'PretendardVariable-ext.woff2', '--font-pretendard-ext', ext_kept, False,
-                             'The rest of Pretendard (rare syllables, kana, Cyrillic, ...).', fallback=False))
+                             'The rest of Pretendard (rare syllables, kana, Cyrillic, ...).', fallback=False,
+                             earlier=frozenset(earlier)))
     heading = f'''/** en/ja headings are always bold, like KOTRA Bold on Korean pages; other characters fall through to --font-pretendard. */
 export const pretendardHeadingLatin = localFont({{
   src: '../public/fonts/pretendard/PretendardVariable-latin.woff2',
@@ -189,5 +209,25 @@ export const pretendardHeadingLatin = localFont({{
     print(f'wrote {os.path.relpath(MODULE, ROOT)}')
 
 
+def rewrite_ranges():
+    """Rewrites app/pretendard.ts from its own declarations, leaving the woff2 pieces as they are."""
+    import re
+    with open(MODULE, encoding='utf8') as source:
+        text = source.read()
+    declared = {name: parse_range(value) for name, value in
+                re.findall(r"^const (pretendard\w+) = localFont\(\{.*?unicode-range', value: '([^']+)'", text, re.S | re.M)}
+    hangul = [declared[f'pretendardHangul{i}'] for i in range(1, 100) if f'pretendardHangul{i}' in declared]
+    # A range written with spans includes earlier pieces' characters: a piece's own set is what is left without them.
+    latin = declared['pretendardLatin']
+    earlier, pieces = set(latin), []
+    for codes in hangul:
+        pieces.append(codes - earlier)
+        earlier |= pieces[-1]
+    symbols = declared['pretendardSymbols'] - earlier
+    ext = declared['pretendardExt'] - earlier - symbols
+    write_module(latin, pieces, symbols, ext)
+
+
 if __name__ == '__main__':
-    main()
+    import sys
+    rewrite_ranges() if '--ranges-only' in sys.argv else main()

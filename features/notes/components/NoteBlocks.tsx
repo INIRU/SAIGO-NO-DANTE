@@ -23,6 +23,10 @@ import { NoteCardPreview } from './NoteChips'
 import { NoteAssetArtwork } from './NoteAssetArtwork'
 import { NoteAssetView, NoteKeywordLabel, NoteGiftLabel, NoteMentionLabel, NoteVideo, fetchNoteAssets } from './NoteBlockViewer'
 import { tr } from '@/features/notes/lib/tr'
+import './note-blocks.css'
+import '@/components/ui/character-picker.css'
+import './note-asset-picker.css'
+import './note-editor.css'
 
 const pickTitle = (kind:BlockKind,lang:string)=>{const label=blockLabel(kind,lang);return tr(lang,`${label} 선택`,`${label}を選択`,`Choose ${kind==='ego'||kind==='youtube'?label:label.toLowerCase()}`)}
 function LegacyAssetPicker({kind,onSelect,onClose}:{kind:AssetKind;onSelect:(asset:NoteAssetData)=>void;onClose:()=>void}) {

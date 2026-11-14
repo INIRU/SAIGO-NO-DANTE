@@ -55,7 +55,7 @@ describe('new note blocks', () => {
 })
 
 describe('links look like links', () => {
-  const css = readFileSync('app/globals.css', 'utf8')
+  const css = ['features/notes/components/note-blocks.css', 'features/notes/components/note-editor.css'].map(path => readFileSync(path, 'utf8')).join('\n')
   it('styles links in the viewer and the editor with accent colour and underline', () => {
     expect(css).toMatch(/\.note-block-document a\[href\][^}]*text-decoration:\s*underline/)
     expect(css).toMatch(/\.note-document-content a[^}]*text-decoration:\s*underline/)

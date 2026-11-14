@@ -1,0 +1,43 @@
+/* Note table of contents (a rail beside the note where the container is wide, a collapsible bar where it is narrow) and the heading copy-link button. */
+.note-toc-frame{container-type:inline-size}
+/* The note keeps its reading width; with a contents rail the wrapper around it lets the frame use the whole row. */
+:is(.planner-detail-note,[data-note-wrap]):has(.note-toc-frame){max-width:none!important}
+.note-toc-layout{display:flex;flex-direction:column;gap:.75rem}
+.note-toc-body{min-width:0;max-width:52rem}
+.note-toc nav{display:grid;grid-template-rows:0fr;transition:grid-template-rows .22s ease}
+.note-toc nav>ol{min-height:0;overflow:hidden;margin:0;padding:0;list-style:none}
+.note-toc[data-open] nav{grid-template-rows:1fr}
+.note-toc-toggle{display:flex;width:100%;align-items:center;justify-content:space-between;min-height:2.75rem;padding:0 .875rem;border:1px solid var(--border);border-radius:.4rem;background:var(--bg-card);color:var(--text-primary);font-family:var(--font-heading);font-size:.9375rem}
+.note-toc-toggle svg{color:var(--gold);transition:transform .22s ease}
+.note-toc[data-open] .note-toc-toggle svg{transform:rotate(180deg)}
+.note-toc-title{display:none}
+.note-toc li{margin:0}
+.note-toc a{position:relative;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;padding:.375rem .75rem .375rem .875rem;color:var(--text-secondary);font-size:.875rem;line-height:1.45;text-decoration:none;overflow-wrap:anywhere;transition:color .15s ease}
+.note-toc li[data-level="2"] a{padding-left:1.625rem;font-size:.8125rem}
+.note-toc a[aria-current=location]{color:var(--gold-light)}
+.note-toc a::before{content:"";position:absolute;left:-1px;top:.375rem;bottom:.375rem;width:.125rem;border-radius:.0625rem;background:var(--gold);transform:scaleY(0);transition:transform .2s ease}
+.note-toc a[aria-current=location]::before{transform:scaleY(1)}
+@media (hover:hover){
+  .note-toc a:hover{color:var(--text-primary)}
+}
+.note-toc a:focus-visible,.note-toc-toggle:focus-visible,.note-heading-link:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
+/* Wide: the rail stands at the right edge of the row, below the site bar and the page's section tabs (3rem + hairline). */
+@container (min-width:72rem){
+  .note-toc-layout{display:grid;grid-template-columns:minmax(0,52rem) 15rem;justify-content:space-between;align-items:start;gap:3rem}
+  .note-toc{order:2;position:sticky;top:calc(var(--nav-height) + 4.5rem);max-height:calc(100dvh - var(--nav-offset) - 6rem);overflow:auto;overscroll-behavior:contain}
+  .note-toc-toggle{display:none}
+  .note-toc-title{display:block;margin:0 0 .5rem;color:var(--text-muted);font-family:var(--font-heading);font-size:.8125rem}
+  .note-toc nav{display:block}
+  .note-toc nav>ol{overflow:visible;border-left:1px solid var(--border)}
+}
+.note-heading-link{display:inline-grid;place-items:center;width:1.5rem;height:1.5rem;margin-left:.375rem;vertical-align:middle;border-radius:.25rem;color:var(--text-muted);opacity:0;transition:opacity .15s ease,color .15s ease}
+.note-heading:is(:hover,:focus-within) .note-heading-link,.note-heading-link:focus-visible{opacity:1}
+@media (hover:hover){
+  .note-heading-link:hover{color:var(--gold-light)}
+}
+@media (hover:none){
+  .note-heading-link{opacity:.7}
+}
+@media (prefers-reduced-motion:reduce){
+  .note-toc,.note-toc nav,.note-toc-toggle svg,.note-toc a,.note-toc a::before,.note-heading-link{transition:none}
+}

@@ -15,6 +15,7 @@ import { PREVIEW_DELAY_MS, PREVIEW_WIDTHS_REM, usesHover } from '@/features/note
 import { placePopoverIn, type PopoverPlacement } from '@/lib/utils/popover'
 import { NoteAssetArtwork } from './NoteAssetArtwork'
 import { tr } from '@/features/notes/lib/tr'
+import './note-preview-card.css'
 
 
 /** The card itself: art on the left, name and what it is on the right (a gift also says what it does). */

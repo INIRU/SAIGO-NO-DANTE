@@ -5,7 +5,8 @@ import { tiptapContentToMarkdown } from '@/features/notes/lib/document'
 import { NOTE_COLOR_SINS, NOTE_HIGHLIGHT_PERCENT, NOTE_SIN_MIX, NOTE_SIN_MIX_ON_HIGHLIGHT, isNoteColorSin } from '@/lib/notes/text-style'
 import { SIN_ORDER, getSinIconUrl } from '@/lib/constants/sin'
 
-const css = readFileSync('app/globals.css', 'utf8')
+// The tokens are in globals; the mark rules are in the note body sheet.
+const css = ['app/globals.css', 'features/notes/components/note-blocks.css'].map(path => readFileSync(path, 'utf8')).join('\n')
 const token = (name: string) => css.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})`))![1]
 const rgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16))
 const lin = (c: number) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }

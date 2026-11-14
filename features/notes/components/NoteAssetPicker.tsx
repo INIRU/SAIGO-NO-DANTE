@@ -17,6 +17,8 @@ import SkillDescription from '@/features/catalog/components/SkillDescription'
 import { assetName, type NoteAssetData, type NoteFormationMember } from '@/features/notes/lib/assets'
 import { NoteAssetArtwork } from './NoteAssetArtwork'
 import { fetchNoteAssets } from './NoteBlockViewer'
+import '@/components/ui/character-picker.css'
+import './note-asset-picker.css'
 
 const GRADE_ORDER = ['EX','5','4','3','2','1']
 function SkillPickerFrame({asset,lang}:{asset:NoteAssetData;lang:string}) {
