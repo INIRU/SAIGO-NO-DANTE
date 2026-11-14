@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import NotePreviewHost from '@/features/notes/components/NotePreviewCard'
 import { giftPreviewAsset } from '@/features/notes'
-import { getLocalizedName } from '@/lib/i18n/localize'
+import { localizeRowName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { GiftData } from '@/lib/planner/types'
 
@@ -30,7 +30,7 @@ interface Props {
 export default function CompanionClearBonus({ gifts, planned, owned, picks, label, iconSize = 36, compact = false }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
-  const localized = (gift: GiftData) => getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, locale)
+  const localized = (gift: GiftData) => localizeRowName(gift, locale)
   const wanted = gifts.filter(gift => planned.has(gift.game_id) && !owned.has(gift.game_id))
   const names = wanted.map(localized).join(', ')
   const advice = !wanted.length ? t('clearBonusNoPlan')

@@ -30,6 +30,7 @@ import type { DeckFilterIdentity } from '@/features/decks/components/DeckIdentit
 import { useLocale, useTranslations } from 'next-intl'
 import { showError } from '@/lib/toast'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
+import { useAutocompleteKeys } from '@/hooks/useAutocompleteKeys'
 
 const PAGE_SIZE = 12
 const THEME_KEYWORD_SET = new Set<string>(THEME_KEYWORDS)
@@ -262,24 +263,9 @@ export default function DecksClient({
   useEffect(() => { setAcIndex(suggestions.length > 0 ? 0 : -1) }, [suggestions.length])
 
   // ── Keyboard handler for autocomplete ──
-  const handleSearchKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowDown' && !showSuggestions && suggestions.length > 0) {
-      e.preventDefault()
-      setShowSuggestions(true)
-      return
-    }
-    if (!showSuggestions || suggestions.length === 0) {
-      if (e.key === 'Escape') setShowSuggestions(false)
-      return
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setAcIndex(prev => (prev + 1) % suggestions.length)
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setAcIndex(prev => (prev <= 0 ? suggestions.length - 1 : prev - 1))
-    } else if (e.key === 'Tab' && acIndex >= 0) {
-      e.preventDefault()
+  const handleSearchKeyDown = useAutocompleteKeys({
+    open: showSuggestions, count: suggestions.length, index: acIndex, setOpen: setShowSuggestions, setIndex: setAcIndex,
+    onPick: e => {
       const selected = suggestions[acIndex].label
       const { prefix } = getActiveTerm(inputValue)
       e.currentTarget.blur()
@@ -289,11 +275,8 @@ export default function DecksClient({
         setInputValue(prefix + selected);
         (e.target as HTMLInputElement).focus()
       }, 10)
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false)
-      setAcIndex(-1)
-    }
-  }, [showSuggestions, suggestions, acIndex, inputValue])
+    },
+  })
 
   // ── Outside click closes suggestions ──
   useEffect(() => {

@@ -8,7 +8,7 @@ import type { ThemeData, GiftData } from '@/lib/planner/types'
 import type { MdEvent } from '@/features/mirror-dungeon'
 import { floorRows, type FloorRow } from '@/features/planner/lib/run-floor-rows'
 import { getThemePackCompositeImageUrl, getThemePackVisualConfig } from '@/lib/data/theme-pack-visuals'
-import { getLocalizedName } from '@/lib/i18n/localize'
+import { localizeRowName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import GiftArtwork from '@/components/ui/GiftArtwork'
@@ -39,7 +39,7 @@ const ROW_GIFTS = 12
 export default function FloorLog({ state, dispatch, themes, giftMap, events, onChooseTheme, onAdvance }: Props) {
   const t = useTranslations('planner.run')
   const locale = useLocale() as SupportedLang
-  const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
+  const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => localizeRowName(item, locale)
   const rows = useMemo(() => floorRows(state), [state])
   const themeById = useMemo(() => new Map(themes.map(theme => [String(theme.id), theme])), [themes])
   const floor = state.currentFloor

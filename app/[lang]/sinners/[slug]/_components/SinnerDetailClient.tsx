@@ -13,7 +13,7 @@ import { Search, X, ArrowDown, ArrowUp } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
 
 const DROPDOWN_BUTTON_STYLE = { minHeight: '2.5rem', background: '#120e09', borderColor: '#2e2417', fontFamily: 'var(--font-body)', fontSize: '0.8125rem' }
-import { Sinner, Identity, EGO, STORAGE_BASE, SIN_COLORS, type SinType, GRADE_COLORS } from '@/lib/data/sinners'
+import { Sinner, Identity, EGO, RARITY_ICON_MAP, SIN_COLORS, type SinType, GRADE_COLORS } from '@/lib/data/sinners'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { useOwnedIdentities } from '@/features/catalog/hooks/useOwnedIdentities'
 import IdentityCard from '@/features/catalog/components/IdentityCard'
@@ -27,6 +27,7 @@ import styles from '@/styles/components/SinnerDetail.module.css'
 import SinnerHero from '@/features/catalog/components/SinnerHero'
 import AdSlot from '@/components/ads/AdSlot'
 import EgoDisplayCard from '@/features/catalog/components/EgoDisplayCard'
+import { useAutocompleteKeys } from '@/hooks/useAutocompleteKeys'
 
 interface Props {
   sinner: Sinner
@@ -180,33 +181,14 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
   }
 
   // 키보드 핸들러
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // ArrowDown으로 드롭다운 열기
-    if (e.key === 'ArrowDown' && !showAutocomplete && hasAutocompleteResults) {
-      e.preventDefault()
-      setShowAutocomplete(true)
-      return
-    }
-    if (!showAutocomplete || !hasAutocompleteResults) {
-      if (e.key === 'Escape') setShowAutocomplete(false)
-      return
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setAcIndex(prev => (prev + 1) % acItems.length)
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setAcIndex(prev => (prev <= 0 ? acItems.length - 1 : prev - 1))
-    } else if (e.key === 'Tab' && acIndex >= 0) {
-      e.preventDefault()
+  const handleSearchKeyDown = useAutocompleteKeys({
+    open: showAutocomplete, count: acItems.length, index: acIndex, setOpen: setShowAutocomplete, setIndex: setAcIndex,
+    onPick: e => {
       e.currentTarget.blur()
       executeAcItem(acItems[acIndex])
       setTimeout(() => (e.target as HTMLInputElement).focus(), 0)
-    } else if (e.key === 'Escape') {
-      setShowAutocomplete(false)
-      setAcIndex(-1)
-    }
-  }
+    },
+  })
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -432,9 +414,9 @@ export default function SinnerDetailClient({ sinner, identities, egos }: Props) 
                   <div className={styles.segment} role="group" aria-label={t('sinnerDetail.rarityFilter')}>
                     {[
                       { value: null, label: t('sinnerDetail.allFilter'), icon: null },
-                      { value: '1성', label: '1성', icon: `${STORAGE_BASE}/icons/Rarity/1star.webp` },
-                      { value: '2성', label: '2성', icon: `${STORAGE_BASE}/icons/Rarity/2star.webp` },
-                      { value: '3성', label: '3성', icon: `${STORAGE_BASE}/icons/Rarity/3star.webp` },
+                      { value: '1성', label: '1성', icon: RARITY_ICON_MAP[1] },
+                      { value: '2성', label: '2성', icon: RARITY_ICON_MAP[2] },
+                      { value: '3성', label: '3성', icon: RARITY_ICON_MAP[3] },
                     ].map(({ value, label, icon }, index) => (
                       <button
                         type="button"

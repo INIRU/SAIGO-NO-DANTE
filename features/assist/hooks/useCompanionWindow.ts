@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { readJson, writeJson } from '@/lib/utils/local-storage'
 
 interface DocumentPip {
   requestWindow(options: { width: number; height: number; disallowReturnToOpener?: boolean }): Promise<Window>
@@ -68,15 +69,14 @@ export function useCompanionWindow() {
   sizer.current ??= createCompanionSizer(size)
   const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(SIZE_KEY) ?? 'null') as CompanionSize | null
-      if (saved && Number.isFinite(saved.width) && Number.isFinite(saved.height)) {
-        const restored = clampCompanionSize(saved)
-        setSize(restored)
-        // The sizer is created with the default before storage is read; opening must use the stored size.
-        sizer.current!.setSize(restored)
-      }
-    } catch { /* use defaults when storage is unavailable */ }
+    // Defaults stay when storage is unavailable.
+    const saved = readJson(SIZE_KEY) as CompanionSize | null
+    if (saved && Number.isFinite(saved.width) && Number.isFinite(saved.height)) {
+      const restored = clampCompanionSize(saved)
+      setSize(restored)
+      // The sizer is created with the default before storage is read; opening must use the stored size.
+      sizer.current!.setSize(restored)
+    }
   }, [])
   useEffect(() => {
     mounted.current = true
@@ -118,7 +118,7 @@ export function useCompanionWindow() {
         setSize(manual)
         if (persistTimer.current) clearTimeout(persistTimer.current)
         persistTimer.current = setTimeout(() => {
-          try { localStorage.setItem(SIZE_KEY, JSON.stringify(manual)) } catch { /* the window keeps its size */ }
+          writeJson(SIZE_KEY, manual) // the window keeps its size when storage refuses
         }, 300)
       }
       setActualSize({ width: pip.innerWidth, height: pip.innerHeight })
@@ -141,7 +141,7 @@ export function useCompanionWindow() {
   const updateSize = (next: CompanionSize) => {
     const clamped = clampCompanionSize(next)
     setSize(clamped)
-    try { localStorage.setItem(SIZE_KEY, JSON.stringify(clamped)) } catch { /* the current window can still resize */ }
+    writeJson(SIZE_KEY, clamped) // the current window can still resize when storage refuses
     // Explicit commits resize immediately (even to an unchanged value after a manual drag), unless collapsed.
     sizer.current!.setSize(clamped, true)
   }

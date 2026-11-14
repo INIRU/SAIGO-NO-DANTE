@@ -2,6 +2,7 @@ import { deleteTempSlot, loadTempSlots, saveTempSlot, type TempSlot } from '@/li
 import { createInitialState, getIdentitySkillDistribution, normalizePlannerThemeId, normalizeSkillDistribution, type PlannerState, type Difficulty, type SkillDistribution, type IdentityData, type EgoData } from '@/lib/planner/types'
 import { getLegacyPlanFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'
 import type { RunState } from './run-types'
+import { readJson } from '@/lib/utils/local-storage'
 
 interface PlanData {
   v?: number              // payload version
@@ -254,14 +255,8 @@ export function saveDraftToLocal(state: PlannerState): boolean {
 }
 
 export function loadDraftFromLocal(): Partial<PlannerState> | null {
-  try {
-    const raw = localStorage.getItem(PLANNER_HANDOFF_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    return isPlannerState(parsed) ? parsed : null
-  } catch {
-    return null
-  }
+  const parsed = readJson(PLANNER_HANDOFF_KEY)
+  return isPlannerState(parsed) ? parsed : null
 }
 
 export function clearDraftFromLocal(): void {
@@ -336,9 +331,7 @@ const DIFF_LABELS: Record<string, string> = {
 
 export function loadRunDraft(): RunDraft | null {
   try {
-    const raw = localStorage.getItem(RUN_DRAFT_KEY)
-    if (!raw) return null
-    const parsed: unknown = JSON.parse(raw)
+    const parsed = readJson(RUN_DRAFT_KEY)
     if (!parsed || typeof parsed !== 'object' || !('state' in parsed)) return null
     const state = normalizeRunState(parsed.state)
     return {
@@ -367,7 +360,7 @@ export function saveRunToHistory(state: RunState): boolean {
 
 function loadRunHistory(): RunDraft[] {
   try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(RUN_HISTORY_KEY) ?? '[]')
+    const parsed = readJson(RUN_HISTORY_KEY) ?? []
     if (!Array.isArray(parsed)) return []
     return parsed.flatMap(entry => {
       if (!entry || typeof entry !== 'object' || !('state' in entry)) return []

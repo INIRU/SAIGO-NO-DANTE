@@ -1,3 +1,5 @@
+import { writeJson } from '@/lib/utils/local-storage'
+
 const KEY = 'limbus-recent-floor-gifts'
 const MAX = 12
 
@@ -19,6 +21,6 @@ export function loadRecentGifts(): string[] {
 /** Remembers a picked gift in this browser and returns the new list. */
 export function rememberGift(id: string): string[] {
   const next = pushRecentGift(loadRecentGifts(), id)
-  try { localStorage.setItem(KEY, JSON.stringify(next)) } catch { /* the list lives for this session only */ }
+  writeJson(KEY, next) // the list lives for this session only when storage refuses
   return next
 }

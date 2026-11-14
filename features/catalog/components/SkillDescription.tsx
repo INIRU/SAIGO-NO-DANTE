@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { STORAGE_BASE } from '@/lib/constants/game'
+import { getLockIconUrl } from '@/lib/utils/images'
 import { useFormatGameText, useFormatSkillDesc } from '@/components/providers/KeywordProvider'
 import { useTranslations } from 'next-intl'
 import CoinBadge from './CoinBadge'
@@ -72,7 +72,7 @@ export default function SkillDescription({
             {hasDiff && (
               <div className="flex items-start gap-1 mt-0.5" style={{ opacity: 0.35 }}>
                 {!prevDiff ? (
-                  <Image src={`${STORAGE_BASE}/icons/ui/lock.webp`} alt="" width={118} height={157} className="shrink-0" style={{ width: '0.5625rem', height: 'auto', marginTop: '0.125rem' }} />
+                  <Image src={getLockIconUrl()} alt="" width={118} height={157} className="shrink-0" style={{ width: '0.5625rem', height: 'auto', marginTop: '0.125rem' }} />
                 ) : (
                   <span className="shrink-0" style={{ width: '0.75rem' }} />
                 )}
@@ -82,7 +82,7 @@ export default function SkillDescription({
             {extraLines.map((eLine, ei) => (
               <div key={`g4-${ei}`} className="flex items-start gap-1 mt-0.5" style={{ opacity: 0.35 }}>
                 {ei === 0 && !hasDiff ? (
-                  <Image src={`${STORAGE_BASE}/icons/ui/lock.webp`} alt="" width={118} height={157} className="shrink-0" style={{ width: '0.5625rem', height: 'auto', marginTop: '0.125rem' }} />
+                  <Image src={getLockIconUrl()} alt="" width={118} height={157} className="shrink-0" style={{ width: '0.5625rem', height: 'auto', marginTop: '0.125rem' }} />
                 ) : (
                   <span className="shrink-0" style={{ width: '0.75rem' }} />
                 )}
@@ -118,7 +118,7 @@ export default function SkillDescription({
                       {hasDiff && (
                         <div className="flex items-start gap-1 mt-0.5" style={{ opacity: 0.35 }}>
                           {!prevDiff ? (
-                            <Image src={`${STORAGE_BASE}/icons/ui/lock.webp`} alt="" width={118} height={157} className="shrink-0" style={{ width: '0.5625rem', height: 'auto', marginTop: '0.125rem' }} />
+                            <Image src={getLockIconUrl()} alt="" width={118} height={157} className="shrink-0" style={{ width: '0.5625rem', height: 'auto', marginTop: '0.125rem' }} />
                           ) : (
                             <span className="shrink-0" style={{ width: '0.75rem' }} />
                           )}
@@ -147,7 +147,7 @@ export default function SkillDescription({
                     {hasDiff && (
                       <div className="flex items-start gap-1 mt-0.5" style={{ opacity: 0.35 }}>
                         {!prevDiff ? (
-                          <Image src={`${STORAGE_BASE}/icons/ui/lock.webp`} alt="" width={118} height={157} className="shrink-0" style={{ width: '0.5625rem', height: 'auto', marginTop: '0.125rem' }} />
+                          <Image src={getLockIconUrl()} alt="" width={118} height={157} className="shrink-0" style={{ width: '0.5625rem', height: 'auto', marginTop: '0.125rem' }} />
                         ) : (
                           <span className="shrink-0" style={{ width: '0.75rem' }} />
                         )}

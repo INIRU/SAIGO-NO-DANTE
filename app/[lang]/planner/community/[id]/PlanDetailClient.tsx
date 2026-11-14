@@ -59,6 +59,7 @@ import styles from './PlanDetailHeader.module.css'
 import { gameTextToPlain } from '@/lib/game-text/rich-text'
 import AdSlot from '@/components/ads/AdSlot'
 import { ADS_ON } from '@/lib/seo/ads'
+import EmptyState from '@/components/ui/EmptyState'
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 
@@ -178,14 +179,6 @@ function SubHead({ title, meta }: { title: string; meta: ReactNode }) {
       <h3 className="font-[family-name:var(--font-heading)] text-[1.0625rem] text-[var(--text-primary)]">{title}</h3>
       <span className="flex items-center gap-2 text-[0.875rem] tabular-nums text-[#9c8b73]">{meta}</span>
     </div>
-  )
-}
-
-function EmptyState({ text }: { text: string }) {
-  return (
-    <p className="border-l-2 border-[#2e2417] py-1 pl-3 text-[0.9375rem] leading-relaxed text-[var(--text-muted)]">
-      {text}
-    </p>
   )
 }
 

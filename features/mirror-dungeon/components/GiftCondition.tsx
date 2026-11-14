@@ -7,7 +7,7 @@ import { getLocalizedAffiliation } from '@/lib/i18n/localize'
 import { localizeGiftKeyword } from '@/lib/i18n/gift-keyword'
 import { getAffiliationIconUrl } from '@/lib/constants/affiliation-icons'
 import { getGiftKeywordIconUrl, getGiftKeywordSlug } from '@/lib/constants/gift'
-import { STORAGE_BASE } from '@/lib/constants/game'
+import { getLockIconUrl } from '@/lib/utils/images'
 import type { GiftConditionScope, GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import type { SupportedLang } from '@/lib/i18n/types'
 import styles from './GiftCondition.module.css'
@@ -61,8 +61,6 @@ export function GiftConditionLine({ status }: { status: GiftConditionStatus }) {
   return <span className={styles.line} data-level={status.level} title={text.title}>{status.scope === 'deployed' ? text.formation : text.withBench}{text.tier && ' · ' + text.tier}</span>
 }
 
-const LOCK_URL = `${STORAGE_BASE}/icons/ui/lock.webp`
-
 type PlateCondition = {
   type: string; keyword?: string; keywords?: string[]; affiliation?: string; affiliations?: string[]
   count?: number | null; tiers?: { count: number }[] | null; partial?: boolean
@@ -96,7 +94,7 @@ export function GiftConditionDivider({ text, condition, scope, status, children 
       <header className={styles.gateHead}>
         <i className={styles.rule} aria-hidden="true" />
         <span className={styles.gateTitle}>
-          <Image src={LOCK_URL} alt="" width={118} height={157} className={styles.lock} />
+          <Image src={getLockIconUrl()} alt="" width={118} height={157} className={styles.lock} />
           {icons.map(src => <Image key={src} src={src} alt="" width={24} height={24} className={styles.lockIcon} />)}
           <strong>{text}</strong>
         </span>
