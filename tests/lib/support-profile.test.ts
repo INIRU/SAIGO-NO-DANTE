@@ -1,6 +1,9 @@
-import { it, expect, vi } from 'vitest'
+import { beforeEach, it, expect, vi } from 'vitest'
 vi.mock('@/lib/data/legal', () => ({ getCurrentLegalDocs: async () => [] }))
-import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user'
+import { findOrCreateSupabaseUser, forgetSupabaseUser } from '@/lib/supabase/find-or-create-user'
+
+// The ids are remembered per email; each test starts without one.
+beforeEach(() => forgetSupabaseUser('qa@example.invalid'))
 
 function mockAdmin(existing: boolean) {
   const upsert = vi.fn().mockResolvedValue({ error: null })
