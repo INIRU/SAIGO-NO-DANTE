@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { createAdminClient } from '@/lib/supabase/admin'
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { requireAccount } from '@/lib/auth-account'
 
 type ProfileSuspensionRow = {
   suspended: boolean | null
@@ -21,21 +18,9 @@ function isSuspensionActive(profile: ProfileSuspensionRow | null, now = Date.now
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    const admin = createAdminClient()
-    const userId = await findOrCreateSupabaseUser(
-      admin,
-      session.user.email,
-      session.user.name,
-      session.user.image,
-    )
-    if (!userId) {
-      return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
-    }
+    const auth = await requireAccount()
+    if (auth.error) return auth.response
+    const { admin, userId } = auth
 
     const { data, error } = await admin
       .schema('limbus')

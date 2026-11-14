@@ -23,10 +23,8 @@ import { DECK_MAIN_KEYWORDS } from '@/lib/decks/keyword-rules'
 import DeckListFilters from '@/features/decks/components/DeckListFilters'
 import { BoardResults, BrowseBar } from '@/features/community/components/Browse'
 import type { RowPost } from '@/features/community/components/BoardParts'
-import {
-  type SearchSuggestion,
-} from '@/features/decks'
-import type { DeckFilterIdentity } from '@/features/decks/components/DeckIdentityFilterModal'
+import { QUERY_OPTIONS, parseCsvParam, serializeCsvParam, toDeckFilterIdentity, type SearchSuggestion } from '@/features/decks'
+import { useIdentityFilterOptions } from '@/features/decks/hooks/useIdentityFilterOptions'
 import { useLocale, useTranslations } from 'next-intl'
 import { showError } from '@/lib/toast'
 import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
@@ -35,34 +33,8 @@ import { useAutocompleteKeys } from '@/hooks/useAutocompleteKeys'
 const PAGE_SIZE = 12
 const THEME_KEYWORD_SET = new Set<string>(THEME_KEYWORDS)
 const PINNED_DECK_KEYWORDS = [...DECK_MAIN_KEYWORDS]
-const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
-const IDENTITY_FILTER_SELECT_WITH_SKILL_KEYWORDS = 'id, sinner_id, name_kr, name_en, name_jp, rarity, release_date, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
-const IDENTITY_FILTER_SELECT_LEGACY = 'id, sinner_id, name_kr, name_en, name_jp, rarity, release_date, keywords, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
 
 type SortKey = 'latest' | 'popular'
-type IdentityNameEntry = {
-  id: string
-  name: string
-  name_kr: string
-  name_en?: string | null
-  name_jp?: string | null
-  sinner_id: string
-  folder_name: string | null
-  game_id: string | null
-  rarity: number
-  release_date?: string | null
-  keywords: string[] | null
-  skill_keyword_list?: string[] | null
-  hp: number | null
-  speed_min: number | null
-  speed_max: number | null
-  def_level: number | null
-  sinner?: {
-    id: string
-    name_kr: string
-    order_num: number
-  } | { id: string; name_kr: string; order_num: number }[] | null
-}
 
 type DeckDerivedIndex = {
   egoIds: string[]
@@ -74,30 +46,6 @@ function buildDeckDerivedIndex(deck: DeckSummary): DeckDerivedIndex {
   return {
     egoIds: (deck.deck_egos ?? []).map(e => e.ego_id),
     formedIdentityIds: (deck.deck_identities ?? []).filter(slot => slot.slot_order < 99 && slot.identities?.id).map(slot => slot.identities!.id),
-  }
-}
-
-function toDeckFilterIdentity(identity: IdentityNameEntry): DeckFilterIdentity {
-  const sinner = Array.isArray(identity.sinner) ? identity.sinner[0] : identity.sinner
-  return {
-    id: identity.id,
-    sinner_id: identity.sinner_id,
-    name: identity.name_kr,
-    name_kr: identity.name_kr,
-    name_en: identity.name_en,
-    name_jp: identity.name_jp,
-    rarity: identity.rarity,
-    release_date: identity.release_date ?? undefined,
-    keywords: identity.keywords ?? [],
-    skill_keyword_list: identity.skill_keyword_list ?? [],
-    folder_name: identity.folder_name,
-    game_id: identity.game_id,
-    hp: identity.hp ?? 0,
-    speed_min: identity.speed_min ?? 0,
-    speed_max: identity.speed_max ?? 0,
-    def_level: identity.def_level ?? 0,
-    tier: 0,
-    sinner: sinner ?? null,
   }
 }
 
@@ -126,16 +74,6 @@ interface DecksClientProps {
 
 function normalizeSortKey(value: string): SortKey {
   return value === 'popular' ? 'popular' : 'latest'
-}
-
-function parseCsvParam(value: string) {
-  if (!value) return []
-  return value.split(',').map(item => item.trim()).filter(Boolean)
-}
-
-function serializeCsvParam(values: Iterable<string>) {
-  const serialized = [...values].filter(Boolean).join(',')
-  return serialized || null
 }
 
 function normalizeFormationCountParam(value: number | null) {
@@ -195,36 +133,7 @@ export default function DecksClient({
   const searchRef = useRef<HTMLDivElement>(null)
 
   // ── Identity autocomplete data ──
-  const [allIdentities, setAllIdentities] = useState<IdentityNameEntry[]>([])
-  useEffect(() => {
-    async function loadIdentities() {
-      try {
-        const { createClient: createBrowserClient } = await import('@/lib/supabase/client')
-        const supabase = createBrowserClient()
-        const buildQuery = (select: string) => supabase
-            .schema('limbus')
-            .from('identities')
-            .select(select)
-            .order('sinner_id')
-            .order('rarity', { ascending: false })
-            .order('name_kr')
-
-        let { data, error } = await buildQuery(IDENTITY_FILTER_SELECT_WITH_SKILL_KEYWORDS)
-        if (error && error.message.includes('skill_keyword_list')) {
-          const legacyResult = await buildQuery(IDENTITY_FILTER_SELECT_LEGACY)
-          data = legacyResult.data
-          error = legacyResult.error
-        }
-
-        if (error) throw error
-        if (data) setAllIdentities(data as unknown as IdentityNameEntry[])
-      } catch (error) {
-        console.error('인격 필터 데이터 로드 실패:', error)
-      }
-    }
-
-    loadIdentities()
-  }, [])
+  const { identities: allIdentities } = useIdentityFilterOptions()
 
   // ── Search suggestions ──
   const suggestions = useMemo((): SearchSuggestion[] => {
@@ -674,7 +583,7 @@ export default function DecksClient({
   const availableKeywords = deckDerived.availableKeywords
   const keywordCandidates = deckDerived.keywordCandidates
   const filterIdentities = useMemo(
-    () => allIdentities.map(toDeckFilterIdentity),
+    () => allIdentities.map(identity => toDeckFilterIdentity(identity)),
     [allIdentities],
   )
   const filterSinners = useMemo(() => {

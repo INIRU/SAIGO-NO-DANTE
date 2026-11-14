@@ -1,4 +1,5 @@
 import { notePlainText } from '@/lib/notes/blocks'
+import { parseCsvParam } from '../lib/filter-params'
 import { parseSearchQuery, type ParsedSearch } from '@/lib/utils/search'
 import { THEME_KEYWORDS, normalizeThemeKeyword } from '@/lib/constants/keywords'
 import {
@@ -117,14 +118,6 @@ export function parseDeckLangFilter(value: string | null): { value: DeckLangFilt
 
 export function parseDeckMutationLang(...values: unknown[]): DeckLang {
   return values.find(isDeckLang) ?? 'ko'
-}
-
-function parseCsvParam(value: string | null) {
-  if (!value) return []
-  return value
-    .split(',')
-    .map(item => item.trim())
-    .filter(Boolean)
 }
 
 function getParam(searchParams: URLSearchParams, primary: string, alias?: string) {

@@ -10,6 +10,7 @@ import QuietImage from '@/components/ui/QuietImage'
 import { useCutinAllies, useMotionCatalog } from '@/features/motion/hooks/useMotionCatalog'
 import { readMotionVoiceLinks, useSkillMotion } from '@/features/motion/hooks/useSkillMotion'
 import { defaultMotionState, findMotionSkill, isMotionEgo, toMotionParam as toParam, type MotionIdentity, type MotionSkill } from '@/features/motion/lib/catalog'
+import { QUERY_OPTIONS } from '@/features/decks'
 import { useRouter } from '@/lib/i18n/navigation'
 import { showError } from '@/lib/toast'
 import MotionScenarios from './MotionScenarios'
@@ -20,7 +21,6 @@ import AdSlot from '@/components/ads/AdSlot'
 import { MotionWatchSkeleton } from './SkillMotionSkeleton'
 
 const QUERY = { skill: parseAsString, state: parseAsString }
-const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
 const iconButton = 'hit-target inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[rgba(200,144,10,0.08)] hover:text-[var(--gold-light)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold-light)]'
 
 /** The address of what is on screen, condition included, for anyone to open. */
