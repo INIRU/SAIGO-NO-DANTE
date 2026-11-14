@@ -7,7 +7,7 @@ import FormationThumbnail from '@/features/decks/components/FormationThumbnail'
 import { refOf } from '@/features/tools/lib/random/roll'
 import type { RecentRoll } from '@/features/tools/lib/random/history'
 import type { Identity, Sinner } from '@/lib/types'
-import styles from './random.module.css'
+import styles from '@/features/tools/components/RandomClient.module.css'
 
 /** The last rolls of this browser as 6x2 portrait thumbnails (formation numbers first, like the board cards); click to bring one back. */
 export default function RecentRolls({ recent, sinners, identities, currentSeed, onRestore, onClear }: {

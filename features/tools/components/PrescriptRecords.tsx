@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import BackLink from '@/components/navigation/BackLink'
 import { HISTORY_KEY, historyTotals, readHistory, type PrescriptRunSummary } from '@/features/tools/lib/prescript-history'
-import styles from './prescript.module.css'
+import styles from '@/features/tools/components/PrescriptClient.module.css'
 
 /** My records: the dashboard over the finished runs of this browser, then each run, newest first. */
 export default function PrescriptRecords() {

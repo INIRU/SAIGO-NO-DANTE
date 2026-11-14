@@ -12,7 +12,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import type { Sinner, Identity } from '@/lib/types'
 import type { RandomResult } from '@/features/tools/lib/random/engine'
 import { EGO_GRADES, isRareEgo, isRareIdentity, revealRanks } from '@/features/tools/lib/random/display'
-import styles from './random.module.css'
+import styles from '@/features/tools/components/RandomClient.module.css'
 
 /**
  * The 12 sinners on the formation board grid, as identity cards or as E.G.O slots (same cell size, so switching tabs

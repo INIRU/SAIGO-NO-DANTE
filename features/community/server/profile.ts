@@ -1,7 +1,7 @@
 import "server-only";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { COMMUNITY_SETTING_KEYS, type CommunitySettings, type CommunityProfile } from "@/features/community/lib/rules";
-import { stripPlanForList } from "@/lib/planner/stripPlanForList";
+import { stripPlanForList } from "@/lib/planner/strip-plan-for-list";
 import { listUserSeries } from "@/features/community/server/series";
 export async function loadCommunityProfile(
   db: ReturnType<typeof createAdminClient>,

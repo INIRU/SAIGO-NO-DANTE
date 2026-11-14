@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user'
 import { INQUIRY_FIELDS, inquirySchema } from '@/lib/support'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 export async function GET() {

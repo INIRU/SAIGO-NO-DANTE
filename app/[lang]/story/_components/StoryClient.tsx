@@ -1,6 +1,6 @@
 'use client'
 
-import { useTurnedTouchScroll } from './landscape'
+import { useTurnedTouchScroll } from '@/features/story/hooks/useTurnedTouchScroll'
 import FullscreenGate from './FullscreenGate'
 import { useEffect, useRef, useState } from 'react'
 import { parseAsInteger, useQueryStates } from 'nuqs'
@@ -13,8 +13,8 @@ import { SIN_ICON_MAP } from '@/lib/constants/sin'
 import type { SinType } from '@/lib/types'
 import AttackTypeIcon, { type AttackTypeKey } from '@/components/ui/AttackTypeIcon'
 import StoryMap from './StoryMap'
-import { useStoryProgress } from './progress'
-import { isHiddenChapter } from './story-order'
+import { useStoryProgress } from '@/features/story/hooks/useStoryProgress'
+import { isHiddenChapter } from '@/features/story'
 import DungeonView from './DungeonView'
 
 type Lang = 'ko' | 'en' | 'ja'

@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { NextIntlClientProvider } from 'next-intl'
 import koMessages from '@/messages/ko.json'
 import enMessages from '@/messages/en.json'
-import { parseUnityColorTags, colorizeEventText, replaceEventPlaceholders } from '@/lib/utils/event-text'
+import { parseUnityColorTags, colorizeEventText, replaceEventPlaceholders } from '@/features/mirror-dungeon/lib/event-text'
 
 it('preserves original colors, nested italics and small or hidden source text', () => {
   const html = renderToStaticMarkup(<>{parseUnityColorTags('<color=#e30000>20 <i>피해</i></color=#e30000><size=75%>작게</size><size=0%>숨김</size>')}</>)

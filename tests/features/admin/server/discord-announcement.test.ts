@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { announcementDiscordMessages, sendAnnouncementToDiscord, type DiscordMessage } from '@/lib/discord/announcement'
+import { announcementDiscordMessages, sendAnnouncementToDiscord, type DiscordMessage } from '@/features/admin/server/discord-announcement'
 
 const text = (t: string, marks?: { type: string; attrs?: Record<string, unknown> }[]) => ({ type: 'text', text: t, marks })
 const doc = {

@@ -1,5 +1,3 @@
-'use client'
-
 import type { ReactNode } from 'react'
 import QuietImage from '@/components/ui/QuietImage'
 import { FlaskConical } from 'lucide-react'

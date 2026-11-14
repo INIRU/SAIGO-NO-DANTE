@@ -23,7 +23,7 @@ import { localizeIdentityName } from '@/features/decks/components/DeckIdentityCa
 import { getIdentityImageUrl, getSinnerLogoUrl, getSkillIconUrl } from '@/lib/utils/images'
 import { GRADE_COLORS, isDeployedSlot } from '@/lib/constants/game'
 import { SIN_COLORS, SIN_KR_TO_EN, getSinIconUrl, normalizeSin } from '@/lib/constants/sin'
-import { toggleFormationSlot } from '@/lib/planner/formation-toggle'
+import { toggleFormationSlot } from '@/features/planner/lib/formation-toggle'
 import { gameTextToPlain } from '@/lib/game-text/rich-text'
 
 type DeckSubTab = 'identity' | 'ego' | 'skillset'

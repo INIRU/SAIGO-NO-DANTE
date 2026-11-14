@@ -3,9 +3,8 @@ import { revalidateTag } from 'next/cache'
 import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { announcementText } from '@/lib/announcements'
-import { announcementSchema } from '@/lib/announcement-schema'
+import { announcementSchema, postAnnouncementToDiscord } from '@/features/admin/server'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import { postAnnouncementToDiscord } from '@/lib/discord/announcement'
 export async function GET() {
   const auth = await requireAdmin()
   if (auth.error) return auth.response

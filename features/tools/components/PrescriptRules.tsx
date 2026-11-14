@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import styles from './prescript.module.css'
+import styles from '@/features/tools/components/PrescriptClient.module.css'
 
 const SEEN_KEY = 'prescript-rules-seen'
 const ARTICLES = ['rule_connect', 'rule_start', 'rule_answer', 'rule_resist', 'rule_room', 'rule_penance', 'rule_judge', 'rule_break'] as const

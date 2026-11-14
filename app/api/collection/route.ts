@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { fetchCollectionData } from '@/lib/db/collection'
+import { fetchCollectionData } from '@/features/tools/server'
 import { CATALOG_CACHE_CONTROL } from '@/lib/constants/http-cache'
 
 /** The public collection catalog (my page's collection tab); the /collection page gets the same data from its server render. */

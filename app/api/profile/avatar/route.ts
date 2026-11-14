@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user'
 
 
 export async function GET() {

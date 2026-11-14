@@ -36,7 +36,7 @@
 | `YOUTUBE_CHANNEL_ID` | 홈의 최신 영상을 가져올 YouTube 채널 | 서버 전용 | `app/[lang]/(home)/page.tsx` |
 | `IP_HASH_SECRET` | 방문자 주소를 해시할 때 쓰는 비밀 값(방문 집계, 요청 횟수 제한). 없으면 `NEXTAUTH_SECRET`을 쓴다 | 서버 전용 | `lib/request-meta.ts`, `lib/rate-limit.ts` |
 | `REVALIDATION_SECRET` | 동기화와 스크립트가 캐시된 게임 데이터를 비울 때(`POST /api/revalidate`) 보내는 비밀 값. 추출 도구의 값과 같아야 한다 | 서버 전용 | `app/api/revalidate/route.ts` |
-| `DISCORD_ANNOUNCEMENT_WEBHOOK_URL` | 한국어 공지가 게시될 때 Discord로 보내는 웹훅 주소. 없으면 전송을 건너뛰고 관리자 화면에 실패를 알린다 | 서버 전용 | `lib/discord/announcement.ts`, `app/[lang]/admin/announcements/page.tsx` |
+| `DISCORD_ANNOUNCEMENT_WEBHOOK_URL` | 한국어 공지가 게시될 때 Discord로 보내는 웹훅 주소. 없으면 전송을 건너뛰고 관리자 화면에 실패를 알린다 | 서버 전용 | `features/admin/server/discord-announcement.ts`, `app/[lang]/admin/announcements/page.tsx` |
 
 ## 방문 통계(Cloudflare Web Analytics)
 
@@ -70,9 +70,9 @@
 
 | 이름 | 용도 | 노출 | 쓰는 곳 |
 |---|---|---|---|
-| `EDGE_CONFIG` | Edge Config 연결 문자열 | 서버 전용 | `lib/maintenance.ts`, `lib/maintenance-edge.ts` |
-| `VERCEL_API_TOKEN` | 점검 목록을 Edge Config에 올릴 Vercel 접근 토큰 | 서버 전용 | `lib/maintenance-edge.ts`, `app/api/admin/maintenance/route.ts` |
-| `VERCEL_TEAM_ID` | 위 토큰의 Vercel 팀 번호 | 서버 전용 | `lib/maintenance-edge.ts` |
+| `EDGE_CONFIG` | Edge Config 연결 문자열 | 서버 전용 | `lib/maintenance.ts`, `features/admin/server/maintenance-edge.ts` |
+| `VERCEL_API_TOKEN` | 점검 목록을 Edge Config에 올릴 Vercel 접근 토큰 | 서버 전용 | `features/admin/server/maintenance-edge.ts`, `app/api/admin/maintenance/route.ts` |
+| `VERCEL_TEAM_ID` | 위 토큰의 Vercel 팀 번호 | 서버 전용 | `features/admin/server/maintenance-edge.ts` |
 
 ## 오류 추적(Sentry, 선택)
 

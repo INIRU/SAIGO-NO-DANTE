@@ -1,6 +1,6 @@
 import { it, expect, vi } from 'vitest'
 vi.mock('@/lib/data/legal', () => ({ getCurrentLegalDocs: async () => [] }))
-import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
+import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user'
 
 function mockAdmin(existing: boolean) {
   const upsert = vi.fn().mockResolvedValue({ error: null })

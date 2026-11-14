@@ -12,10 +12,10 @@ import { ACTIVATION_ORDER, STOCK_MAX_TURNS, rateIdentityPassive, type PassiveAct
 import KeywordChart, { type KeywordChartContributor } from '@/features/planner/components/KeywordChart'
 import SkillDescription from '@/features/catalog/components/SkillDescription'
 import { PassiveNameLabel } from '@/features/catalog/components/PassiveParts'
-import { useWheelIntent } from '@/lib/hooks/useWheelIntent'
+import { useWheelIntent } from '@/hooks/useWheelIntent'
 import { localizeDeckKeyword } from '@/features/decks/lib/decks-types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { useOwnKeywordSets } from '@/lib/hooks/useOwnKeywords'
+import { useOwnKeywordSets } from '@/hooks/useOwnKeywords'
 import type { SupportedLang } from '@/lib/i18n/types'
 
 /** Name/description already localized by the caller. */

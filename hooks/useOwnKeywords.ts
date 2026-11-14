@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { mayBeRawGameText } from '@/lib/game-text/rich-text'
-import { useGameTextRefs } from '@/lib/hooks/useGameTextRefs'
+import { useGameTextRefs } from '@/hooks/useGameTextRefs'
 import { ownKeywordSet } from '@/lib/keywords/own-keywords'
 
 type Text = string | null | undefined

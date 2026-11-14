@@ -8,7 +8,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { getLocalizedKeywordName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
-import { useKeywordAutocomplete } from '@/hooks/useKeywordAutocomplete'
+import { useKeywordAutocomplete } from '@/features/catalog/hooks/useKeywordAutocomplete'
 import { filterStyles } from './FilterToggleGroup'
 
 type Props = {

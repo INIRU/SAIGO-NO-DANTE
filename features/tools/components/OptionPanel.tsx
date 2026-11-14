@@ -8,7 +8,7 @@ import { RARITY_ICON_MAP } from '@/lib/constants/game'
 import { MAX_DEPLOY, type KeywordCondition } from '@/features/tools/lib/random/engine'
 import Switch from '@/components/ui/Switch'
 import KeywordChips from './KeywordChips'
-import styles from './random.module.css'
+import styles from '@/features/tools/components/RandomClient.module.css'
 
 type Props = {
   identityEnabled: boolean

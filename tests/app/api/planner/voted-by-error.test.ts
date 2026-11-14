@@ -5,7 +5,7 @@ const state = vi.hoisted(() => ({ votesError: null as { message: string } | null
 
 vi.mock('next-auth', () => ({ getServerSession: async () => ({ user: { email: 'a@b.c' } }) }))
 vi.mock('@/lib/auth', () => ({ authOptions: {} }))
-vi.mock('@/lib/supabase/findOrCreateUser', () => ({ findOrCreateSupabaseUser: async () => 'user-1' }))
+vi.mock('@/lib/supabase/find-or-create-user', () => ({ findOrCreateSupabaseUser: async () => 'user-1' }))
 vi.mock('@/lib/push/send', () => ({ pushForPost: async () => {} }))
 vi.mock('@/lib/audit', () => ({ writeAuditLog: async () => {} }))
 vi.mock('@/features/community/server', () => ({ saveSeriesChoice: async () => null, withPostAuthors: async (rows: unknown[]) => rows }))

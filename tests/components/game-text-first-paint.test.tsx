@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { KeywordProvider, useFormatSkillDesc, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import { GameTextRefsProvider } from '@/components/providers/GameTextRefsProvider'
 import { compactGameTextRefNames } from '@/lib/game-text/ref-names-wire'
-import { usePlainGameText } from '@/lib/hooks/usePlainGameText'
+import { usePlainGameText } from '@/hooks/usePlainGameText'
 import type { GameTextRefNames } from '@/lib/db/game-text-refs'
 
 const REFS: GameTextRefNames = {
@@ -52,7 +52,7 @@ describe('the first paint already has the reference names', () => {
     // The client side of the lazy request flag: set once a text that may hold a ref was formatted in the browser.
     vi.stubGlobal('window', {})
     vi.resetModules()
-    const hook = await import('@/lib/hooks/useGameTextRefs')
+    const hook = await import('@/hooks/useGameTextRefs')
     hook.wantGameTextRefs()
     const { KeywordProvider: Keywords, useFormatSkillDesc: useFormat } = await import('@/components/providers/KeywordProvider')
     const { GameTextRefsProvider: Refs } = await import('@/components/providers/GameTextRefsProvider')

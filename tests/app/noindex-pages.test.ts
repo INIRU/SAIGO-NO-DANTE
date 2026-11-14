@@ -6,7 +6,7 @@ vi.mock('next/cache', async original => ({ ...(await original<typeof import('nex
 vi.mock('next-auth', () => ({ getServerSession: async () => null }))
 vi.mock('@/lib/auth', () => ({ authOptions: {} }))
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({}) }))
-vi.mock('@/lib/supabase/findOrCreateUser', () => ({ findOrCreateSupabaseUser: async () => null }))
+vi.mock('@/lib/supabase/find-or-create-user', () => ({ findOrCreateSupabaseUser: async () => null }))
 vi.mock('@/features/decks/server/builder-data', () => ({ fetchDeckBuilderData: async () => ({}) }))
 vi.mock('@/lib/data/legal', () => ({ getLegalDoc: async () => null }))
 vi.mock('@/lib/db/queries', () => ({ getLatestIdentities: async () => [] }))

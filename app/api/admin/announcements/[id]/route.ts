@@ -4,9 +4,8 @@ import { z } from 'zod'
 import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { announcementText } from '@/lib/announcements'
-import { announcementSchema } from '@/lib/announcement-schema'
+import { announcementSchema, postAnnouncementToDiscord } from '@/features/admin/server'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import { postAnnouncementToDiscord } from '@/lib/discord/announcement'
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },

@@ -18,7 +18,7 @@ import type {
 import {
   colorizeEventText,
   parseUnityColorTags,
-} from '@/lib/utils/event-text'
+} from '@/features/mirror-dungeon/lib/event-text'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { translations } from '@/lib/i18n/translations'

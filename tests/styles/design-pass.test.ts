@@ -60,7 +60,7 @@ describe('design pass', () => {
     const friends = narrow(read('app/[lang]/friends/_components/Friends.module.css'), '.primary')
     expect(friends).toMatch(/\.primary,\s*\.ghost\s*\{[^}]*height:\s*2\.75rem/)
     expect(friends).toMatch(/\.icon\s*\{[^}]*height:\s*2\.75rem/)
-    const random = narrow(read('features/tools/components/random.module.css'), '.toggle')
+    const random = narrow(read('features/tools/components/RandomClient.module.css'), '.toggle')
     expect(random).toMatch(/\.toggle\s*\{[^}]*min-height:\s*2\.75rem/)
     expect(random).toMatch(/\.tab\s*\{[^}]*min-height:\s*2\.75rem/)
     const catalog = read('features/mirror-dungeon/components/GiftCatalog.tsx')

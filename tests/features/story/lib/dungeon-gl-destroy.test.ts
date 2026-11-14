@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DungeonGL } from '@/app/[lang]/story/_components/dungeon-gl'
+import { DungeonGL } from '@/features/story/lib/dungeon-gl'
 
 // A fake WebGL2: every method answers with a truthy object, and the calls that make textures are counted.
 function fakeGl() {

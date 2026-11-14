@@ -6,9 +6,9 @@ import type { DungeonEvent, DungeonEventGift, StorySubchapter } from '@/lib/stor
 import GiftDetailModal from '@/features/mirror-dungeon/components/GiftDetailModal'
 import BaseModal from '@/components/ui/BaseModal'
 import { buttonClass } from '@/components/ui/Button'
-import { isTouch } from './landscape'
+import { isTouch } from '@/features/story/hooks/useTurnedTouchScroll'
 import { CheckChain, CheckStep, Choices, Outcome, ResultBox, Rich, SectionTitle } from './DungeonEventOutcome'
-import { GIFT_KEYWORD, L, giftArt, monitorText, nine, pickText, ui, type Ctx, type Lang, type Step } from './dungeon-event-flow'
+import { GIFT_KEYWORD, L, giftArt, monitorText, nine, pickText, ui, type Ctx, type Lang, type Step } from '@/features/story'
 
 /** The site's gift window for an event gift: the game's name and effect text. */
 export function EventGiftModal({ id, g, base, lang, onClose }: { id: string; g: DungeonEventGift; base: string; lang: Lang; onClose: () => void }) {

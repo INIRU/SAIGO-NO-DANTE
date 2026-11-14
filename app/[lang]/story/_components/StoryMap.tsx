@@ -1,6 +1,6 @@
 'use client'
 
-import { local } from './landscape'
+import { local } from '@/features/story/hooks/useTurnedTouchScroll'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { StoryNode, StorySubchapter } from '@/lib/story-map'
 import { STRIDE, VIEWPORT, clampCamera, visibleHeight, type Cam } from './story-camera'

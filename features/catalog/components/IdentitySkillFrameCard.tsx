@@ -6,7 +6,7 @@ import { skillLabel, skillSlot } from '@/lib/identity/skill-model'
 import { SIN_COLORS, SIN_KR_TO_EN } from '@/lib/constants/sin'
 import type { SinType, SkillCoin } from '@/lib/types'
 import { computeSkillImageIndices, getSkillIconUrl } from '@/lib/utils/images'
-import { useOwnKeywords } from '@/lib/hooks/useOwnKeywords'
+import { useOwnKeywords } from '@/hooks/useOwnKeywords'
 import { descriptionTexts } from '@/lib/keywords/own-keywords'
 import { useMemo, type CSSProperties } from 'react'
 

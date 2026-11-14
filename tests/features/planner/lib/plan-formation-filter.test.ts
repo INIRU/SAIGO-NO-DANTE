@@ -25,7 +25,7 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({}) }))
 vi.mock('next-auth', () => ({ getServerSession: async () => null }))
 vi.mock('@/lib/auth', () => ({ authOptions: {}, requireActiveUser: async () => ({ error: true }) }))
-vi.mock('@/lib/supabase/findOrCreateUser', () => ({ findOrCreateSupabaseUser: async () => null }))
+vi.mock('@/lib/supabase/find-or-create-user', () => ({ findOrCreateSupabaseUser: async () => null }))
 vi.mock('@/lib/rate-limit', () => ({ checkRequestRateLimit: () => ({ ok: true }), rateLimitResponse: () => null }))
 vi.mock('@/lib/audit', () => ({ writeAuditLog: async () => {} }))
 vi.mock('next/cache', () => ({ revalidateTag: () => {} }))

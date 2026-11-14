@@ -84,7 +84,7 @@ void main() {
   if (vGray > 0.5) o.rgb = vec3(dot(o.rgb, vec3(0.262, 0.678, 0.059)));
   if (uHasMask > 0.5 && texture(uMask, vMuv).a <= 0.001) discard;
 }`
-// Shader Graphs/FX_Grp_0_Master_Dissolve, as lib/story-fx/map-shaders.ts MASTER_DISSOLVE translates it from the
+// Shader Graphs/FX_Grp_0_Master_Dissolve, as features/story/lib/fx/map-shaders.ts MASTER_DISSOLVE translates it from the
 // game's DX11 code; a LineRenderer has no custom vertex streams (Custom1XY, StableRandomXY: 0). URP's transparent
 // Unlit output clamps alpha to 0..1 (OutputAlpha); blended SrcAlpha / OneMinusSrcAlpha.
 const FS_DISSOLVE = `#version 300 es

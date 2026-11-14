@@ -11,7 +11,7 @@ import { getLocalizedKeywordDesc } from '@/lib/i18n/localize'
 import { localizeDeckKeyword } from '@/features/decks'
 import { keywordAccentColor, resolveKeywordIconUrl, useKeywords } from '@/components/providers/KeywordProvider'
 import { PlaceholderText } from '@/components/ui/PlaceholderLabel'
-import { usePlainGameText } from '@/lib/hooks/usePlainGameText'
+import { usePlainGameText } from '@/hooks/usePlainGameText'
 
 export interface KeywordEntry {
   name: string

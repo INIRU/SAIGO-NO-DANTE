@@ -27,7 +27,7 @@ import { QUERY_OPTIONS, parseCsvParam, serializeCsvParam, toDeckFilterIdentity, 
 import { useIdentityFilterOptions } from '@/features/decks/hooks/useIdentityFilterOptions'
 import { useLocale, useTranslations } from 'next-intl'
 import { showError } from '@/lib/toast'
-import { useRoutePrefetch } from '@/lib/hooks/useRoutePrefetch'
+import { useRoutePrefetch } from '@/hooks/useRoutePrefetch'
 import { useAutocompleteKeys } from '@/hooks/useAutocompleteKeys'
 
 const PAGE_SIZE = 12

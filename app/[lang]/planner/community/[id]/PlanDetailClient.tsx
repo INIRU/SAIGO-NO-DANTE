@@ -32,7 +32,7 @@ import {
   type SkillSummary as PlannerSkillSummary, type ThemeData as PlannerThemeData,
 } from '@/lib/planner/types'
 import { buildGiftMap } from '@/lib/planner/fusion'
-import { computeDifficultySummary, planDifficultyBadge } from '@/lib/planner/stripPlanForList'
+import { computeDifficultySummary, planDifficultyBadge } from '@/lib/planner/strip-plan-for-list'
 import { getGiftActivationConditionStatus, getGiftConditionCountsForSlots, type GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { getSelectedBlessingCost, getSelectedBlessingLevels, normalizeBlessingMessages, observationCost, type Observation } from '@/features/planner'
 import { normalizeFloorPlanDifficulty } from '@/lib/planner/floor-difficulty'

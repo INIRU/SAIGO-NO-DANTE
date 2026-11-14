@@ -13,7 +13,7 @@ const REFS: GameTextRefNames = {
 vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key: string) => key }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: 'a' }))
 // A server render never loads the lazy table (the hook waits for a browser), so the loaded table is stood in directly.
-vi.mock('@/lib/hooks/useGameTextRefs', () => ({
+vi.mock('@/hooks/useGameTextRefs', () => ({
   useGameTextRefs: () => ({ names: REFS, refIds: new Set(Object.keys(REFS)) }),
   wantGameTextRefs: () => {},
   preloadGameTextRefDescriptions: () => {},

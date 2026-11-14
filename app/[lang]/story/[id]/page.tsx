@@ -6,7 +6,7 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { STORY_MAP_PAGE_BASE, getStoryIndex, getStorySubchapter, pickText } from '@/lib/story-map'
 import { Suspense } from 'react'
 import StoryClient, { StoryShell } from '../_components/StoryClient'
-import { chapterParts, isExtraPart, storyOrder } from '../_components/story-order'
+import { chapterParts, isExtraPart, storyOrder } from '@/features/story'
 
 type Lang = 'ko' | 'en' | 'ja'
 const langOf = (l: string): Lang => l === 'en' || l === 'ja' ? l : 'ko'

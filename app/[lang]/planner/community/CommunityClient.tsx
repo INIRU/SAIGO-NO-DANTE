@@ -24,7 +24,7 @@ import { decodeCollectionAsync, missingFormationCount, withBaseIdentities, type 
 import { useOwnedIdentities } from '@/features/catalog/hooks/useOwnedIdentities'
 import { parseSearchQuery, getActiveTerm, termMatchesAny } from '@/lib/utils/search'
 import { THEME_KEYWORDS } from '@/lib/constants/keywords'
-import { normalizePlannerListKeywords } from '@/lib/planner/stripPlanForList'
+import { normalizePlannerListKeywords } from '@/lib/planner/strip-plan-for-list'
 import { useLocale, useTranslations } from 'next-intl'
 import { QUERY_OPTIONS, localizeDeckKeyword, parseCsvParam, serializeCsvParam, toDeckFilterIdentity } from '@/features/decks'
 import { useIdentityFilterOptions } from '@/features/decks/hooks/useIdentityFilterOptions'

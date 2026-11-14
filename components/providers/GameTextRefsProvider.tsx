@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { GameTextRefsContext } from '@/lib/hooks/useGameTextRefs'
+import { GameTextRefsContext } from '@/hooks/useGameTextRefs'
 import { expandGameTextRefNames, type GameTextRefNamesWire } from '@/lib/game-text/ref-names-wire'
 
 /**

@@ -9,7 +9,7 @@ import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvi
 import { contentTypeMessageKey, localizeDeckKeyword } from '@/features/decks'
 import { CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 import { normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
-import { normalizePlannerListKeywords, planDifficultyBadge } from '@/lib/planner/stripPlanForList'
+import { normalizePlannerListKeywords, planDifficultyBadge } from '@/lib/planner/strip-plan-for-list'
 import { guestAuthorName } from '@/features/account'
 import { noteSummaryText } from '@/lib/notes/blocks'
 import type { DiscoveryKind } from '@/features/community/lib/recommend'

@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { isConfiguredFloor } from '@/lib/planner/stripPlanForList'
+import { isConfiguredFloor } from '@/lib/planner/strip-plan-for-list'
 
 import FloorConstraints from './FloorConstraints'
 import FloorGuidance from './FloorGuidance'
@@ -17,7 +17,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal'
 import { previousFloorGifts } from '@/features/planner/lib/floor-copy'
 import { showSuccess } from '@/lib/toast'
 import FinalGiftSection from './FinalGiftSection'
-import ThemePackStack from '@/components/ui/ThemePackStack'
+import ThemePackStack from '@/features/planner/components/ThemePackStack'
 import {
   ThemePackModalPill,
   ThemePackPickerModal,

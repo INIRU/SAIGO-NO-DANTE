@@ -1,6 +1,6 @@
 'use client'
 
-import { isTouch, local } from './landscape'
+import { isTouch, local } from '@/features/story/hooks/useTurnedTouchScroll'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { DungeonDoor, DungeonPart, DungeonRect, RGBA, StoryDungeon, StoryDungeonUI, StoryNode, StorySubchapter } from '@/lib/story-map'
 import { storageName } from '@/lib/storage-name'
@@ -8,7 +8,7 @@ import { SIN_ATTRIBUTE_CODES, SIN_ICON_MAP } from '@/lib/constants/sin'
 import { BackButton, StagePanel } from './StoryClient'
 import DungeonEventWindow from './DungeonEvent'
 import DungeonGifts from './DungeonGifts'
-import { DungeonGL, type Cam, type Item, type Slice } from './dungeon-gl'
+import { DungeonGL, type Cam, type Item, type Slice } from '@/features/story'
 
 type Lang = 'ko' | 'en' | 'ja'
 

@@ -23,7 +23,7 @@ vi.mock('@supabase/supabase-js', () => ({
 }))
 vi.mock('@/features/account/server/partner-data', () => ({ loadCatalog: m.loadCatalog, loadCatalogItem: m.loadCatalogItem, loadDeckDetail: m.loadDeckDetail, loadPlanDetail: m.loadPlanDetail }))
 vi.mock('@/lib/auth', () => ({ requireActiveUser: m.auth, adminEmails: () => [] }))
-vi.mock('@/lib/supabase/findOrCreateUser', () => ({ findOrCreateSupabaseUser: async () => 'user-1' }))
+vi.mock('@/lib/supabase/find-or-create-user', () => ({ findOrCreateSupabaseUser: async () => 'user-1' }))
 vi.mock('@/lib/rate-limit', () => ({ checkRequestRateLimit: () => ({ allowed: true }), rateLimitResponse: () => new Response(null, { status: 429 }) }))
 
 import { GET } from '@/app/api/v1/[resource]/route'

@@ -2,7 +2,7 @@ import { invalidateProfileDecks, loadCommunityProfile, communitySettingsSchema }
 import { NextResponse } from "next/server";
 import { requireActiveUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { findOrCreateSupabaseUser } from "@/lib/supabase/findOrCreateUser";
+import { findOrCreateSupabaseUser } from "@/lib/supabase/find-or-create-user";
 import { isAllowedRequestOrigin } from '@/lib/request-origin';
 const headers = { "Cache-Control": "private, no-store" };
 async function actor() {

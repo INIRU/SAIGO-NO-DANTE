@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import Image from 'next/image'
 import { eventCheckSins, groupEventChoices } from '@/features/mirror-dungeon/lib/event-flow'
-import { colorizeEventText } from '@/lib/utils/event-text'
+import { colorizeEventText } from '@/features/mirror-dungeon/lib/event-text'
 import { getRootEvents } from '@/lib/utils/event-catalog'
 import { Search, X, ArrowUpRight } from 'lucide-react'
 import styles from './EventTab.module.css'
