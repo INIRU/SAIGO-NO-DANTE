@@ -81,7 +81,8 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     return NextResponse.json(
       { error: "Visit unavailable" },
-      { status: e instanceof z.ZodError ? 400 : 503 },
+      // A body that is not JSON is the caller's mistake, like one that fails the schema.
+      { status: e instanceof z.ZodError || e instanceof SyntaxError ? 400 : 503 },
     );
   }
 }
