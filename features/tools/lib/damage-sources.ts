@@ -3,8 +3,10 @@
 
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { KeywordInfo } from '@/lib/keywords/catalog'
-import { MAX_MODIFIER_OPTIONS, type SavedModifier } from './damage'
-import { effectSummary, readAbilities, readGiftModifiers, type AbilityEffect, type GiftModifier, type KeywordAbility } from './damage-abilities'
+import { type SavedModifier } from './damage-types'
+import { MAX_MODIFIER_OPTIONS } from './damage'
+import { type AbilityEffect } from './damage-types'
+import { effectSummary, readAbilities, readGiftModifiers, type GiftModifier, type KeywordAbility } from './damage-abilities'
 
 // The first three are the attack types (physical resistance), the rest the sins.
 const ATTRIBUTES = ['참격', '관통', '타격', '분노', '색욕', '나태', '탐식', '우울', '오만', '질투']

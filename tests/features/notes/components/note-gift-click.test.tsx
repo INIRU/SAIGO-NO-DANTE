@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, it, vi } from 'vitest'
 import { KeywordProvider } from '@/components/providers/KeywordProvider'
-import { NoteRenderer } from '@/features/decks/components/NoteChips'
+import { NoteRenderer } from '@/features/notes/components/NoteChips'
 import { NoteGiftClickContext } from '@/features/notes/components/NoteBlockViewer'
 import { NOTE_PREFIX } from '@/lib/notes/blocks'
 

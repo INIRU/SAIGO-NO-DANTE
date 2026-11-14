@@ -5,7 +5,7 @@ import DeckInsights, { type DeckInsightIdentity } from '@/features/decks/compone
 vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key: string) => key }))
 vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
 vi.mock('@/components/providers/KeywordProvider', () => ({ useKeywordData: () => ({ keywords: {} }) }))
-vi.mock('@/features/planner/components/KeywordChart', () => ({ default: () => null }))
+vi.mock('@/components/ui/KeywordChart', () => ({ default: () => null }))
 vi.mock('@/features/catalog/components/SkillDescription', () => ({ default: () => null }))
 
 const identity = (sin_requirements: { sin: string; count: number }[]): DeckInsightIdentity => ({

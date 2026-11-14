@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import DeckResourceSummary from '@/features/decks/components/DeckResourceSummary'
-import type { DeckResources } from '@/features/decks/lib/deck-analysis'
+import type { DeckResources } from '@/lib/decks/deck-analysis'
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string, values?: { count?: number }) => values?.count === undefined ? key : `${key}:${values.count}` }))
 

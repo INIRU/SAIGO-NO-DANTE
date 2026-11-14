@@ -8,14 +8,15 @@ import { computeSkillImageIndices, getSkillIconUrl, getSinnerProfileUrl } from '
 import { toast } from 'sonner'
 import Dropdown from '@/components/ui/Dropdown'
 import BaseModal from '@/components/ui/BaseModal'
-import KeywordSidebar from '@/features/planner/components/KeywordSidebar'
+import KeywordSidebar from '@/components/ui/KeywordSidebar'
 import { GRADE_ROMAN, GRADE_COLORS, getKeywordSlug } from '@/lib/planner/gift-plan-constants'
 import SkillFrame from '@/features/catalog/components/SkillFrame'
 import { buildSkillVariantMap, selectIdentitySkills } from '@/lib/identity/skill-model'
 import { normalizeSin, SIN_COLORS } from '@/lib/constants/sin'
 import SkillDescription from '@/features/catalog/components/SkillDescription'
 import { assetName, type NoteAssetData, type NoteFormationMember } from '@/features/notes/lib/assets'
-import { fetchNoteAssets, NoteAssetArtwork } from './NoteBlockViewer'
+import { NoteAssetArtwork } from './NoteAssetArtwork'
+import { fetchNoteAssets } from './NoteBlockViewer'
 
 const GRADE_ORDER = ['EX','5','4','3','2','1']
 function SkillPickerFrame({asset,lang}:{asset:NoteAssetData;lang:string}) {

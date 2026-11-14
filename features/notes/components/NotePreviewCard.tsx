@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { createPortal } from 'react-dom'
 import { useLocale, useTranslations } from 'next-intl'
 import BaseModal from '@/components/ui/BaseModal'
-import IdentityFrameCard from '@/features/catalog/components/IdentityFrameCard'
+import IdentityFrameCard from '@/components/cards/IdentityFrameCard'
 import { EffectText } from '@/features/mirror-dungeon/components/GiftDetailModal'
 import { Link } from '@/lib/i18n/navigation'
 import Image from 'next/image'
@@ -13,7 +13,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import { assetName, type NoteAssetData } from '@/features/notes/lib/assets'
 import { PREVIEW_DELAY_MS, PREVIEW_WIDTHS_REM, usesHover } from '@/features/notes/lib/preview'
 import { placePopoverIn, type PopoverPlacement } from '@/lib/utils/popover'
-import { NoteAssetArtwork } from './NoteBlockViewer'
+import { NoteAssetArtwork } from './NoteAssetArtwork'
 import { tr } from '@/features/notes/lib/tr'
 
 

@@ -12,7 +12,7 @@ import {
   Passive,
   getIdentitySinColor,
 } from '@/lib/data/sinners'
-import IdentityDecksTab from '@/features/catalog/components/IdentityDecksTab'
+import IdentityDecksTab from '@/features/decks/components/IdentityDecksTab'
 import IdentityPortraitSection from '@/features/catalog/components/IdentityPortraitSection'
 import IdentityInfoCard from '@/features/catalog/components/IdentityInfoCard'
 import { useIdentitySkillModel } from '@/features/catalog/hooks/useIdentitySkillModel'

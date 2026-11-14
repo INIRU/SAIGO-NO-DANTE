@@ -3,7 +3,8 @@
 import { createContext, useContext, useSyncExternalStore } from 'react'
 import { useLocale } from 'next-intl'
 import useSWR, { preload } from 'swr'
-import type { GameTextRefDescriptions, GameTextRefFlavors, GameTextRefNames } from '@/lib/db/game-text-refs'
+import type { GameTextRefNames } from '@/lib/game-text/ref-names'
+import type { GameTextRefDescriptions, GameTextRefFlavors } from '@/lib/db/game-text-refs'
 import { flavorKeyOfKeyword } from '@/lib/game-text/flavor'
 
 const namesUrl = (locale: string) => `/api/game-text-refs/${locale}`

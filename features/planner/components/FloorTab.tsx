@@ -12,7 +12,7 @@ import { ChevronUp, Plus } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 import FloorGiftPickerModal from './FloorGiftPickerModal'
-import { useSuggestionState } from '@/features/community/hooks/useSuggestions'
+import { useSuggestionState } from '@/hooks/useSuggestions'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { previousFloorGifts } from '@/features/planner/lib/floor-copy'
 import { showSuccess } from '@/lib/toast'
@@ -39,7 +39,7 @@ import {
   buildEgoGiftPool,
   type AutocompleteSuggestion,
 } from '@/features/notes/components/NoteAutocomplete'
-import { NoteRenderer, type NoteEgoGiftEntry } from '@/features/decks/components/NoteChips'
+import { NoteRenderer, type NoteEgoGiftEntry } from '@/features/notes/components/NoteChips'
 import type { NoteFormationMember } from '@/features/notes'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'

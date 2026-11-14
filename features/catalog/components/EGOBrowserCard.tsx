@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import EgoDisplayCard from '@/features/catalog/components/EgoDisplayCard'
+import EgoDisplayCard from '@/components/cards/EgoDisplayCard'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { EGOBrowserItem } from '@/lib/types/browser'

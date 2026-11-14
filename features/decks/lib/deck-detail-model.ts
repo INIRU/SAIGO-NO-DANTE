@@ -4,10 +4,10 @@ import { normalizeSin } from '@/lib/constants/sin'
 import { computeSkillImageIndices, getIdentityPortraitUrl } from '@/lib/utils/images'
 import { skillSlot } from '@/lib/identity/skill-model'
 import type { Identity, Skill } from '@/lib/types'
-import type { IdentityDetail, IdentitySlot } from '@/features/decks/components/DeckIdentityCard'
-import type { NoteEgoEntry, NoteIdentityEntry, NotePassiveEntry, NoteSkillEntry } from '@/features/decks/components/NoteChips'
-import { localizeEgoName, localizeIdentityName, localizePassiveDescription, localizePassiveName, localizeSkillDescription, localizeSkillName } from './localize'
-import { topUptiePassives, topUptieSkills } from './deck-identity-uptie'
+import type { IdentityDetail, IdentitySlot } from '@/lib/decks/identity-types'
+import type { NoteEgoEntry, NoteIdentityEntry, NotePassiveEntry, NoteSkillEntry } from '@/features/notes/components/NoteChips'
+import { localizeEgoName, localizeIdentityName, localizePassiveDescription, localizePassiveName, localizeSkillDescription, localizeSkillName } from '@/lib/decks/localize'
+import { topUptiePassives, topUptieSkills } from '@/lib/decks/deck-identity-uptie'
 
 export type SinnerEgo = {
   sinner_id: string

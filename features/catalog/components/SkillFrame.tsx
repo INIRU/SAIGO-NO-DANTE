@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import GameSkillIcon from '@/features/catalog/components/GameSkillIcon'
+import GameSkillIcon from '@/components/ui/GameSkillIcon'
 
 interface SkillFrameProps {
   skillIconUrl: string

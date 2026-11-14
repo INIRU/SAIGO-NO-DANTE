@@ -5,7 +5,7 @@ vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }))
 vi.mock('next/image', () => ({ default: () => <span data-avatar /> }))
 vi.mock('@/components/ui/RelativeTime', () => ({ default: () => <time /> }))
 
-import CommentThread, { type ThreadItem } from '@/features/community/components/CommentThread'
+import CommentThread, { type ThreadItem } from '@/components/ui/CommentThread'
 
 const item = (id: string, parent_id: string | null, minute: number, name: string): ThreadItem =>
   ({ id, parent_id, created_at: `2026-10-20T10:0${minute}:00Z`, content: `text-${id}`, name, avatar: null })

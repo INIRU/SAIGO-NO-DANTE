@@ -5,13 +5,13 @@ vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key
 // eslint-disable-next-line @next/next/no-img-element
 vi.mock('next/image', () => ({ default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} /> }))
 vi.mock('@/components/ui/BaseModal', () => ({ default: ({ open, children }: { open: boolean; children: React.ReactNode }) => (open ? <div role="dialog">{children}</div> : null) }))
-vi.mock('@/features/catalog/components/IdentityFrameCard', () => ({ default: ({ name }: { name: string }) => <span data-identity="true">{name}</span> }))
-vi.mock('@/features/catalog/components/EgoDisplayCard', () => ({ default: ({ name }: { name: string }) => <span data-ego="true">{name}</span> }))
+vi.mock('@/components/cards/IdentityFrameCard', () => ({ default: ({ name }: { name: string }) => <span data-identity="true">{name}</span> }))
+vi.mock('@/components/cards/EgoDisplayCard', () => ({ default: ({ name }: { name: string }) => <span data-ego="true">{name}</span> }))
 vi.mock('@/components/providers/KeywordProvider', () => ({ useKeywords: () => ({}), useKeywordData: () => ({ getIconUrl: () => null }) }))
 vi.mock('@/lib/i18n/navigation', () => ({ Link: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a>, useRouter: () => ({}), usePathname: () => '/' }))
 
-import { PlannerEgoSelectModal, PlannerIdentitySelectModal } from '@/features/planner/components/PlannerDeckSelection'
-import type { Suggestion } from '@/features/community/lib/suggestion-types'
+import { PlannerEgoSelectModal, PlannerIdentitySelectModal } from '@/features/decks/components/PlannerDeckSelection'
+import type { Suggestion } from '@/lib/community/suggestion-types'
 
 const sinner = { id: 'faust', name_kr: '파우스트' }
 const identity = (id: string, name: string, sinner_id = 'faust') => ({ id, sinner_id, name_kr: name, rarity: 3, game_id: '10201', folder_name: name })

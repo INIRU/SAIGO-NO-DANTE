@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import CollectionSection from '@/features/account/components/CollectionSection'
+import CollectionSection from '@/features/tools/components/CollectionSection'
 
 // Design Ref: §5.5 — CollectionSection 래퍼
 type Props = {

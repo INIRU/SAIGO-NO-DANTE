@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider, type KeywordInfo } from '@/components/providers/KeywordProvider'
 import SkillDescription from '@/features/catalog/components/SkillDescription'
 import { UptieChangePanel } from '@/features/catalog/components/UptieChanges'
-import type { GameTextRefNames } from '@/lib/db/game-text-refs'
+import type { GameTextRefNames } from '@/lib/game-text/ref-names'
 
 const REFS: GameTextRefNames = {
   Combustion: { k: 'keyword', n: '화상', kw: '화상' },

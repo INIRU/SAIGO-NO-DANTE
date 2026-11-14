@@ -1,6 +1,6 @@
 'use client'
 
-import { maxObserved, observationCost, type Observation } from '@/features/planner/lib/observation'
+import { maxObserved, observationCost, type Observation } from '@/lib/planner/observation'
 
 
 import { getGameUiAsset } from '@/lib/utils/game-ui'

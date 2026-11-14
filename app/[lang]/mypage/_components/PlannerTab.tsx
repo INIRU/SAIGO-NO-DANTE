@@ -5,10 +5,11 @@ import { useLocale } from 'next-intl'
 import useSWR from 'swr'
 import { Heart, Map as MapIcon, Plus } from 'lucide-react'
 import { Link } from '@/lib/i18n/navigation'
-import PlanCard, { type PlanSummary } from '@/features/planner/components/PlanCard'
+import PlanCard, { type PlanSummary } from '@/components/cards/PlanCard'
 import Skeleton from '@/components/ui/Skeleton'
 import { getCommunityCopy } from '@/features/community'
 import styles from '@/styles/components/CommunityProfile.module.css'
+import { NoteCardPreview } from '@/features/notes/components/NoteChips'
 
 export default function PlannerTab() {
   const t = getCommunityCopy(useLocale())
@@ -39,7 +40,7 @@ export default function PlannerTab() {
           </Link>
         </div>
       ) : (
-        <ul className={styles.list}>{list.map(plan => <li key={plan.id} className={styles.item}><PlanCard plan={plan} /></li>)}</ul>
+        <ul className={styles.list}>{list.map(plan => <li key={plan.id} className={styles.item}><PlanCard plan={plan} NotePreview={NoteCardPreview} /></li>)}</ul>
       )}
     </>
   )

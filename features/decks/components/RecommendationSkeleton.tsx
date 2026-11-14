@@ -1,5 +1,5 @@
 import Skeleton, { SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
-import { CardSkeleton } from '@/features/community/components/BoardSkeleton'
+import { CardSkeleton } from '@/components/cards/CardSkeleton'
 
 /** Loading shape of a `RecommendationLane`: the heading and its count, then the post cards on the same grid. Server-safe. */
 export function RecommendationLaneSkeleton({ kind, count = 3 }: { kind: 'deck' | 'planner'; count?: number }) {

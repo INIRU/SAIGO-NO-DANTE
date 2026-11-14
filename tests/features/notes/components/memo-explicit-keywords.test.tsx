@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { KeywordProvider } from '@/components/providers/KeywordProvider'
-import { NoteRenderer } from '@/features/decks/components/NoteChips'
+import { NoteRenderer } from '@/features/notes/components/NoteChips'
 import { NOTE_PREFIX, notePreviewText } from '@/lib/notes/blocks'
 
 vi.mock('next-intl', () => ({ useLocale: () => 'ko', useTranslations: () => (key: string) => key }))

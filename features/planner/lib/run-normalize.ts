@@ -1,4 +1,4 @@
-import type { DeckChange, FloorLog, RunState } from './run-types'
+import type { DeckChange, FloorLog, RunState } from './run-model'
 import type { Difficulty, IdentitySlot, EgoSlot, PlannerState } from '@/lib/planner/types'
 import { DIFFICULTY_CONFIG, getIdentitySkillDistribution, normalizePlannerThemeId } from '@/lib/planner/types'
 import { getLegacyPlanFloorDifficulty, isAllowedFloorDifficulty, isFloorDifficulty } from '@/lib/planner/floor-difficulty'

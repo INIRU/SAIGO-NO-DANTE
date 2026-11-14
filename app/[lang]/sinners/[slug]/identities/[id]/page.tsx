@@ -14,7 +14,7 @@ const IdentityDetailClient = dynamic(() => import('@/app/[lang]/sinners/[slug]/i
 import JsonLd, { breadcrumbJsonLd, gameCharacterJsonLd } from '@/components/seo/JsonLd'
 import { getLocalizedName, getLocalizedKeywordName } from '@/lib/i18n/localize'
 import { getIdentityRecommendations } from '@/features/community/server'
-import IdentityRecommendations from '@/features/catalog/components/IdentityRecommendations'
+import IdentityRecommendations from '@/features/community/components/IdentityRecommendations'
 import { IdentityRecommendationsSkeleton } from '@/features/decks/components/RecommendationSkeleton'
 import { getKeywordData } from '@/lib/keywords/server-data'
 import type { KeywordInfo } from '@/lib/keywords/catalog'
