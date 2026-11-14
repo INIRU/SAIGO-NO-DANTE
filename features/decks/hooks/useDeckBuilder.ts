@@ -16,19 +16,21 @@ import {
   type DeckBuilderEgoSlots, type DeckBuilderSlots, type EditMode, type ForkMode,
 } from '../lib/deck-builder-model'
 
+// What the deck builder page reads beside the hooks (not exported by the entry file: that adds to every route's first JS).
+export { buildDeckInsightData, buildDeckSaveRows } from '../lib/deck-builder-model'
+export type { EditMode, ForkMode } from '../lib/deck-builder-model'
+
 type DecodedDeck = { deckSlots: DeckBuilderSlots; egoSlots: DeckBuilderEgoSlots; formationOrder: string[] }
 
 /**
- * The deck builder's editor state (slots, E.G.O, formation order, title, type, note, keywords, uptie and skill
- * distribution), what it derives (skills and passives at each uptie, keyword and gift counts, the draft) and the ways
- * a whole formation is applied (a draft, a plan, a deck code).
+ * The deck builder's editor state: slots, E.G.O, formation order, title, type, note, keywords, uptie and skill
+ * distribution, started from the edit, fork or ?formation= start. Called first, so the address clean-up runs before the
+ * page's other hooks; `useDeckBuilderModel` comes after them.
  */
-export function useDeckBuilder({ sinners, identities, egos, skills, passives, editMode, forkMode }: {
+export function useDeckBuilderState({ sinners, identities, egos, editMode, forkMode }: {
   sinners: Sinner[]
   identities: Identity[]
   egos: EGO[]
-  skills: Skill[]
-  passives: Passive[]
   editMode?: EditMode
   forkMode?: ForkMode
 }) {
@@ -63,6 +65,32 @@ export function useDeckBuilder({ sinners, identities, egos, skills, passives, ed
   const [gacksungSlots, setGacksungSlots] = useState<Record<string, boolean>>(initData?.gacksungSlots ?? {})
   const [upties, setUpties] = useState<Record<string, number>>(initData?.upties ?? {})
   const [skillDistribution, setSkillDistribution] = useState<Record<string, [number, number, number]>>(initData?.skillDistribution ?? {})
+
+  return {
+    withLcb, deckSlots, setDeckSlots, egoSlots, setEgoSlots, formationOrder, setFormationOrder, title, setTitle, contentType, setContentType,
+    description, setDescription, selectedMainKeywords, setSelectedMainKeywords, mainKeywordsManual, setMainKeywordsManual,
+    gacksungSlots, setGacksungSlots, upties, setUpties, skillDistribution, setSkillDistribution,
+  }
+}
+
+/**
+ * What the deck builder derives from its editor state (skills and passives at each uptie, keyword and gift counts,
+ * the draft) and the ways a whole formation is applied (a draft, a plan, a deck code). Its keyword clean-up runs after
+ * the page's own effects, as it did before the hook was split.
+ */
+export function useDeckBuilderModel({ sinners, identities, egos, skills, passives, state }: {
+  sinners: Sinner[]
+  identities: Identity[]
+  egos: EGO[]
+  skills: Skill[]
+  passives: Passive[]
+  state: ReturnType<typeof useDeckBuilderState>
+}) {
+  const {
+    withLcb, deckSlots, setDeckSlots, egoSlots, setEgoSlots, formationOrder, setFormationOrder, title, setTitle, contentType, setContentType,
+    description, setDescription, selectedMainKeywords, setSelectedMainKeywords, mainKeywordsManual, setMainKeywordsManual,
+    gacksungSlots, setGacksungSlots, upties, setUpties, skillDistribution, setSkillDistribution,
+  } = state
 
   // Skills/passives follow each slot's uptie (nearest level the data has).
   const identityUpties = useMemo(() => buildIdentityUpties(sinners, deckSlots, upties), [deckSlots, sinners, upties])
@@ -143,8 +171,6 @@ export function useDeckBuilder({ sinners, identities, egos, skills, passives, ed
   }
 
   return {
-    deckSlots, setDeckSlots, egoSlots, setEgoSlots, formationOrder, setFormationOrder, title, setTitle, contentType, setContentType,
-    description, setDescription, mainKeywordsManual, gacksungSlots, upties, setUpties, skillDistribution, setSkillDistribution,
     skillsByIdentityId, passivesByIdentityId, deckKeywordCounts, effectiveMainKeywords, formationGiftKeywordCounts, allGiftKeywordCounts,
     handleMainKeywordToggle, handleFormationToggle, identityCount, egoCount, skillsetCustomCount, draftState,
     applyDraft, applyImportedFormation, applyDecodedDeck,

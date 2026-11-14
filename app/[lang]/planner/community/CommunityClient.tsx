@@ -22,14 +22,14 @@ import { FilterChoice, FilterFieldHelp, FilterIconTile, FilterSection, FilterSin
 import { useBoardFacets } from '@/features/community/hooks/useBoardFacets'
 import { getActiveTerm } from '@/lib/utils/search'
 import { useLocale, useTranslations } from 'next-intl'
-import { QUERY_OPTIONS, buildDeckSuggestions, localizeDeckKeyword, parseCsvParam, serializeCsvParam } from '@/features/decks'
+import { QUERY_OPTIONS, localizeDeckKeyword, parseCsvParam, serializeCsvParam } from '@/features/decks'
+import { buildDeckSuggestions } from '@/features/decks/hooks/useIdentityFilterOptions'
 import { getIdentityInfoUrl } from '@/lib/utils/images'
 import type { SupportedLang } from '@/lib/i18n'
 import Sheet from '@/components/ui/Sheet'
 import { usePlanList } from '@/features/planner/hooks/usePlanList'
 import { usePlanCollectionFilter } from '@/features/planner/hooks/usePlanCollectionFilter'
-import { usePlanListFilters } from '@/features/planner/hooks/usePlanListFilters'
-import { PLAN_FILTER_KEYWORDS, PLAN_LIST_PAGE_SIZE as PAGE_SIZE, buildPlanFilterIndexes, filterPlanIndexes } from '@/features/planner'
+import { PLAN_FILTER_KEYWORDS, PLAN_LIST_PAGE_SIZE as PAGE_SIZE, buildPlanFilterIndexes, filterPlanIndexes, usePlanListFilters } from '@/features/planner/hooks/usePlanListFilters'
 import { useAutocompleteKeys } from '@/hooks/useAutocompleteKeys'
 
 type SortKey = 'latest' | 'popular'
@@ -157,7 +157,6 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
 
   const sentinelRef = useLoadMoreSentinel(loadMore, scrollRootRef, serverQueryKey)
 
-
   const {
     filterOwnedIdentity, filterOwnedEgo, hasCollection, collectionLoading, codeInput, codeError, effectiveOwned, changeCodeInput,
     applyCollectionCode, toggleFilterOwnedIdentity, toggleFilterOwnedEgo, clearCollectionFilters,
@@ -167,7 +166,6 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
     rootT(`sinner.${sinner.id}` as Parameters<typeof rootT>[0])
   ), [rootT])
 
-
   const planIndexes = useMemo(() => buildPlanFilterIndexes(plans, facetData?.identityAffiliations), [plans, facetData])
 
   // 클라이언트 필터
@@ -175,7 +173,6 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
     search: debouncedSearch, keywords: activeKeywordList, keywordMode, identityIds: selectedIdentityIdList, identityMode,
     filterOwnedIdentity, filterOwnedEgo, effectiveOwned, facets: facetSelections,
   }), [planIndexes, debouncedSearch, activeKeywordList, keywordMode, selectedIdentityIdList, identityMode, filterOwnedIdentity, filterOwnedEgo, effectiveOwned, affiliationQuery, egoQuery, giftQuery, themeQuery]) // eslint-disable-line react-hooks/exhaustive-deps
-
 
   const collectionFilterCount = (filterOwnedIdentity ? 1 : 0) + (filterOwnedEgo ? 1 : 0)
   const totalActiveCount = (inputValue.trim() ? 1 : 0) + (difficulty ? 1 : 0) + (formationCount !== null ? 1 : 0) + activeKeywords.size + selectedIdentityIds.size + collectionFilterCount + Object.values(facetSelections).reduce((sum, list) => sum + list.length, 0)

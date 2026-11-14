@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { IDENTITY_FILTER_SELECT_LEGACY, IDENTITY_FILTER_SELECT_WITH_SKILL_KEYWORDS, type IdentityNameEntry } from '../lib/filter-params'
 
+// What the deck and plan boards read beside the identity options (search suggestions, the sinner tiles, the formation count
+// parameter). The boards take them from here and not from the entry file: the entry is read by every route, and each
+// export added there adds to every route's first JS.
+export { buildDeckSuggestions, collectFilterSinners, normalizeFormationCountParam } from '../lib/deck-list'
+
 /** Every identity for the filter picker and the search suggestions, read in the browser. Throws when the read fails. */
 export async function loadIdentityFilterOptions(): Promise<IdentityNameEntry[]> {
   const { createClient: createBrowserClient } = await import('@/lib/supabase/client')
