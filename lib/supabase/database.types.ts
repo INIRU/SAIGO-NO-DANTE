@@ -3170,6 +3170,12 @@ export type Database = {
         }
         Returns: number
       }
+      auth_user_id_by_email: {
+        Args: {
+          p_email: string | null
+        }
+        Returns: string
+      }
       community_follows: {
         Args: {
           p_user: string | null

@@ -179,6 +179,39 @@ async function ensureUserProfile(admin: SupabaseClient<Database>, userId: string
   return !error
 }
 
+// Every signed-in request asks for its user; remembering the answer keeps those requests off the auth API.
+const KNOWN_USER_MS = 10 * 60 * 1000
+const knownUsers = new Map<string, { id: string; until: number }>()
+
+function remember(email: string, id: string): string {
+  const now = Date.now()
+  if (knownUsers.size >= 1000) for (const [key, entry] of knownUsers) if (entry.until <= now) knownUsers.delete(key)
+  knownUsers.set(email, { id, until: now + KNOWN_USER_MS })
+  return id
+}
+
+/** Drops a remembered id, e.g. after the account is deleted. */
+export function forgetSupabaseUser(email: string): void {
+  knownUsers.delete(email)
+}
+
+/** The auth user id for an email in one query; undefined when the lookup function is missing or the call fails. */
+async function lookUpUserId(admin: SupabaseClient<Database>, email: string): Promise<string | null | undefined> {
+  try {
+    const { data, error } = await admin.schema('limbus').rpc('auth_user_id_by_email', { p_email: email })
+    if (error) return undefined
+    return data ?? null
+  } catch {
+    return undefined
+  }
+}
+
+async function ensureExistingUserProfile(admin: SupabaseClient<Database>, userId: string): Promise<boolean> {
+  const { data, error } = await admin.schema('limbus').from('profiles').select('id').eq('id', userId).maybeSingle()
+  if (!error && data) return true
+  return ensureUserProfile(admin, userId, await generateSafeUsername(admin))
+}
+
 // next-auth 유저를 Supabase auth에 find-or-create
 export async function findOrCreateSupabaseUser(
   admin: SupabaseClient<Database>,
@@ -186,6 +219,12 @@ export async function findOrCreateSupabaseUser(
   _name?: string | null,
   _avatarUrl?: string | null,
 ): Promise<string | null> {
+  const known = knownUsers.get(email)
+  if (known && known.until > Date.now()) return known.id
+
+  const foundId = await lookUpUserId(admin, email)
+  if (foundId && await ensureExistingUserProfile(admin, foundId)) return remember(email, foundId)
+
   for (let attempt = 0; attempt < CREATE_USER_ATTEMPTS; attempt++) {
     const userName = await generateSafeUsername(admin)
     const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -199,12 +238,13 @@ export async function findOrCreateSupabaseUser(
     if (!createError) {
       if (!await ensureUserProfile(admin, created.user.id, userName)) continue
       await seedCurrentLegalAcknowledgements(admin, created.user.id)
-      return created.user.id
+      return remember(email, created.user.id)
     }
 
-    // 이미 존재하는 경우 페이지네이션으로 이메일 검색 (listUsers는 email 필터 미지원)
-    const existingUserId = await findExistingUserIdByEmail(admin, email)
-    if (existingUserId && await ensureUserProfile(admin, existingUserId, userName)) return existingUserId
+    // Another request may have created the user first. Listing every user is the fallback for a database without the lookup.
+    const lookedUp = await lookUpUserId(admin, email)
+    const existingUserId = lookedUp === undefined ? await findExistingUserIdByEmail(admin, email) : lookedUp
+    if (existingUserId && await ensureUserProfile(admin, existingUserId, userName)) return remember(email, existingUserId)
   }
 
   return null

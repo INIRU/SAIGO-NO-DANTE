@@ -99,6 +99,8 @@ DB 백업(`2026-03-23/identities.json`, 저장소 밖 `limbus-db-backups/`에 �
 
 활동 기록 쓰기와 집계 RPC는 service_role 전용이다. 프로필의 공개 컬럼만 직접 조회할 수 있으며 관리자 권한·이메일 등은 제외한다. 기존 DB의 다른 테이블에 남은 RLS 경고를 해결한 것은 아니다. 계정 삭제 API(`DELETE /api/profile`)가 부르는 `delete_user_account`는 `supabase/migrations/20261115020000_delete_user_account.sql`로 만든다(service_role 전용). 사용자의 덱·플랜·덱 댓글·문의를 지우고, 삭제를 막는 연결(문의 메시지 작성자, 문의 답변자, 감사 기록 행위자)을 비운 뒤 프로필을 지운다. 나머지 사용자 행은 프로필과 함께 지워진다. 검사는 `tests/sql/account-delete.sql`.
 
+로그인한 요청의 계정 id는 `limbus.auth_user_id_by_email`(`supabase/migrations/20261115030000_auth_user_id_by_email.sql`, service_role 전용)로 메일에서 한 번에 찾고 서버 메모리에 10분 기억한다(`lib/supabase/find-or-create-user.ts`). 함수가 없으면 예전처럼 생성 시도 뒤 사용자 목록을 넘긴다. 메일은 대소문자를 무시해 비교하므로 `auth.users`의 메일 인덱스를 쓰지 않는다. 사용자가 크게 늘면 다시 본다. 검사는 `tests/sql/auth-user-id-by-email.sql`.
+
 ## 월간 광기 계획
 
 광기 계획은 계정 DB 대신 브라우저 쿠키 `limbus_lunacy_v1`에 시작 월별로 저장한다. 압축한 값은 3,800자 이내로 제한하고 1년, SameSite=Lax, HTTPS에서는 Secure를 적용한다. 저장 실패 시 기존 쿠키를 보존하고 오류를 표시한다. 이전 localStorage 계획은 해당 기간을 열 때 검증 후 쿠키로 이전하며 원래 기록은 보존한다. 시작 월과 다음 월의 날짜별 구매·거던·기타 보상, 월초 무료/유료 잔액, 월정액 잔여 일수를 보관한다. 이전 계획의 초회 사용 여부와 다른 상품 구매는 호환성을 위해 복원한다. 서로 다른 기간은 독립된 시나리오다. `planSchema`로 복원 데이터를 검증한다.
