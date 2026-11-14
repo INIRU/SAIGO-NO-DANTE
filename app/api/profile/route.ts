@@ -1,9 +1,9 @@
 import { invalidateProfileDecks } from '@/features/community/server'
 import * as Sentry from '@sentry/nextjs'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { authOptions, requireActiveUser } from '@/lib/auth'
+import { requireActiveUser } from '@/lib/auth'
+import { requireAccount } from '@/lib/auth-account'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { z } from 'zod'
@@ -23,21 +23,9 @@ const patchSchema = z.object({
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    const admin = createAdminClient()
-    const userId = await findOrCreateSupabaseUser(
-      admin,
-      session.user.email,
-      session.user.name,
-      session.user.image,
-    )
-    if (!userId) {
-      return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
-    }
+    const auth = await requireAccount()
+    if (auth.error) return auth.response
+    const { session, admin, userId } = auth
 
     const [profileRes, decksRes, bookmarksRes, planCountRes, planVoteSumRes] = await Promise.all([
       admin
@@ -186,20 +174,9 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE() {
   try {
-    const auth = await requireActiveUser()
+    const auth = await requireAccount({ activeOnly: true })
     if (auth.error) return auth.response
-    const { session } = auth
-
-    const admin = createAdminClient()
-    const userId = await findOrCreateSupabaseUser(
-      admin,
-      session.user.email!,
-      session.user.name,
-      session.user.image,
-    )
-    if (!userId) {
-      return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
-    }
+    const { admin, userId } = auth
 
     // Delete app data atomically
     const { error: deleteDataError } = await admin

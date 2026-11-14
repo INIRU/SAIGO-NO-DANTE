@@ -8,7 +8,7 @@ import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { fetchDeckBuilderData } from '@/features/decks/server'
 import type { SupportedLang } from '@/lib/i18n/types'
 import EditWrapper from './EditWrapper'
-import { normalizeUptie } from '@/features/decks'
+import { buildEditMode } from '@/features/decks'
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
@@ -82,43 +82,9 @@ export default async function EditDeckPage({ params }: { params: Promise<{ lang:
     redirect(`/decks/${id}`)
   }
 
-  // editMode 데이터 구성
-  const identitySlotIds: Record<string, string> = {}
-  const gacksungSlots: Record<string, boolean> = {}
-  const upties: Record<string, number> = {}
-  const slotOrders: Record<string, number> = {}
-
-  const skillDistribution: Record<string, [number, number, number]> = {}
-
-  for (const di of deck.deck_identities) {
-    const identity = identities.find(i => i.id === di.identity_id)
-    if (!identity) continue
-    identitySlotIds[identity.sinner_id] = identity.id
-    if (di.gacksung) gacksungSlots[identity.sinner_id] = true
-    upties[identity.sinner_id] = normalizeUptie(di.uptie)
-    slotOrders[identity.sinner_id] = di.slot_order
-    const s1 = di.s1_count ?? 3
-    const s2 = di.s2_count ?? 2
-    const s3 = di.s3_count ?? 1
-    if (s1 !== 3 || s2 !== 2 || s3 !== 1) {
-      skillDistribution[identity.sinner_id] = [s1, s2, s3]
-    }
-  }
-
-  // formationOrder: slot_order !== 99인 것만 순서대로
-  const formationOrder = Object.entries(slotOrders)
-    .filter(([, order]) => order !== 99)
-    .sort(([, a], [, b]) => a - b)
-    .map(([sinnerId]) => sinnerId)
-
-  // egoSlotIds: sinnerId → grade → egoId
-  const egoSlotIds: Record<string, Record<string, string>> = {}
-  for (const de of deck.deck_egos) {
-    const ego = egos.find(e => e.id === de.ego_id)
-    if (!ego) continue
-    if (!egoSlotIds[ego.sinner_id]) egoSlotIds[ego.sinner_id] = {}
-    egoSlotIds[ego.sinner_id][de.grade] = ego.id
-  }
+  const { identitySlotIds, gacksungSlots, upties, skillDistribution, formationOrder, egoSlotIds } = buildEditMode({
+    deckIdentities: deck.deck_identities, deckEgos: deck.deck_egos, identities, egos,
+  })
 
   return (
     <EditWrapper
