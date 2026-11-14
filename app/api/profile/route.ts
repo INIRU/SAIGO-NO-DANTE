@@ -187,11 +187,10 @@ export async function DELETE() {
     if (auth.error) return auth.response
     const { admin, userId } = auth
 
-    // Delete app data atomically. The connected database has no such function (docs/reference/data-model.md), so it is
-    // not in the generated types; the call is kept as it was.
+    // delete_user_account deletes the app data in one transaction.
     const { error: deleteDataError } = await admin
       .schema('limbus')
-      .rpc('delete_user_account' as never, { p_user_id: userId } as never)
+      .rpc('delete_user_account', { p_user_id: userId })
 
     if (deleteDataError) {
       console.error('[api/profile]', deleteDataError)
