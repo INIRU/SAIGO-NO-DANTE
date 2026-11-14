@@ -24,7 +24,7 @@ async function ownThread({ params }: Params) {
     .maybeSingle()
   if (error) return { response: NextResponse.json({ error: '문의를 불러오지 못했습니다.' }, { status: 500 }) }
   if (!data) return { response: NextResponse.json({ error: '문의를 찾을 수 없습니다.' }, { status: 404 }) }
-  return { auth, db, userId, thread: data as unknown as Inquiry }
+  return { auth, db, userId, thread: data as Inquiry }
 }
 /** Reading the thread marks every admin answer in it as seen. */
 export async function GET(_request: Request, ctx: Params) {

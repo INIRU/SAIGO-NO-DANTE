@@ -5,6 +5,7 @@ import { saveSeriesChoice, withPostAuthors } from '@/features/community/server'
 import { authorColumns, authorRateKey, guestPinOf, recordGuestAuthorship, resolveAuthor } from '@/features/account/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { toJson } from '@/lib/supabase/json'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/find-or-create-user'
@@ -384,7 +385,8 @@ export async function POST(req: NextRequest) {
     })
     if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
 
-    const body = await req.json()
+    const body = await req.json().catch(() => null)
+    if (body === null) return NextResponse.json({ error: '요청 형식이 올바르지 않습니다.' }, { status: 400 })
     const { title, description, difficulty, deck, egos, floor_plan, gift_inventory, tags } = body
     // A guest's password for the plan; screens from before it existed send none.
     const pin = author.kind === 'guest' ? guestPinOf(body?.pin) : null
@@ -405,8 +407,8 @@ export async function POST(req: NextRequest) {
         difficulty: planDifficulty,
         deck: deck ?? [],
         egos: egos ?? [],
-        floor_plan: normalizedFloorPlan,
-        gift_inventory: gift_inventory ?? [],
+        floor_plan: toJson(normalizedFloorPlan),
+        gift_inventory: toJson(gift_inventory ?? []),
         tags: tags ?? [],
         lang,
       })
@@ -422,7 +424,9 @@ export async function POST(req: NextRequest) {
       ? await admin.schema('limbus').rpc('community_record_plan', { p_plan_id: data.id, p_user_id: userId })
       : { error: await recordGuestAuthorship(admin, author, 'plan', data.id, pin) }
     if (activityError) {
-      await admin.schema('limbus').from('md_plans').delete().eq('id', data.id)
+      // The answer stays the same; a delete that fails leaves a plan without its activity record, so it is logged.
+      const { error: rollbackError } = await admin.schema('limbus').from('md_plans').delete().eq('id', data.id)
+      if (rollbackError) console.error('[planner] rollback failed:', data.id, rollbackError.message)
       return NextResponse.json({ error: '플랜을 저장하지 못했습니다. 다시 시도해주세요.' }, { status: 500 })
     }
 

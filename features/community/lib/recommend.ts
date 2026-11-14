@@ -8,12 +8,12 @@ export const DISCOVERY_COLUMNS: Record<DiscoveryKind, string> = {
   deck: 'id,user_id,guest_tag,profiles!decks_user_id_fkey(username,avatar_url,public_profile),title,description,tags,main_keywords,content_type,lang,created_at,updated_at,vote_count,view_count,comment_count,deck_identities(slot_order,identities(id,sinner_id,folder_name,game_id,name_kr))',
   planner: 'id,user_id,guest_tag,profiles:user_id(username,avatar_url,public_profile),title,description,lang,difficulty,deck,egos,floor_plan,gift_inventory,tags,created_at,updated_at,vote_count,view_count,comment_count',
 }
-export const DISCOVERY_TABLE: Record<DiscoveryKind, string> = { deck: 'decks', planner: 'md_plans' }
+export const DISCOVERY_TABLE: Record<DiscoveryKind, 'decks' | 'md_plans'> = { deck: 'decks', planner: 'md_plans' }
 
 export function formatDiscoveryPosts(kind: DiscoveryKind, rows: unknown[]) {
   return rows.map(raw => {
     const row = raw as Record<string, unknown>
-    if (kind === 'planner') return stripPlanForList(row) as unknown as Record<string, unknown>
+    if (kind === 'planner') return stripPlanForList(row) as Record<string, unknown>
     const profile = (Array.isArray(row.profiles) ? row.profiles[0] : row.profiles) as { username?: string | null; avatar_url?: string | null; public_profile?: boolean } | null
     // Cards show the description as one line: send that line, not the whole note document.
     const description = typeof row.description === 'string' ? { description: notePreviewText(row.description) } : {}
@@ -59,7 +59,7 @@ export function recommend<T extends { id: string }>(
 ): T[] {
   const unseen = new Map(candidates.filter(c => !seenIds.has(c.id)).map(c => [c.id, c]))
   const score = (post: T) => {
-    const features = postFeatures(post as unknown as Record<string, unknown>)
+    const features = postFeatures(post as Record<string, unknown>)
     let total = 0
     for (const key of KEYS)
       for (const value of features[key]) total += WEIGHT[key] * (profile.get(key + ':' + value) ?? 0)

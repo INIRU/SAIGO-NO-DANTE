@@ -30,12 +30,13 @@ async function handle(request: Request) {
   try {
     const db = createAdminClient();
     const user = auth.session.user;
-    const userId = await findOrCreateSupabaseUser(
+    // Never checked for null here, as before: a null id would query with a null user_id.
+    const userId = (await findOrCreateSupabaseUser(
       db,
       user.email!,
       user.name,
       user.image,
-    );
+    )) as string;
     if (request.method === "GET") {
       const { data, error } = await db
         .schema("limbus")
@@ -60,7 +61,7 @@ async function handle(request: Request) {
     }
     const body = await request.json();
     if (request.method === "DELETE") {
-      const id = z.string().uuid().parse(body.id);
+      const id = z.string().uuid().parse(body?.id);
       const { error } = await db
         .schema("limbus")
         .from("developer_keys")
@@ -70,7 +71,7 @@ async function handle(request: Request) {
       if (error) throw error;
       return NextResponse.json({ ok: true }, { headers });
     }
-    const name = z.string().trim().min(1).max(60).parse(body.name);
+    const name = z.string().trim().min(1).max(60).parse(body?.name);
     const { key, ...secret } = createApiKey();
     const { error } = await db
       .schema("limbus")

@@ -179,7 +179,7 @@ export async function loadMotionSkill(skillId: number, lang: SupportedLang): Pro
   const { data, error } = await db.schema('limbus').from('skills').select(SKILL_COLUMNS).in('image_id', [String(skillId), `${skillId}_4`])
   if (error) throw error
   type Row = MotionSkillRow & { name_en: string | null; name_jp: string | null; description_en: string | null; description_jp: string | null; identity: MotionSkillRow['identity'] | MotionSkillRow['identity'][] }
-  let row = pickMotionSkillRow(ownSkillRows((data ?? []) as unknown as Row[], skillId))
+  let row = pickMotionSkillRow(ownSkillRows((data ?? []) as Row[], skillId))
   if (!row) {
     // Saved under another identity's sprite id: the identity's one borrowed skill (see borrowedRows).
     const owner = String(skillId).slice(0, 5)
@@ -188,13 +188,13 @@ export async function loadMotionSkill(skillId: number, lang: SupportedLang): Pro
     if (identity.data?.length) {
       const own = await db.schema('limbus').from('skills').select(SKILL_COLUMNS).eq('identity_id', identity.data[0].id)
       if (own.error) throw own.error
-      row = pickMotionSkillRow(borrowedRows((own.data ?? []) as unknown as Row[], owner))
+      row = pickMotionSkillRow(borrowedRows((own.data ?? []) as Row[], owner))
     }
   }
   if (!row) {
     const ego = await db.schema('limbus').from('ego_skills').select(EGO_SKILL_COLUMNS).eq('game_skill_id', skillId)
     if (ego.error) throw ego.error
-    return egoSkillRow((ego.data ?? []) as unknown as EgoSkillRow[], lang)
+    return egoSkillRow((ego.data ?? []) as EgoSkillRow[], lang)
   }
   const { name_en, name_jp, description_en, description_jp, identity, ...rest } = row
   return {

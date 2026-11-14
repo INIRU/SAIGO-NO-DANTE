@@ -64,7 +64,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })
     if (!rateLimit.allowed) return rateLimitResponse(rateLimit)
 
-    const body = await req.json()
+    const body = await req.json().catch(() => null)
+    if (body === null) return NextResponse.json({ error: '요청 형식이 올바르지 않습니다.' }, { status: 400 })
     const content = typeof body.content === 'string' ? body.content.trim() : ''
     const parentId = normalizeParentId(body.parent_id)
 

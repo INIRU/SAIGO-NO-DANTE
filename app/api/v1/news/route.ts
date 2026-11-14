@@ -55,11 +55,11 @@ export async function POST(request: Request) {
     if (dryRun) return NextResponse.json({ data: { id, dry_run: true, day, url, item } }, { headers: cors });
 
     const db = createAdminClient().schema("limbus");
-    const existing = await db.from("news_items").select("id").eq("partner", access.partner).eq("external_id", id).maybeSingle();
+    const existing = await db.from("news_items").select("id").eq("partner", access.partner as string).eq("external_id", id).maybeSingle();
     if (existing.error) throw existing.error;
     const { error } = await db
       .from("news_items")
-      .upsert({ ...item, partner: access.partner, external_id: id, updated_at: new Date().toISOString() }, { onConflict: "partner,external_id" });
+      .upsert({ ...item, partner: access.partner as string, external_id: id, updated_at: new Date().toISOString() }, { onConflict: "partner,external_id" });
     if (error) throw error;
     revalidateTag(CACHE_TAGS.news, "max");
     return NextResponse.json({ data: { id, created: !existing.data, day, url } }, { status: existing.data ? 200 : 201, headers: cors });

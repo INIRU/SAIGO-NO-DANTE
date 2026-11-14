@@ -26,11 +26,12 @@ export async function POST(request: NextRequest) {
     const secret = process.env.NEXTAUTH_SECRET;
     if (!secret) throw Error();
     const db = createAdminClient().schema("limbus");
+    // The three tables all have a uuid `id`; the client types one table at a time, so the union is read as one.
     const table = {
       identity: "identities",
       deck: "decks",
       planner: "md_plans",
-    }[kind];
+    }[kind] as "decks";
     const { data, error } = await db
       .from(table)
       .select("id")
@@ -80,7 +81,8 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     return NextResponse.json(
       { error: "Visit unavailable" },
-      { status: e instanceof z.ZodError ? 400 : 503 },
+      // A body that is not JSON is the caller's mistake, like one that fails the schema.
+      { status: e instanceof z.ZodError || e instanceof SyntaxError ? 400 : 503 },
     );
   }
 }

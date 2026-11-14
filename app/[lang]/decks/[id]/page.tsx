@@ -1,6 +1,7 @@
 import { notePlainText } from '@/lib/notes/blocks'
 import * as Sentry from '@sentry/nextjs'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/supabase/database.types'
 import type { Metadata } from 'next'
 import { localeUrl, pageMetadata } from '@/lib/seo/metadata'
 import { translations } from '@/lib/i18n/translations'
@@ -17,6 +18,7 @@ import { withPostAuthors, loadSeriesOfPost } from '@/features/community/server'
 import { EMPTY_RECOMMENDATIONS, fetchDeckRecommendations, fetchEgoAttackSkillsByEgoId, getSelectedEgoIds, type CurrentDeckForRecommendations, type EgoAttackSkill } from '@/features/decks/server'
 import type { SeriesView } from '@/features/community'
 import type { IdentitySlot, IdentityDetail } from '@/lib/decks/identity-types'
+import type { DeckDetail } from '@/features/decks/hooks/useDeckDetailData'
 import CoVisitedLane from '@/features/community/components/CoVisitedLane'
 import { RecommendationLaneSkeleton } from '@/features/decks/components/RecommendationSkeleton'
 
@@ -27,7 +29,7 @@ function absoluteUrl(path: string): string {
 }
 
 function createDeckReadClient() {
-  return createSupabaseClient(
+  return createSupabaseClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
@@ -122,7 +124,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
 
   // Server-side prefetch: hero portrait strip + basic deck fields for LCP. A failed read throws so that it is not cached
   // as an empty page; the caller catches it outside the cache and the client fetches instead.
-  let initialDeck = null
+  let initialDeck: DeckDetail | null = null
   let initialComments: Comment[] = []
   let initialRecommendations: DeckRecommendationsData = EMPTY_RECOMMENDATIONS
   let initialSeries: SeriesView | null = null
@@ -168,7 +170,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
     // fails to load leaves the deck shown; any other failure falls back to the client fetch, as before.
     const [series, recommendations, egoSkillsByEgoId, [author]] = await Promise.all([
       loadSeriesOfPost(supabase, 'deck', id).catch(() => null),
-      fetchDeckRecommendations(supabase, lang, data as unknown as CurrentDeckForRecommendations),
+      fetchDeckRecommendations(supabase, lang, data as CurrentDeckForRecommendations),
       fetchEgoAttackSkillsByEgoId(
         supabase,
         getSelectedEgoIds(data.deck_egos as Array<{ ego: { id?: string | null } | { id?: string | null }[] | null }> | null),
@@ -188,7 +190,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
         identities: (() => {
           const identity = Array.isArray(slot.identities)
             ? ((slot.identities[0] as IdentityDetail | undefined) ?? null)
-            : (slot.identities as unknown as IdentityDetail | null)
+            : (slot.identities as IdentityDetail | null)
           // Only the skill/passive rows and the language this page renders go to the browser.
           return identity ? trimDeckIdentity(identity, slot.uptie ?? 4, lang) : null
         })(),
@@ -216,12 +218,13 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
           ego: ego ? { ...ego, ego_skills: egoSkillsByEgoId.get(ego.id) ?? [] } : null,
         }
       }) as EgoSlot[],
-      profiles: author.profiles,
+      // withPostAuthors puts the author object here; the select's join type still says array.
+      profiles: author.profiles as DeckDetail['profiles'],
       all_sinner_egos: [],
       is_owner: false,
       is_admin: false,
       deck_code: undefined,
-    } as any
+    } as DeckDetail
   }
 
   if (commentsResult.data) {
@@ -237,7 +240,7 @@ async function getCachedDeckDetailPayload(lang: 'ko' | 'en' | 'ja', id: string) 
         avatar_url: profile?.avatar_url ?? null,
         role: profile?.role ?? undefined,
       }
-    })
+    }) as Comment[]
   }
   return {
     initialDeck,

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/supabase/database.types'
 import type { DeckSummary } from '@/components/cards/DeckCard'
 import type { PlanSummary } from '@/components/cards/PlanCard'
 import { withPostAuthors } from '@/lib/server/post-authors'
@@ -11,7 +12,7 @@ const DECK_COLUMNS = 'id,user_id,title,description,tags,main_keywords,content_ty
 const PLAN_COLUMNS = 'id,user_id,title,description,lang,difficulty,deck,egos,floor_plan,gift_inventory,tags,created_at,vote_count,view_count,comment_count,guest_tag,profiles:user_id(username,avatar_url)'
 
 /** The cards of a series' posts, in series order; a post that can no longer be read is left out. */
-export async function loadSeriesCards(db: SupabaseClient, items: SeriesItem[]): Promise<SeriesCard[]> {
+export async function loadSeriesCards(db: SupabaseClient<Database>, items: SeriesItem[]): Promise<SeriesCard[]> {
   const ordered = orderSeriesItems(items)
   const deckIds = ordered.filter(item => item.kind === 'deck').map(item => item.id)
   const planIds = ordered.filter(item => item.kind === 'plan').map(item => item.id)
@@ -20,7 +21,7 @@ export async function loadSeriesCards(db: SupabaseClient, items: SeriesItem[]): 
     planIds.length ? db.schema('limbus').from('md_plans').select(PLAN_COLUMNS).in('id', planIds) : { data: [], error: null },
   ])
   if (decks.error || plans.error) throw new Error('series cards lookup failed')
-  const deckRows = await withPostAuthors((decks.data ?? []) as unknown as (DeckSummary & { profiles?: { username: string; avatar_url: string | null; public_profile: boolean } | null })[])
+  const deckRows = await withPostAuthors((decks.data ?? []) as (DeckSummary & { profiles?: { username: string; avatar_url: string | null; public_profile: boolean } | null })[])
   const deckById = new Map(deckRows.map(row => {
     const { profiles, ...rest } = row
     return [row.id, { ...rest, username: profiles?.username ?? undefined, avatar_url: profiles?.avatar_url ?? null, profile_public: profiles?.public_profile } as DeckSummary]

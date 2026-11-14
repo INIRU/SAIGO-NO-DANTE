@@ -34,7 +34,7 @@ export function usePlanDetailModel({ gifts, themes, recipes, identities, events,
   const themeMap = useMemo(() => new Map(themes.map(t => [String(t.id), t])), [themes])
   const eventById = useMemo(() => new Map(events.map(event => [event.id, event])), [events])
   const choicesByEventId = useMemo(() => groupChoicesByEventId(eventChoices), [eventChoices])
-  const eventThemes = useMemo(() => themes.map(theme => ({ ...theme, id: Number(theme.id) }) as unknown as EgoGiftTheme), [themes])
+  const eventThemes = useMemo(() => themes.map(theme => ({ ...theme, id: Number(theme.id) }) as EgoGiftTheme), [themes])
 
   // 레시피맵
   const giftByName = useMemo(() => buildGiftByName(gifts), [gifts])

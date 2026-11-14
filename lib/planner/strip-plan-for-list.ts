@@ -274,7 +274,7 @@ export function stripPlanForList(plan: Record<string, unknown>): PlanSummary {
     identity_names,
     gift_ids,
     theme_ids,
-  } as unknown as PlanSummary
+  } as PlanSummary
 }
 
 type PlanDifficultyBadge = {

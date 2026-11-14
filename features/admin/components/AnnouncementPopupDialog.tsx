@@ -28,7 +28,7 @@ export default function AnnouncementPopupDialog({ announcement }: { announcement
   }, [announcement.id, pathname])
   const close = () => {
     setOpen(false)
-    try { localStorage.setItem(POPUP_SEEN_KEY, announcement.id) } catch {}
+    try { localStorage.setItem(POPUP_SEEN_KEY, announcement.id) } catch { /* Storage blocked: it may open again on the next page. */ }
   }
   return (
     // A story chapter's map covers the page at z-60: below it the popup was hidden yet still took every click and scroll

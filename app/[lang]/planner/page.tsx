@@ -9,6 +9,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { readAllRows } from '@/lib/meta/pagination'
 import { getTranslations } from 'next-intl/server'
 import PlannerClient from './PlannerClient'
+import type { ThemeData, GiftData, SinnerData, PassiveData, SkillSummary, EgoData } from '@/lib/planner/types'
 import PlannerSkeleton from '@/features/planner/components/PlannerSkeleton'
 import PageHeader from '@/components/ui/PageHeader'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
@@ -90,14 +91,15 @@ export default async function PlannerPage({ params }: { params: Promise<{ lang: 
       <Suspense fallback={<PlannerSkeleton />}>
         <StaticQueryAdapter fallback={<PlannerSkeleton />}>
           <PlannerClient
-            themes={themes ?? []}
-            gifts={gifts ?? []}
+            // The pack ids are numbers here, where ThemeData says string (the run page normalizes them): kept as read.
+            themes={(themes ?? []) as unknown as ThemeData[]}
+            gifts={(gifts ?? []) as GiftData[]}
             recipes={recipes ?? []}
             identities={identities ?? []}
-            sinners={sinners ?? []}
-            passives={passives ?? []}
-            skills={skills ?? []}
-            egos={egos ?? []}
+            sinners={(sinners ?? []) as SinnerData[]}
+            passives={(passives ?? []) as PassiveData[]}
+            skills={(skills ?? []) as SkillSummary[]}
+            egos={(egos ?? []) as EgoData[]}
             observation={observation}
           />
         </StaticQueryAdapter>

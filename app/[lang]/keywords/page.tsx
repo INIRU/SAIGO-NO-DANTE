@@ -7,6 +7,8 @@ import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { getGameTextRefNames } from '@/lib/db/game-text-refs'
 import { isMissingColumnError, keywordTextsFromRefs, loadKeywordRefTexts } from '@/lib/keywords/ref-text'
 import KeywordsClient from './_components/KeywordsClient'
+import type { KeywordEntry } from './_components/KeywordCard'
+import type { KeywordEgo } from './_components/KeywordModal'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
 import KeywordsLoading from './loading'
 
@@ -22,13 +24,16 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 }
 
 
+/** A keyword_meta row as the page's column list reads it (game_id only where its migration is applied). */
+type KeywordRow = Omit<KeywordEntry, 'sin_affinity'> & { game_id?: string | null }
+
 const KEYWORD_COLUMNS = 'name, description, max_stack, icon_slug, category, name_en, name_jp, description_en, description_jp'
 
 /** keyword_meta rows with the names and descriptions of their game_text_refs row (keyword_meta's own where a row has no game_id). */
 async function fetchAllKeywords(supabase: ReturnType<typeof createAdminClient>, withRefs: boolean) {
   // game_id first; a database without that column (migration not applied yet) answers with the plain columns.
   for (const select of [`${KEYWORD_COLUMNS}, game_id`, KEYWORD_COLUMNS]) {
-    const all: any[] = []
+    const all: KeywordRow[] = []
     let from = 0
     let missingColumn = false
     while (true) {
@@ -39,7 +44,7 @@ async function fetchAllKeywords(supabase: ReturnType<typeof createAdminClient>, 
       if (error && isMissingColumnError(error) && select !== KEYWORD_COLUMNS) { missingColumn = true; break }
       if (error) throw error
       if (!data || data.length === 0) break
-      all.push(...data)
+      all.push(...(data as unknown as KeywordRow[]))
       if (data.length < 1000) break
       from += 1000
     }
@@ -136,7 +141,7 @@ async function renderKeywords(withRefs: boolean) {
           identities={safeIdentities}
           sinners={sinners ?? []}
           gifts={safeGifts}
-          egos={safeEgos}
+          egos={safeEgos as KeywordEgo[]}
           refKeywords={refKeywords}
         />
       </StaticQueryAdapter>

@@ -20,13 +20,22 @@ const COLUMNS = {
   skill:'id,name,name_en,name_jp,identity_id,skill_type,atk_type,sin_affinity,coins,base_power,coin_power,coin_list,skill_order,image_id,variant_order,atk_weight,offense_level,description,description_en,description_jp,uptie_level',
   keyword:'name,name_en,name_jp,description,icon_slug',
 } as const
+type AssetQuery = PromiseLike<{ data: unknown; error: unknown }> & {
+  in(column: string, values: readonly unknown[]): AssetQuery
+  eq(column: string, value: unknown): AssetQuery
+  gte(column: string, value: unknown): AssetQuery
+  or(filters: string): AssetQuery
+  order(column: string): AssetQuery
+  range(from: number, to: number): AssetQuery
+}
 async function load(kind: AssetKind, query: string, ids: string[], offset = 0, grade = '', identityIds: string[] | null = null, catalog = false): Promise<NoteAssetData[]> {
   'use cache'
   cacheLife('hours'); cacheTag(CACHE_TAGS.gameData)
   if (kind === 'sin') return SIN_ORDER.filter(id => ids.length ? ids.includes(id) : `${id} ${SIN_LABELS_KR[id]}`.includes(query)).map(id => ({kind,id,name:SIN_LABELS_KR[id],name_en:id,image_url:SIN_ICON_MAP[id]}))
   if (kind === 'skill' && identityIds?.length === 0) return []
   const db = createAdminClient().schema('limbus')
-  let req = db.from(TABLES[kind]).select(COLUMNS[kind])
+  // One query over six tables: the client types one table at a time, so the builder is read through its few filters.
+  let req = db.from(TABLES[kind]).select(COLUMNS[kind]) as AssetQuery
   // 노트 스킬은 동기화 III·IV만 쓴다(I·II 행이 들어와도 검색·형제 라벨이 바뀌지 않게)
   if (kind === 'skill') req = identityIds ? req.in('identity_id', identityIds).eq('uptie_level', 4) : req.gte('uptie_level', 3)
   if (kind === 'gift' && grade) req = req.eq('grade', Number(grade))
@@ -39,7 +48,7 @@ async function load(kind: AssetKind, query: string, ids: string[], offset = 0, g
   const {data,error} = await req
   if (error) throw Error('Assets unavailable')
   // Columns are an explicit public game-data allowlist, never user/profile rows.
-  const rows = data as unknown as Array<Record<string, unknown>>
+  const rows = data as Array<Record<string, unknown>>
   let identities: Identity[] = [], siblings: Skill[] = []
   if (kind === 'skill' && rows.length) {
     const identityIds = [...new Set(rows.map(r => String(r.identity_id)))]
@@ -48,17 +57,17 @@ async function load(kind: AssetKind, query: string, ids: string[], offset = 0, g
       db.from('skills').select(COLUMNS.skill).in('identity_id', identityIds).gte('uptie_level', 3),
     ])
     if (parents.error || allSkills.error) throw Error('Skill data unavailable')
-    identities = parents.data as unknown as Identity[]; siblings = allSkills.data as unknown as Skill[]
+    identities = parents.data as Identity[]; siblings = allSkills.data as Skill[]
   }
   return rows.map(row => {
-    const identity = kind === 'identity' ? row as unknown as Identity : identities.find(i => i.id === row.identity_id)
+    const identity = kind === 'identity' ? row as Identity : identities.find(i => i.id === row.identity_id)
     return { kind, id:String(kind === 'keyword' ? row.name : row.id), name:String(row.name_kr || row.name || ''),
       name_en:row.name_en as string, name_jp:row.name_jp as string,
       image_url:identity && kind === 'identity' ? getIdentityInfoUrl(identity) : kind === 'keyword' ? resolveKeywordIconUrl(String(row.name), row.icon_slug as string | null) : row.image_url as string,
       grade:row.grade as string, keyword:row.keyword as string, description:(row.description ?? row.effect_base) as string, description_en:(row.description_en ?? row.effect_base_en) as string, description_jp:(row.description_jp ?? row.effect_base_jp) as string,
       ...(kind === 'ego' ? {ego: {grade:String(row.grade), image_url:row.image_url as string, sin_affinity:row.sin_affinity as string, max_construe_level:withEgoStage({stage_levels:row.stage_levels as {construe_level:number|null}[]}).max_construe_level}, sinnerId:String(row.sinner_id)} : {}),
       ...(identity ? {identity} : {}),
-      ...(kind === 'skill' ? {skill:row as unknown as Skill, skills:siblings.filter(s => s.identity_id === row.identity_id), sinnerName:identity?.name_kr} : {}),
+      ...(kind === 'skill' ? {skill:row as Skill, skills:siblings.filter(s => s.identity_id === row.identity_id), sinnerName:identity?.name_kr} : {}),
     }
   })
 }

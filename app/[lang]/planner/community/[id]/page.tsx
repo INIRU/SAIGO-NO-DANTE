@@ -22,7 +22,10 @@ import CoVisitedLane from '@/features/community/components/CoVisitedLane'
 import { RecommendationLaneSkeleton } from '@/features/decks/components/RecommendationSkeleton'
 import type { SupportedLang } from '@/lib/i18n/types'
 import PlanDetailClient, { type Plan } from './PlanDetailClient'
+import type { ComponentProps } from 'react'
 import PlanDetailSkeleton from './PlanDetailSkeleton'
+
+type ClientProps = ComponentProps<typeof PlanDetailClient>
 
 interface Props {
   params: Promise<{ lang: string; id: string }>
@@ -155,13 +158,14 @@ export default async function PlanDetailPage({ params }: Props) {
     fetchPlanEvents(planGiftIds),
   ])
   // 플랜이 쓰는 기프트·레시피·인격·에고만 보낸다(전체 카탈로그는 flight 페이로드 1MB)
-  const used = trimPlanDetailCatalog({ plan, gifts: game.gifts, recipes: game.recipes, themes, identities, egos: game.egos, events: planEvents.events, eventChoices: planEvents.choices })
+  const used = trimPlanDetailCatalog({ plan, gifts: game.gifts, recipes: game.recipes, themes, identities, egos: game.egos as Parameters<typeof trimPlanDetailCatalog>[0]['egos'], events: planEvents.events, eventChoices: planEvents.choices })
   const gifts = used.gifts.map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))
   // one locale of text, and the other themes' gift pools cut to this plan's gifts (the page's data was about 570KB)
+  // The pack ids are numbers here, where ThemeData says string: kept as read.
   const planThemes = slimPlanThemes(themes.map(theme => withoutOtherLocales(theme, lang, ['name'])), {
     floorThemeIds: new Set((Array.isArray(plan.floor_plan) ? plan.floor_plan : []).flatMap((entry: { theme_id?: unknown }) => entry?.theme_id != null ? [String(entry.theme_id)] : [])),
     giftIds: new Set(gifts.map(gift => gift.game_id)),
-  })
+  }) as unknown as ClientProps['themes']
   const oneLocale = <T extends Record<string, unknown>>(row: T) => withoutOtherLocales(row, lang, ['name', 'description'])
   if (skillsError) console.error('Failed to fetch skills:', skillsError)
   if (passivesError) console.error('Failed to fetch passives:', passivesError)
@@ -179,21 +183,21 @@ export default async function PlanDetailPage({ params }: Props) {
         series={series}
         coVisited={<Suspense fallback={<RecommendationLaneSkeleton kind="planner" />}><CoVisitedLane kind="planner" id={id} lang={lang as SupportedLang} exclude={[]} /></Suspense>}
         themes={planThemes}
-        gifts={gifts}
+        gifts={gifts as ClientProps['gifts']}
         recipes={used.recipes}
-        identities={used.identities}
-        sinners={sinners}
-        skills={memberIds.flatMap(id => selectUptieRows((skills ?? []).filter(row => row.identity_id === id), 4)).map(oneLocale)}
-        passives={memberIds.flatMap(id => selectUptieRows((passives ?? []).filter(row => row.identity_id === id), 4)).map(oneLocale)}
-        egos={used.egos}
+        identities={used.identities as ClientProps['identities']}
+        sinners={sinners as ClientProps['sinners']}
+        skills={memberIds.flatMap(id => selectUptieRows((skills ?? []).filter(row => row.identity_id === id), 4)).map(oneLocale) as ClientProps['skills']}
+        passives={memberIds.flatMap(id => selectUptieRows((passives ?? []).filter(row => row.identity_id === id), 4)).map(oneLocale) as ClientProps['passives']}
+        egos={used.egos as ClientProps['egos']}
         observation={game.observation}
-        events={planEvents.events.map(event => withoutOtherLocales(event, lang, ['desc_text'], ['judgment'])) as unknown as MdEvent[]}
+        events={planEvents.events.map(event => withoutOtherLocales(event, lang, ['desc_text'], ['judgment'])) as MdEvent[]}
         eventChoices={planEvents.choices.map(choice => ({
           ...withoutOtherLocales(choice, lang, ['result_text', 'message', 'message_desc'], ['effects']),
           message: localized(choice, 'message', lang),
           message_desc: localized(choice, 'message_desc', lang),
           result_text: localized(choice, 'result_text', lang),
-        })) as unknown as MdEventChoice[]}
+        })) as MdEventChoice[]}
       />
     </Suspense>
     </>

@@ -48,7 +48,7 @@ export async function loadRising(kind: DiscoveryKind): Promise<RisingFeed> {
   ])
   if (postRows.error || identityRows.error) throw postRows.error ?? identityRows.error
   const postById = new Map((formatDiscoveryPosts(kind, postRows.data ?? []) as (Record<string, unknown> & { id: string })[]).map(post => [post.id, post]))
-  const identityById = new Map((identityRows.data as unknown as RisingIdentity[]).map(identity => [identity.id, identity]))
+  const identityById = new Map((identityRows.data as RisingIdentity[]).map(identity => [identity.id, identity]))
   const posts = postRise.flatMap(item => { const post = postById.get(item.id); return post ? [{ post, rise: item.rise, recent: item.recent, id: item.id }] : [] })
     .slice(0, POSTS).sort(byRise).map(({ post, rise }) => ({ post, rise }))
   const identities = identityRise.flatMap(item => { const identity = identityById.get(item.id); return identity ? [{ identity, count: item.count }] : [] })

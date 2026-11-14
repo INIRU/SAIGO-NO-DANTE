@@ -116,7 +116,7 @@ async function getCurrentSeason(): Promise<number> {
     .schema('limbus').from('app_config').select('value')
     .eq('key', 'current_season').maybeSingle()
   if (error) throw error
-  return data?.value?.season ?? 7
+  return (data?.value as { season?: number } | null)?.season ?? 7
 }
 
 /** Companions and popular posts, streamed after the page: a failed or sparse count leaves the section out. */

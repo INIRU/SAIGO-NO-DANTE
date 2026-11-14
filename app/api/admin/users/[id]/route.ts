@@ -54,9 +54,10 @@ export async function PATCH(request: Request, context: Context) {
       p_expected_suspended_at: value.expectedSuspendedAt, p_admin_emails: adminEmails(),
     })
   if (error || !data) return NextResponse.json({ error: 'unavailable' }, { status: 500 })
-  if (data.error) {
-    const status = ({ forbidden: 403, protected: 403, not_found: 404, conflict: 409, invalid: 400 } as Record<string, number>)[data.error] ?? 500
-    return NextResponse.json({ error: data.error }, { status })
+  const failure = (data as { error?: string }).error
+  if (failure) {
+    const status = ({ forbidden: 403, protected: 403, not_found: 404, conflict: 409, invalid: 400 } as Record<string, number>)[failure] ?? 500
+    return NextResponse.json({ error: failure }, { status })
   }
   return NextResponse.json({ ok: true }, { headers: { 'Cache-Control': 'private, no-store' } })
 }
