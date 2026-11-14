@@ -27,6 +27,6 @@ export async function GET(request: NextRequest) {
   }
   const { data, error } = await query
   if (error) return NextResponse.json({ error: 'Cards unavailable' }, { status: 500 })
-  const rows = await withPostAuthors((data ?? []) as unknown as { user_id?: string | null; profiles?: { username?: string; avatar_url?: string | null; public_profile?: boolean } | null }[])
+  const rows = await withPostAuthors((data ?? []) as { user_id?: string | null; profiles?: { username?: string; avatar_url?: string | null; public_profile?: boolean } | null }[])
   return NextResponse.json(kind === 'plan' ? rows : rows.map(row => ({ ...row, username: row.profiles?.username, avatar_url: row.profiles?.avatar_url, profile_public: row.profiles?.public_profile })))
 }

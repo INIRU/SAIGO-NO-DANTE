@@ -10,7 +10,7 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import MirrorDungeonClient from '@/app/[lang]/mirror-dungeon/_components/MirrorDungeonClient'
 import MirrorDungeonSkeleton from '@/features/mirror-dungeon/components/MirrorDungeonSkeleton'
-import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
+import type { EgoGift, EgoGiftTheme, MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
 import { giftsQuery, recipesQuery } from '@/features/mirror-dungeon/server'
 import JsonLd, { faqJsonLd } from '@/components/seo/JsonLd'
 import StaticQueryAdapter from '@/components/providers/StaticQueryAdapter'
@@ -117,9 +117,9 @@ export default async function MirrorDungeonPage({ params }: { params: Promise<{ 
         <StaticQueryAdapter fallback={<MirrorDungeonSkeleton />}>
           <MirrorDungeonClient
             lang={lang as SupportedLang}
-            gifts={(gifts ?? []).map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))}
+            gifts={(gifts ?? []).map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus'])) as EgoGift[]}
             recipes={recipes ?? []}
-            themes={themes ?? []}
+            themes={(themes ?? []) as EgoGiftTheme[]}
             events={(events ?? []).map(event => withoutOtherLocales(event, lang, ['desc_text'], ['judgment'])) as MdEvent[]}
             choices={(choices ?? []).map(choice => withoutOtherLocales(choice, lang, ['result_text', 'message', 'message_desc'], ['effects'])) as MdEventChoice[]}
           />

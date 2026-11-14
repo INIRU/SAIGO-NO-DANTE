@@ -10,7 +10,7 @@ import { writeAuditLog } from '@/lib/audit'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { parseDeckMainKeywordsInput } from '@/lib/decks/keyword-rules'
-import { encodeTeamCode } from '@/lib/decks/team-code'
+import { encodeTeamCode, type TeamCodeSinner } from '@/lib/decks/team-code'
 import { normalizeUptie } from '@/features/decks'
 import { fetchEgoAttackSkillsByEgoId, type EgoAttackSkill } from '@/features/decks/server'
 import { isNoRow } from '@/lib/supabase/no-row'
@@ -75,13 +75,13 @@ export async function GET(
   const sinnerIds = [
     ...new Set(
       deck.deck_identities
-        .map(di => (di.identities as unknown as SlotIdentity)?.sinner_id)
+        .map(di => (di.identities as SlotIdentity)?.sinner_id)
         .filter((x): x is string => Boolean(x))
     ),
   ]
 
   type DeckEgoRow = { grade: string; ego: { id: string; sinner_id: string; grade: string; name_kr: string | null; sin_affinity: string | null; folder_name: string | null; image_url: string | null; cost: number[] | null; game_id: string | null; ego_skills?: EgoAttackSkill[] | null } | null }
-  const deckEgoRows = (deck.deck_egos ?? []) as unknown as DeckEgoRow[]
+  const deckEgoRows = (deck.deck_egos ?? []) as DeckEgoRow[]
   const egoSinnerIds = [
     ...new Set(deckEgoRows.map(r => r.ego?.sinner_id).filter((x): x is string => Boolean(x))),
   ]
@@ -101,10 +101,10 @@ export async function GET(
   const deckSlots: Record<string, { id: string; sinner_id: string; game_id: string | null } | undefined> = {}
   const formationEntries: { sinnerId: string; order: number }[] = []
   for (const di of deck.deck_identities) {
-    const id_ = di.identities as unknown as SlotIdentity
+    const id_ = di.identities as SlotIdentity
     if (!id_?.sinner_id) continue
     deckSlots[id_.sinner_id] = id_
-    if (di.slot_order !== 99) formationEntries.push({ sinnerId: id_.sinner_id, order: di.slot_order + 1 })
+    if (di.slot_order !== 99) formationEntries.push({ sinnerId: id_.sinner_id, order: di.slot_order! + 1 })
   }
   formationEntries.sort((a, b) => a.order - b.order)
 
@@ -122,7 +122,7 @@ export async function GET(
   }
 
   const deckCode = encodeTeamCode({
-    sinners,
+    sinners: sinners as TeamCodeSinner[],
     deckSlots,
     egoSlots,
     formationOrder: formationEntries.map(entry => entry.sinnerId),
@@ -135,7 +135,7 @@ export async function GET(
     const session = await getServerSession(authOptions)
     if (session?.user?.email) {
       const adminClient = createAdminClient()
-      const { data: { user: deckOwner } } = await adminClient.auth.admin.getUserById(deck.user_id)
+      const { data: { user: deckOwner } } = await adminClient.auth.admin.getUserById(deck.user_id!)
       isOwner = deckOwner?.email === session.user.email
       isAdmin = session.user.isAdmin === true
     }

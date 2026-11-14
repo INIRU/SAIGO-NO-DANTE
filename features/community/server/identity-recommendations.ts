@@ -46,7 +46,7 @@ export async function getIdentityRecommendations(identityId: string): Promise<Id
   ])
   if (identityRows.error || postRows.some(result => result.error)) throw identityRows.error ?? postRows.find(result => result.error)?.error
 
-  const byId = new Map((identityRows.data as unknown as Omit<IdentityCompanion, 'count'>[]).map(row => [row.id, row]))
+  const byId = new Map((identityRows.data as Omit<IdentityCompanion, 'count'>[]).map(row => [row.id, row]))
   const existing = new Map(postRows.flatMap(result => (result.rows as IdentityPost['post'][]).map(post => [`${result.kind}:${post.id}`, { kind: result.kind, post }] as const)))
   return {
     companions: companions.flatMap(row => byId.has(row.identity_id) ? [{ ...byId.get(row.identity_id)!, count: row.count }] : []),

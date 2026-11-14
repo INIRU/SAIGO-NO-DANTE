@@ -2,7 +2,7 @@ import { normalizeUptie } from '@/lib/decks/deck-identity-uptie'
 
 type DeckIdentityRow = {
   identity_id: string
-  slot_order: number
+  slot_order: number | null
   uptie?: number | null
   gacksung?: boolean | null
   s1_count?: number | null
@@ -34,7 +34,7 @@ export function buildEditMode({ deckIdentities, deckEgos, identities, egos }: {
     identitySlotIds[identity.sinner_id] = identity.id
     if (di.gacksung) gacksungSlots[identity.sinner_id] = true
     upties[identity.sinner_id] = normalizeUptie(di.uptie)
-    slotOrders[identity.sinner_id] = di.slot_order
+    slotOrders[identity.sinner_id] = di.slot_order!
     const s1 = di.s1_count ?? 3
     const s2 = di.s2_count ?? 2
     const s3 = di.s3_count ?? 1

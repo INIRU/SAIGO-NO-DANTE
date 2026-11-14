@@ -2,8 +2,9 @@ import "server-only";
 import { revalidateTag } from "next/cache";
 import { CACHE_TAGS } from "@/lib/constants/cache-tags";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from '@/lib/supabase/database.types'
 export async function invalidateProfileDecks(
-  db: SupabaseClient,
+  db: SupabaseClient<Database>,
   userId: string,
 ) {
   const { data, error } = await db

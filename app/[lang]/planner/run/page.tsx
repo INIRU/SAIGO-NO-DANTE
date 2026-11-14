@@ -6,7 +6,7 @@ import { MD_EVENT_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
 import { readAllRows } from '@/lib/meta/pagination'
 import { getTranslations } from 'next-intl/server'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import { normalizePlannerThemeId } from '@/lib/planner/types'
+import { normalizePlannerThemeId, type ThemeData, type GiftData, type SinnerData, type SkillSummary, type PassiveData, type EgoData } from '@/lib/planner/types'
 import RunWrapper from './RunWrapper'
 import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
 import { giftsQuery, recipesQuery, themesQuery } from '@/features/mirror-dungeon/server'
@@ -62,16 +62,16 @@ export default async function RunPage({ params }: { params: Promise<{ lang: stri
 
   return (
     <RunWrapper
-      themes={normalizedThemes}
+      themes={normalizedThemes as ThemeData[]}
       // 이름(화면 인식용)은 모든 언어를 두고, 긴 설명·결과 문장은 현재 언어만 보낸다
-      gifts={(gifts ?? []).map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))}
+      gifts={(gifts ?? []).map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus'])) as GiftData[]}
       recipes={recipes ?? []}
       identities={identities ?? []}
-      sinners={sinners ?? []}
+      sinners={(sinners ?? []) as SinnerData[]}
       // Rows repeated at the top uptie are dropped; selectUptieRows falls back to the identical level below.
-      skills={dropRepeatedTopUptie(skills ?? [], row => row.identity_id)}
-      passives={dropRepeatedTopUptie(passives ?? [], row => row.identity_id)}
-      egos={egos ?? []}
+      skills={dropRepeatedTopUptie(skills ?? [], row => row.identity_id) as SkillSummary[]}
+      passives={dropRepeatedTopUptie(passives ?? [], row => row.identity_id) as PassiveData[]}
+      egos={(egos ?? []) as EgoData[]}
       events={(mdEvents ?? []).map(event => withoutOtherLocales(event, lang, ['desc_text'], ['judgment'])) as MdEvent[]}
       eventChoices={(mdChoices ?? []).map(choice => withoutOtherLocales(choice, lang, ['result_text', 'message', 'message_desc'], ['effects'])) as MdEventChoice[]}
     />

@@ -28,7 +28,7 @@ async function texts(lang: Lang) {
   ])
   if (gifts.error || events.error || choices.error) throw Error('Assist texts unavailable')
   const pick = (row: Record<string, unknown>, fields: string[]) => fields.map(field => row[field + s]).filter((value): value is string => typeof value === 'string' && value.length > 0)
-  const rows = <T,>(data: unknown) => data as unknown as (T & Record<string, unknown>)[]
+  const rows = <T,>(data: unknown) => data as (T & Record<string, unknown>)[]
   return {
     gifts: rows<{ game_id: number }>(gifts.data).map(row => ({ id: String(row.game_id), texts: pick(row, ['effect_base', 'effect_plus', 'effect_plusplus']).map(text => gameTextForScreen(text, labels)) })),
     events: rows<{ id: number }>(events.data).map(row => ({ id: String(row.id), texts: pick(row, ['desc_text']) })),

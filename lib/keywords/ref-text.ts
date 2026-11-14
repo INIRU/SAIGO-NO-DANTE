@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/supabase/database.types'
 import { hasRawPlaceholder } from '@/lib/game-text/placeholders'
 import { gameTextToPlain } from '@/lib/game-text/rich-text'
 import { KEYWORD_DESCRIPTION_OVERRIDES } from '@/lib/keywords/description-overrides'
@@ -65,7 +66,7 @@ const PAGE = 1000
  * Keyword references by game id, or null when the table cannot be read (the callers then show keyword_meta's texts).
  * Plain read, not cached: it runs inside the callers' cached functions.
  */
-export async function loadKeywordRefTexts(supabase: SupabaseClient): Promise<Record<string, KeywordRefTexts> | null> {
+export async function loadKeywordRefTexts(supabase: SupabaseClient<Database>): Promise<Record<string, KeywordRefTexts> | null> {
   const table: Record<string, KeywordRefTexts> = {}
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase.schema('limbus').from('game_text_refs')
@@ -77,7 +78,7 @@ export async function loadKeywordRefTexts(supabase: SupabaseClient): Promise<Rec
       console.error('[keywords] game_text_refs read failed, using keyword_meta texts:', error.message)
       return null
     }
-    for (const row of (data ?? []) as unknown as (KeywordRefTexts & { id: string })[]) {
+    for (const row of (data ?? []) as (KeywordRefTexts & { id: string })[]) {
       table[row.id] = {
         name: row.name, name_en: row.name_en, name_jp: row.name_jp,
         description: row.description, description_en: row.description_en, description_jp: row.description_jp,

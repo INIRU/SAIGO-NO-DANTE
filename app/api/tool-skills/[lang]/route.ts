@@ -19,9 +19,10 @@ async function getToolSkills(lang: SupportedLang, kind: 'identity' | 'ego', id: 
 
   const db = createAdminClient().schema('limbus')
   // coin_list is a newer column: without it a skill's coins are its count times the one coin power.
-  const withCoins = async (table: string, columns: string, owner: string) => {
-    const rows = await db.from(table).select(`${columns}, coin_list`).eq(owner, id)
-    return rows.error && isMissingColumnError(rows.error) ? db.from(table).select(columns).eq(owner, id) : rows
+  // The two skill tables are read through one function, so the client sees the first table's column names.
+  const withCoins = async (table: 'skills' | 'ego_skills', columns: string, owner: 'identity_id' | 'ego_id') => {
+    const rows = await db.from(table as 'skills').select(`${columns}, coin_list`).eq(owner as 'identity_id', id)
+    return rows.error && isMissingColumnError(rows.error) ? db.from(table as 'skills').select(columns).eq(owner as 'identity_id', id) : rows
   }
   if (kind === 'ego') {
     const [ego, skills] = await Promise.all([db.from('ego').select('image_url').eq('id', id).maybeSingle(), withCoins('ego_skills', EGO_SKILL_COLUMNS, 'ego_id')])

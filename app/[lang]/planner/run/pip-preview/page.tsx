@@ -3,7 +3,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { MD_EVENT_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
-import { normalizePlannerThemeId } from '@/lib/planner/types'
+import { normalizePlannerThemeId, type ThemeData, type GiftData } from '@/lib/planner/types'
 import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
 import { giftsQuery, themesQuery } from '@/features/mirror-dungeon/server'
 import PipPreviewWrapper from './PipPreviewWrapper'
@@ -28,5 +28,5 @@ export default async function PipPreviewPage() {
     const id = normalizePlannerThemeId(theme.id)
     return id === null ? [] : [{ ...theme, id }]
   })
-  return <PipPreviewWrapper themes={normalizedThemes} gifts={gifts ?? []} events={(events ?? []) as MdEvent[]} eventChoices={(choices ?? []) as MdEventChoice[]} />
+  return <PipPreviewWrapper themes={normalizedThemes as ThemeData[]} gifts={(gifts ?? []) as GiftData[]} events={(events ?? []) as MdEvent[]} eventChoices={(choices ?? []) as MdEventChoice[]} />
 }

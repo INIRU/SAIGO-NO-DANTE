@@ -200,7 +200,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
     localizedBlessings, selectedBlessings, totalBlessingCost, observeGifts, startGifts, finalGifts, slotGiftMap, conditionCounts,
   } = usePlanDetailModel({ gifts, themes, recipes, identities, events, eventChoices, giftInventory, deck })
   // 상세 페이지의 기프트 행은 ego_gifts 전체 컬럼이라 이벤트 모달의 EgoGift로 그대로 쓸 수 있다
-  const eventGifts = giftMap as unknown as Map<number, EgoGift>
+  const eventGifts = giftMap as Map<number, EgoGift>
   const selectedEvent = selectedEventId == null ? null : eventById.get(selectedEventId) ?? null
   const kwContext = useKeywordData()
 

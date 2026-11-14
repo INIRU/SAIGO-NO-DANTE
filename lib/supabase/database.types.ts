@@ -3118,8 +3118,8 @@ export type Database = {
     Functions: {
       admin_inquiry_notifications: {
         Args: {
-          user_email: string
-          max_rows?: number
+          user_email: string | null
+          max_rows?: number | null
         }
         Returns: {
           kind: string
@@ -3136,87 +3136,87 @@ export type Database = {
       }
       admin_list_users: {
         Args: {
-          p_search?: string
-          p_status?: string
-          p_offset?: number
-          p_limit?: number
+          p_search?: string | null
+          p_status?: string | null
+          p_offset?: number | null
+          p_limit?: number | null
         }
         Returns: Json
       }
       admin_moderate_user: {
         Args: {
-          p_actor_email: string
-          p_target_id: string
-          p_suspend: boolean
-          p_reason: string
-          p_days: number
-          p_expected_suspended_at: string
-          p_admin_emails: string[]
+          p_actor_email: string | null
+          p_target_id: string | null
+          p_suspend: boolean | null
+          p_reason: string | null
+          p_days: number | null
+          p_expected_suspended_at: string | null
+          p_admin_emails: string[] | null
         }
         Returns: Json
       }
       admin_set_partner: {
         Args: {
-          p_actor_email: string
-          p_target_id: string
-          p_partner: string
-          p_admin_emails: string[]
+          p_actor_email: string | null
+          p_target_id: string | null
+          p_partner: string | null
+          p_admin_emails: string[] | null
         }
         Returns: Json
       }
       assist_sample_bytes_since: {
         Args: {
-          since: string
+          since: string | null
         }
         Returns: number
       }
       community_follows: {
         Args: {
-          p_user: string
-          p_viewer?: string
-          p_kind?: string
-          p_offset?: number
+          p_user: string | null
+          p_viewer?: string | null
+          p_kind?: string | null
+          p_offset?: number | null
         }
         Returns: Json
       }
       community_record_deck: {
         Args: {
-          p_deck_id: string
-          p_user_id: string
+          p_deck_id: string | null
+          p_user_id: string | null
         }
         Returns: undefined
       }
       community_record_plan: {
         Args: {
-          p_plan_id: string
-          p_user_id: string
+          p_plan_id: string | null
+          p_user_id: string | null
         }
         Returns: undefined
       }
       community_set_follow: {
         Args: {
-          p_actor: string
-          p_target: string
-          p_follow: boolean
+          p_actor: string | null
+          p_target: string | null
+          p_follow: boolean | null
         }
         Returns: boolean
       }
       community_summary: {
         Args: {
-          p_user_id: string
+          p_user_id: string | null
         }
         Returns: Json
       }
       consume_developer_key: {
         Args: {
-          token_hash: string
-          p_admin_emails: string[]
+          token_hash: string | null
+          p_admin_emails: string[] | null
         }
         Returns: Json
       }
       discovery_counts_since: {
         Args: {
-          since?: string
+          since?: string | null
         }
         Returns: {
           kind: string
@@ -3226,10 +3226,10 @@ export type Database = {
       }
       discovery_covisited: {
         Args: {
-          entity: string
-          post_kind: string
-          since?: string
-          max_rows?: number
+          entity: string | null
+          post_kind: string | null
+          since?: string | null
+          max_rows?: number | null
         }
         Returns: {
           entity_id: string
@@ -3239,7 +3239,7 @@ export type Database = {
       }
       discovery_recent_edits: {
         Args: {
-          p_kind: string
+          p_kind: string | null
         }
         Returns: {
           entity_id: string
@@ -3248,11 +3248,11 @@ export type Database = {
       }
       discovery_rising_windows: {
         Args: {
-          post_kind: string
-          recent_days?: number
-          base_days?: number
-          gap_ratio?: number
-          max_rows?: number
+          post_kind: string | null
+          recent_days?: number | null
+          base_days?: number | null
+          gap_ratio?: number | null
+          max_rows?: number | null
         }
         Returns: {
           entity_id: string
@@ -3264,7 +3264,7 @@ export type Database = {
       }
       discovery_user_id: {
         Args: {
-          user_email: string
+          user_email: string | null
         }
         Returns: string
       }
@@ -3274,58 +3274,58 @@ export type Database = {
       }
       get_user_role: {
         Args: {
-          user_email: string
+          user_email: string | null
         }
         Returns: string
       }
       guest_pin_recover: {
         Args: {
-          p_kind: string
-          p_id: string
-          p_pin_hash: string
-          p_key_hash: string
+          p_kind: string | null
+          p_id: string | null
+          p_pin_hash: string | null
+          p_key_hash: string | null
         }
         Returns: string
       }
       identity_interest: {
         Args: {
-          identity_id: string
+          identity_id: string | null
         }
         Returns: Json
       }
       increment_md_plan_view: {
         Args: {
-          plan_id: string
+          plan_id: string | null
         }
         Returns: undefined
       }
       increment_view: {
         Args: {
-          deck_id: string
+          deck_id: string | null
         }
         Returns: undefined
       }
       is_user_suspended: {
         Args: {
-          user_email: string
+          user_email: string | null
         }
         Returns: boolean
       }
       mark_notifications_read: {
         Args: {
-          user_email: string
+          user_email: string | null
         }
         Returns: undefined
       }
       match_assist_text_embeddings: {
         Args: {
-          query_embedding: string
-          query_locale: string
-          query_model_id: string
-          query_model_revision: string
-          query_preprocess_version: string
-          query_entity_kind?: string
-          match_count?: number
+          query_embedding: string | null
+          query_locale: string | null
+          query_model_id: string | null
+          query_model_revision: string | null
+          query_preprocess_version: string | null
+          query_entity_kind?: string | null
+          match_count?: number | null
         }
         Returns: {
           entity_kind: string
@@ -3339,55 +3339,55 @@ export type Database = {
       }
       record_profile_activity: {
         Args: {
-          user_email: string
-          request_ip_hash?: string
-          request_ip_masked?: string
-          request_user_agent_hash?: string
-          request_country?: string
-          request_device_hash?: string
+          user_email: string | null
+          request_ip_hash?: string | null
+          request_ip_masked?: string | null
+          request_user_agent_hash?: string | null
+          request_country?: string | null
+          request_device_hash?: string | null
         }
         Returns: string
       }
       replace_deck: {
         Args: {
-          p_deck_id: string
-          p_patch: Json
-          p_identities: Json
-          p_egos: Json
+          p_deck_id: string | null
+          p_patch: Json | null
+          p_identities: Json | null
+          p_egos: Json | null
         }
         Returns: undefined
       }
       replace_md_event_graph: {
         Args: {
-          p_events: Json
-          p_choices: Json
+          p_events: Json | null
+          p_choices: Json | null
         }
         Returns: Json
       }
       support_unread: {
         Args: {
-          user_email: string
+          user_email: string | null
         }
         Returns: boolean
       }
       toggle_deck_vote: {
         Args: {
-          p_deck_id: string
-          p_user_id: string
+          p_deck_id: string | null
+          p_user_id: string | null
         }
         Returns: boolean
       }
       toggle_plan_vote: {
         Args: {
-          p_plan_id: string
-          p_user_id: string
+          p_plan_id: string | null
+          p_user_id: string | null
         }
         Returns: boolean
       }
       user_notifications: {
         Args: {
-          user_email: string
-          max_rows?: number
+          user_email: string | null
+          max_rows?: number | null
         }
         Returns: {
           kind: string

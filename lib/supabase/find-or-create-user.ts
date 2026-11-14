@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/supabase/database.types'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 import { getCurrentLegalDocs } from '@/lib/data/legal'
 
@@ -60,7 +61,7 @@ function withNumericSuffix(username: string): string {
   return `${username} ${Math.floor(100 + Math.random() * 900)}`
 }
 
-async function isUsernameTaken(admin: SupabaseClient, username: string): Promise<boolean | null> {
+async function isUsernameTaken(admin: SupabaseClient<Database>, username: string): Promise<boolean | null> {
   const { data, error } = await admin
     .schema('limbus')
     .from('profiles')
@@ -72,7 +73,7 @@ async function isUsernameTaken(admin: SupabaseClient, username: string): Promise
   return (data?.length ?? 0) > 0
 }
 
-async function generateSafeUsername(admin: SupabaseClient): Promise<string> {
+async function generateSafeUsername(admin: SupabaseClient<Database>): Promise<string> {
   const tried = new Set<string>()
 
   for (let attempt = 0; attempt < USERNAME_COLLISION_ATTEMPTS; attempt++) {
@@ -89,7 +90,7 @@ async function generateSafeUsername(admin: SupabaseClient): Promise<string> {
   return withNumericSuffix(buildSafeUsernameBase())
 }
 
-async function findExistingUserIdByEmail(admin: SupabaseClient, email: string): Promise<string | null> {
+async function findExistingUserIdByEmail(admin: SupabaseClient<Database>, email: string): Promise<string | null> {
   const PER_PAGE = 1000
   let page = 1
 
@@ -136,7 +137,7 @@ function getSafeErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Unknown error'
 }
 
-async function seedCurrentLegalAcknowledgements(admin: SupabaseClient, userId: string): Promise<void> {
+async function seedCurrentLegalAcknowledgements(admin: SupabaseClient<Database>, userId: string): Promise<void> {
   let rows: LegalAcknowledgementSeedRow[]
   try {
     rows = await buildCurrentLegalAcknowledgementRows(userId)
@@ -170,7 +171,7 @@ async function seedCurrentLegalAcknowledgements(admin: SupabaseClient, userId: s
 
 // Restored databases may not have the auth.users profile trigger installed.
 // Ignore existing IDs so account names, roles, and avatars are never overwritten.
-async function ensureUserProfile(admin: SupabaseClient, userId: string, username: string): Promise<boolean> {
+async function ensureUserProfile(admin: SupabaseClient<Database>, userId: string, username: string): Promise<boolean> {
   const { error } = await admin.schema('limbus').from('profiles').upsert(
     { id: userId, username, avatar_url: DEFAULT_AVATAR_URL },
     { onConflict: 'id', ignoreDuplicates: true },
@@ -180,7 +181,7 @@ async function ensureUserProfile(admin: SupabaseClient, userId: string, username
 
 // next-auth 유저를 Supabase auth에 find-or-create
 export async function findOrCreateSupabaseUser(
-  admin: SupabaseClient,
+  admin: SupabaseClient<Database>,
   email: string,
   _name?: string | null,
   _avatarUrl?: string | null,

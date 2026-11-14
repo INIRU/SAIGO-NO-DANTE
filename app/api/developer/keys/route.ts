@@ -30,12 +30,13 @@ async function handle(request: Request) {
   try {
     const db = createAdminClient();
     const user = auth.session.user;
-    const userId = await findOrCreateSupabaseUser(
+    // Never checked for null here, as before: a null id would query with a null user_id.
+    const userId = (await findOrCreateSupabaseUser(
       db,
       user.email!,
       user.name,
       user.image,
-    );
+    )) as string;
     if (request.method === "GET") {
       const { data, error } = await db
         .schema("limbus")

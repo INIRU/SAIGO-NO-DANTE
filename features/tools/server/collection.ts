@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { CollectionData } from '@/lib/collection'
+import type { CollectionData, EGOInfo, SinnerInfo } from '@/lib/collection'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 
 /** Sinners, identities and E.G.O grouped by sinner for the collection board; shared by the page and /api/collection. */
@@ -31,8 +31,8 @@ export async function fetchCollectionData(): Promise<CollectionData> {
     identities[i.sinner_id]?.push(i)
   }
   for (const e of egosRes.data) {
-    egos[e.sinner_id]?.push(e)
+    egos[e.sinner_id]?.push(e as EGOInfo)
   }
 
-  return { sinners: sinnersRes.data, identities, egos }
+  return { sinners: sinnersRes.data as SinnerInfo[], identities, egos }
 }

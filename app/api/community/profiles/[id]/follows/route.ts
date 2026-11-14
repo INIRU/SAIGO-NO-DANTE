@@ -34,7 +34,8 @@ async function handle(request: Request, { params }: { params: Promise<{ id: stri
     const { data, error } = await db.schema('limbus').rpc('community_follows', { p_user: id, p_viewer: viewer, p_kind: query.data.kind ?? null, p_offset: query.data.offset });
     if (error) throw error;
     if (!data) return request.method === 'DELETE' ? NextResponse.json({ ok: true }, { headers }) : NextResponse.json({ error: 'Not found' }, { status: 404, headers });
-    return NextResponse.json({ ...data, items: data.items.map((item: { id: string }) => ({ ...item, is_self: item.id === viewer })) }, { headers });
+    const follows = data as { items: { id: string }[] };
+    return NextResponse.json({ ...follows, items: follows.items.map((item: { id: string }) => ({ ...item, is_self: item.id === viewer })) }, { headers });
   } catch {
     return NextResponse.json({ error: 'Unable to load follows' }, { status: 503, headers });
   }

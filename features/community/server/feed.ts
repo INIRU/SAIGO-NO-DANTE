@@ -61,8 +61,8 @@ export async function loadDiscovery(kind: "deck" | "planner", since: string | nu
   const formatPosts = (rows: unknown[]) => formatDiscoveryPosts(kind, rows);
   return {
     recent: formatPosts(recent.data ?? []),
-    updated: formatPosts([...((updated.data ?? []) as unknown as { id: string }[])].sort((a, b) => editedIds.indexOf(a.id) - editedIds.indexOf(b.id))),
-    popular: formatPosts(rankPopular((popular.data ?? []) as unknown as { id: string }[], visitors)),
+    updated: formatPosts([...((updated.data ?? []) as { id: string }[])].sort((a, b) => editedIds.indexOf(a.id) - editedIds.indexOf(b.id))),
+    popular: formatPosts(rankPopular((popular.data ?? []) as { id: string }[], visitors)),
     identities: orderedIdentities,
     counts: metrics,
   };

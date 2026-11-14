@@ -361,7 +361,7 @@ export default function DecksClient({
           />
 
           {/* ── 덱 목록 ── */}
-          <BoardResults kind="deck" posts={filtered as unknown as RowPost[]} loading={loading} hasMore={hasMore} loadingMore={loadingMore} sentinelRef={sentinelRef}
+          <BoardResults kind="deck" posts={filtered as RowPost[]} loading={loading} hasMore={hasMore} loadingMore={loadingMore} sentinelRef={sentinelRef}
             empty={(
               <div className="flex flex-col items-center gap-3 py-16 text-center">
                 <p className="text-[1rem] text-[var(--text-secondary)]">{hasAnyFilter ? t('grid.noResults') : t('grid.empty')}</p>

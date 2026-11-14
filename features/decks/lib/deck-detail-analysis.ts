@@ -70,7 +70,7 @@ export function normalizeDeckDetail(data: DeckDetail): DeckDetail {
       ...slot,
       identities: Array.isArray(slot.identities)
         ? (slot.identities[0] as IdentityDetail | undefined) ?? null
-        : slot.identities as unknown as IdentityDetail | null,
+        : slot.identities as IdentityDetail | null,
     })),
     deck_egos: (data.deck_egos ?? []).map((es: EgoSlot & { ego: unknown }) => ({
       ...es,

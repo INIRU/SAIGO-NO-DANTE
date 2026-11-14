@@ -22,14 +22,14 @@ async function getGameValues() {
   if (abilityRows.error && !isMissingColumnError(abilityRows.error)) throw new Error(abilityRows.error.message)
   if (giftRows.error && !isMissingColumnError(giftRows.error)) throw new Error(giftRows.error.message)
   const abilities: Record<string, KeywordAbility[]> = {}
-  for (const row of (abilityRows.error ? [] : abilityRows.data) as unknown as { name: string; abilities: KeywordAbility[] }[]) {
+  for (const row of (abilityRows.error ? [] : abilityRows.data) as { name: string; abilities: KeywordAbility[] }[]) {
     if (Array.isArray(row.abilities)) abilities[row.name] = row.abilities
   }
   const gifts = giftRows.error
     ? await db.from('ego_gifts').select(GIFT_COLUMNS).order('name')
     : giftRows
   if (gifts.error) throw new Error(gifts.error.message)
-  return { abilities, gifts: gifts.data as unknown as GiftSourceRow[] }
+  return { abilities, gifts: gifts.data as GiftSourceRow[] }
 }
 
 async function getDamageSources(lang: SupportedLang) {

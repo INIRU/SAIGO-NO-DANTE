@@ -44,7 +44,7 @@ export default function IdentityRecommendations({ companions, posts }: { compani
       <RecommendationLane id="identity-popular" title={t('popular')} count={posts.length}>
         {posts.map(({ kind, post }) => (
           <div key={`${kind}:${post.id}`} className="min-w-0">
-            {kind === 'deck' ? <DeckCard deck={post as unknown as DeckSummary} NotePreview={NoteCardPreview} /> : <PlanCard plan={post as unknown as PlanSummary} NotePreview={NoteCardPreview} />}
+            {kind === 'deck' ? <DeckCard deck={post as DeckSummary} NotePreview={NoteCardPreview} /> : <PlanCard plan={post as PlanSummary} NotePreview={NoteCardPreview} />}
           </div>
         ))}
       </RecommendationLane>

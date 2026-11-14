@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const admin = createAdminClient()
     const userId = await findOrCreateSupabaseUser(admin, session.user.email, session.user.name, session.user.image)
 
-    const { data, error } = await admin.schema('limbus').from('md_plan_votes').select('plan_id').eq('plan_id', id).eq('user_id', userId).maybeSingle()
+    const { data, error } = await admin.schema('limbus').from('md_plan_votes').select('plan_id').eq('plan_id', id).eq('user_id', userId as string).maybeSingle()
     if (error) {
       console.error('[planner/[id]/vote]', error.message)
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

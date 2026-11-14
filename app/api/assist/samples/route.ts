@@ -2,6 +2,7 @@ import { after, NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { toJson } from '@/lib/supabase/json'
 import { fail } from '@/lib/api/respond'
 import { parseSampleMeta, SAMPLE_BUCKET, SAMPLE_KEEP_MS, SAMPLE_MAX_FRAMES, SAMPLE_MAX_FRAME_BYTES } from '@/features/assist'
 
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
   const path = day + '/' + randomUUID()
   const signed = await Promise.all(sizes.map((_, index) => bucket.createSignedUploadUrl(path + '/' + index + '.jpg')))
   if (signed.some(item => item.error || !item.data)) return fail(500, 'not saved')
-  const { error } = await admin.schema('limbus').from('assist_samples').insert({ reason: meta.reason, meta, frame_count: sizes.length, bytes: size, path })
+  const { error } = await admin.schema('limbus').from('assist_samples').insert({ reason: meta.reason, meta: toJson(meta), frame_count: sizes.length, bytes: size, path })
   if (error) return fail(500, 'not saved')
   after(purgeExpired)
   return NextResponse.json({ uploads: signed.map(item => ({ path: item.data!.path, token: item.data!.token })) }, { status: 201 })

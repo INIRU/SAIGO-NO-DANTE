@@ -5,7 +5,8 @@ import { pageMetadata } from '@/lib/seo/metadata'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { MD_EVENT_CHOICE_COLUMNS, MD_EVENT_COLUMNS } from '@/lib/db/columns'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
-import { normalizePlannerThemeId } from '@/lib/planner/types'
+import { normalizePlannerThemeId, type ThemeData, type GiftData } from '@/lib/planner/types'
+import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
 import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
 import { giftsQuery, observationQuery, recipesQuery, themesQuery } from '@/features/mirror-dungeon/server'
 import PrescriptWrapper from '../_components/PrescriptWrapper'
@@ -44,7 +45,7 @@ export default async function PrescriptPage({ params }: { params: Promise<{ lang
     const id = normalizePlannerThemeId(theme.id)
     return id === null ? [] : [{ ...theme, id }]
   })
-  return <PrescriptWrapper themes={normalizedThemes}
-    gifts={(gifts ?? []).map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus']))}
-    recipes={recipes ?? []} events={events ?? []} eventChoices={eventChoices ?? []} identities={identities ?? []} sinners={sinners ?? []} observable={observation?.gift_ids ?? []} dataError={!!(e1 || e2 || e3)} />
+  return <PrescriptWrapper themes={normalizedThemes as ThemeData[]}
+    gifts={(gifts ?? []).map(gift => withoutOtherLocales(gift, lang, ['effect_base', 'effect_plus', 'effect_plusplus'])) as GiftData[]}
+    recipes={recipes ?? []} events={(events ?? []) as MdEvent[]} eventChoices={(eventChoices ?? []) as MdEventChoice[]} identities={identities ?? []} sinners={sinners ?? []} observable={observation?.gift_ids ?? []} dataError={!!(e1 || e2 || e3)} />
 }

@@ -418,7 +418,8 @@ export interface GiftData {
   effect_plusplus: string | null
   effect_plusplus_en?: string | null
   effect_plusplus_jp?: string | null
-  theme_ids: number[] | null
+  /** Not a column of ego_gifts: no query selects it, so it is absent on every row read from the database. */
+  theme_ids?: number[] | null
   activation_condition: GiftActivationCondition | null
   /** The gift's price (game ego-gift data `price`; ego_gifts.price). Absent until synced: price checks then pass. */
   price?: number | null

@@ -378,7 +378,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
             summary={loading ? '' : hasAnyFilter || filtered.length !== total ? t('result.filtered', { filtered: filtered.length, total }) : t('result.total', { count: total })}
           />
 
-          <BoardResults kind="planner" posts={filtered as unknown as RowPost[]} loading={loading} hasMore={hasMore} loadingMore={loadingMore} sentinelRef={sentinelRef}
+          <BoardResults kind="planner" posts={filtered as RowPost[]} loading={loading} hasMore={hasMore} loadingMore={loadingMore} sentinelRef={sentinelRef}
             empty={(
               <div className="flex flex-col items-center gap-3 py-16 text-center">
                 <p className="text-[1rem] text-[var(--text-secondary)]">{debouncedSearch.trim() ? t('grid.noSearchResults', { query: debouncedSearch }) : t('grid.empty')}</p>
