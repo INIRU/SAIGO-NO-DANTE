@@ -24,7 +24,7 @@ const render = async (kind: 'deck' | 'planner') => {
 beforeEach(() => { state.posts = [{ id: 'a' }, { id: 'b' }]; state.fail = false })
 
 describe('CoVisitedLane', () => {
-  it('REQ-COMMUNITY-069 shows the title alone above deck cards on a deck page', async () => {
+  it('shows the title alone above deck cards on a deck page', async () => {
     const html = await render('deck')
     expect(html).toContain('server.coVisited')
     expect(html).toContain('<span data-deck="true">a</span>')
@@ -32,11 +32,11 @@ describe('CoVisitedLane', () => {
     expect(html).not.toContain('<p')
   })
 
-  it('REQ-COMMUNITY-069 shows plan cards on a plan page', async () => {
+  it('shows plan cards on a plan page', async () => {
     expect(await render('planner')).toContain('<span data-plan="true">b</span>')
   })
 
-  it('REQ-COMMUNITY-071 draws nothing when there is nothing to show or the read fails', async () => {
+  it('draws nothing when there is nothing to show or the read fails', async () => {
     state.posts = []
     expect(await render('deck')).toBe('')
     state.posts = [{ id: 'a' }]

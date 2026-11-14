@@ -14,12 +14,12 @@ describe('popularWith', () => {
     f('d5', ['B'], { votes: 20 }),
   ]
 
-  it('REQ-COMMUNITY-067 orders posts fielding the identity by window visitors, then votes, then views', () => {
+  it('orders posts fielding the identity by window visitors, then votes, then views', () => {
     const visitors = new Map([['planner:p1', 12], ['deck:d2', 3]])
     expect(popularWith(formations, 'A', visitors).map(post => post.id)).toEqual(['p1', 'd2', 'd1', 'd3'])
   })
 
-  it('REQ-COMMUNITY-067 leaves out posts with neither visitors nor votes and keeps at most four', () => {
+  it('leaves out posts with neither visitors nor votes and keeps at most four', () => {
     const ids = popularWith(formations, 'A', new Map()).map(post => post.id)
     expect(ids).toEqual(['d1', 'd3', 'd2'])
     expect(ids).not.toContain('d4')

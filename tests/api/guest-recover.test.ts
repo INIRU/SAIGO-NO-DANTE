@@ -45,7 +45,7 @@ const outcome = async (res: Response) => [res.status, (await res.json()).code]
 
 beforeEach(() => { rpcCalls.length = 0; lookups.length = 0; audits.length = 0; allowed = true; friendRow = null; rpcResult = { data: 'ok', error: null } })
 
-it('REQ-COMMUNITY-030 the right password ties the post to this browser\'s key; only hashes reach the database', async () => {
+it('the right password ties the post to this browser\'s key; only hashes reach the database', async () => {
   const res = await send({ kind: 'deck', id: POST_ID, pin: '4821' })
   expect(res.status).toBe(200)
   expect(rpcCalls).toEqual([{ name: 'guest_pin_recover', args: { p_kind: 'deck', p_id: POST_ID, p_pin_hash: guestPinHash('deck', POST_ID, '4821'), p_key_hash: guestKeyHash(KEY) } }])
@@ -54,13 +54,13 @@ it('REQ-COMMUNITY-030 the right password ties the post to this browser\'s key; o
   expect(audits).toEqual([{ actorId: null, action: 'guest_recover', targetType: 'deck', targetId: POST_ID, details: { tag: guestKeyHash(KEY).slice(0, 4) } }])
 })
 
-it('REQ-COMMUNITY-030 an id written in capitals is the same post: it is hashed as the database writes it', async () => {
+it('an id written in capitals is the same post: it is hashed as the database writes it', async () => {
   const upper = 'ABCDEF12-3456-4ABC-8DEF-ABCDEF123456'
   expect((await send({ kind: 'deck', id: upper, pin: '4821' })).status).toBe(200)
   expect(rpcCalls[0].args).toMatchObject({ p_id: upper.toLowerCase(), p_pin_hash: guestPinHash('deck', upper.toLowerCase(), '4821') })
 })
 
-it('REQ-COMMUNITY-030 a wrong password, a locked post and a post without a password are refused, each with its code', async () => {
+it('a wrong password, a locked post and a post without a password are refused, each with its code', async () => {
   for (const [result, status, code] of [['wrong', 403, 'wrong_pin'], ['locked', 429, 'pin_locked'], ['none', 404, 'no_pin']] as const) {
     rpcResult = { data: result, error: null }
     expect(await outcome(await send({ kind: 'plan', id: POST_ID, pin: '123456' }))).toEqual([status, code])
@@ -69,7 +69,7 @@ it('REQ-COMMUNITY-030 a wrong password, a locked post and a post without a passw
   expect(audits).toEqual([])
 })
 
-it('REQ-COMMUNITY-030 nothing is tried without a key, with a malformed password or target, or past the request limit', async () => {
+it('nothing is tried without a key, with a malformed password or target, or past the request limit', async () => {
   expect((await send({ kind: 'deck', id: POST_ID, pin: '4821' }, null)).status).toBe(400)
   for (const body of [{ kind: 'deck', id: POST_ID, pin: '48' }, { kind: 'deck', id: POST_ID }, { kind: 'deck', id: 'nope', pin: '4821' }, { kind: 'comment', id: POST_ID, pin: '4821' }, { kind: 'support', code: 'p482593721', pin: '4821' }, null]) {
     expect((await send(body)).status).toBe(400)
@@ -80,7 +80,7 @@ it('REQ-COMMUNITY-030 nothing is tried without a key, with a malformed password 
   expect(lookups).toEqual([])
 })
 
-it('REQ-COMMUNITY-030 a friend post is found by its kind and code', async () => {
+it('a friend post is found by its kind and code', async () => {
   expect(await outcome(await send({ kind: 'want', code: 'P482593721', pin: '4821' }))).toEqual([404, 'not_found'])
   expect(rpcCalls).toEqual([])
   friendRow = { id: POST_ID }
@@ -90,7 +90,7 @@ it('REQ-COMMUNITY-030 a friend post is found by its kind and code', async () => 
   expect(audits).toEqual([{ actorId: null, action: 'guest_recover', targetType: 'friend_post', targetId: POST_ID, details: { tag: guestKeyHash(KEY).slice(0, 4) } }])
 })
 
-it('REQ-COMMUNITY-030 a browser that already has a post of that kind gets 409; a failed call does not say why', async () => {
+it('a browser that already has a post of that kind gets 409; a failed call does not say why', async () => {
   friendRow = { id: POST_ID }
   rpcResult = { data: null, error: { code: '23505', message: 'duplicate key value violates friend_posts_guest' } }
   expect(await outcome(await send({ kind: 'support', code: 'P482593721', pin: '4821' }))).toEqual([409, 'has_post'])

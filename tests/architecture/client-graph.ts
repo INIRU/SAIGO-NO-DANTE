@@ -16,7 +16,7 @@ function file(path: string): string | null {
 /**
  * The npm packages and repo files the client code of a server entry (a layout or page) imports: from the entry, follow static
  * imports; once a 'use client' file is reached, everything it imports is client code the browser downloads with it.
- * regex, not a parser — good enough for this repo's import style; switch to the TS AST if it misreads.
+ * Regex, not a parser — good enough for this repo's import style; switch to the TS AST if it misreads.
  */
 export function clientGraph(entry: string): { packages: Map<string, string>; files: Set<string> } {
   const packages = new Map<string, string>()

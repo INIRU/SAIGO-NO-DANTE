@@ -72,6 +72,7 @@ docs/              개발 문서(guides/ 하는 방법, reference/ 찾아보기)
 deploy/server/     서버 배포 스크립트
 ```
 
+자세한 경계와 이름 규칙은 [구조](docs/reference/architecture.md)와 [새 기능 만들기](docs/guides/new-feature.md)에 있습니다.
 
 ## 문서
 

@@ -12,7 +12,7 @@ const identities = new Map([[I1, 'faust'], [I2, 'faust']])
 const egos = new Map([[E1, { sinner: 'faust', grade: 'ZAYIN' }], [E2, { sinner: 'ryoshu', grade: 'HE' }]])
 const body = (slots: unknown, extra: object = {}) => ({ code: 'A123456789', visibility: 'public', slots, ...extra })
 
-describe('REQ-COMMUNITY-019 support post', () => {
+describe('support post', () => {
   it('takes a code of one capital letter and nine digits, a visibility and up to 12 slots, the same sinner twice', () => {
     const parsed = parseSupportPost(body([{ slot: 0, identity: I1, egos: { ZAYIN: E1 } }, { slot: 11, identity: I2, egos: {} }]), identities, egos)
     expect(parsed).toEqual({ code: 'A123456789', visibility: 'public', identityIds: [I1, I2],
@@ -45,7 +45,7 @@ describe('REQ-COMMUNITY-019 support post', () => {
   })
 })
 
-describe('REQ-COMMUNITY-020 who sees the code', () => {
+describe('who sees the code', () => {
   const post = (visibility: string) => ({ code: 'A123456789', visibility })
   const nobody = { signedIn: false, mine: false, exchanged: false }
   it('public: anyone; members: signed-in viewers; exchange: those who gave their code; the author always', () => {
@@ -58,7 +58,7 @@ describe('REQ-COMMUNITY-020 who sees the code', () => {
   })
 })
 
-describe('REQ-COMMUNITY-022 moving a post up', () => {
+describe('moving a post up', () => {
   it('moves up when the last time is 12 hours or more ago, and keeps the order before that', () => {
     const now = new Date('2026-10-08T12:00:00Z')
     expect(nextBumpedAt('2026-10-08T00:00:00Z', now)).toBe(now.toISOString())
@@ -66,7 +66,7 @@ describe('REQ-COMMUNITY-022 moving a post up', () => {
   })
 })
 
-describe('REQ-COMMUNITY-019 want post', () => {
+describe('want post', () => {
   const want = (ids: unknown, extra: object = {}) => ({ code: 'A123456789', visibility: 'public', identities: ids, ...extra })
   it('takes the author\'s own code and one to three identities of the catalogue, each once, and no free text', () => {
     expect(parseWantPost(want([I1, I2], { note: 'please' }), identities)).toEqual({ code: 'A123456789', visibility: 'public', identityIds: [I1, I2] })
@@ -83,7 +83,7 @@ describe('REQ-COMMUNITY-019 want post', () => {
   })
 })
 
-describe('REQ-COMMUNITY-022 want post lifetime and request counts', () => {
+describe('want post lifetime and request counts', () => {
   it('ends one day after it was written', () => {
     expect(wantExpiresAt('2026-10-08T03:00:00.000Z')).toBe('2026-10-09T03:00:00.000Z')
   })
@@ -94,7 +94,7 @@ describe('REQ-COMMUNITY-022 want post lifetime and request counts', () => {
   })
 })
 
-describe('REQ-COMMUNITY-021 code exchange', () => {
+describe('code exchange', () => {
   it('takes only a well-formed code from the viewer, and shows the author\'s code to those who gave one', () => {
     for (const code of ['Q111111111', 'A000000000']) expect(FRIEND_CODE_RE.test(code)).toBe(true)
     for (const code of ['q111111111', 'Q11111111', 'Q1111111111', '1111111111', 'Q11111111a', '']) expect(FRIEND_CODE_RE.test(code)).toBe(false)
@@ -106,7 +106,7 @@ describe('REQ-COMMUNITY-021 code exchange', () => {
   })
 })
 
-describe('REQ-COMMUNITY-023 last time on the site', () => {
+describe('last time on the site', () => {
   it('is written again only after ten minutes', () => {
     const now = Date.parse('2026-10-08T12:00:00Z')
     expect(seenIsStale('2026-10-08T11:49:59Z', now)).toBe(true)
@@ -115,7 +115,7 @@ describe('REQ-COMMUNITY-023 last time on the site', () => {
   })
 })
 
-describe('REQ-COMMUNITY-024 strips and the three languages', () => {
+describe('strips and the three languages', () => {
   it('numbers a strip by its identity\'s sinner, as the game does (no 10), and has no number for an unknown one', () => {
     expect(['yi-sang', 'rodion', 'sinclair', 'outis', 'gregor'].map(sinnerNumber)).toEqual(['01', '09', '11', '12', '13'])
     expect(sinnerNumber('nobody')).toBeNull()
@@ -128,7 +128,7 @@ describe('REQ-COMMUNITY-024 strips and the three languages', () => {
   })
 })
 
-describe('REQ-COMMUNITY-025 warning, reports and barred authors', () => {
+describe('warning, reports and barred authors', () => {
   it('warns about other people\'s and fake codes in the three languages, and names a report and its outcome', () => {
     for (const messages of [ko, en, ja]) for (const key of ['warning', 'report', 'reported'] as const) expect(messages.friends[key]).toBeTruthy()
     expect(ko.friends.warning).toContain('정지')
@@ -140,7 +140,7 @@ describe('REQ-COMMUNITY-025 warning, reports and barred authors', () => {
   })
 })
 
-describe('REQ-COMMUNITY-026 friend code guide', () => {
+describe('friend code guide', () => {
   it('has five steps, each with its game screen, a text in ko, en and ja, and marks inside the picture', () => {
     expect(FRIEND_GUIDE_STEPS.map(step => step.key)).toEqual(['code', 'copy', 'friends', 'add', 'company'])
     for (const step of FRIEND_GUIDE_STEPS) {
@@ -155,14 +155,14 @@ describe('REQ-COMMUNITY-026 friend code guide', () => {
   })
 })
 
-describe('REQ-COMMUNITY-027 list tab in the address', () => {
+describe('list tab in the address', () => {
   it('names the two tabs the address can carry: none for support, want for wanted identities', () => {
     // FriendsClient binds the tab to ?tab= with nuqs (parseAsStringLiteral over these kinds, default support).
     for (const messages of [ko, en, ja]) expect(Object.keys(messages.friends.tabs)).toEqual(['support', 'want'])
   })
 })
 
-describe('REQ-COMMUNITY-028 code shown after the author approves', () => {
+describe('code shown after the author approves', () => {
   const post = { code: 'A123456789', visibility: 'approval' }
   const viewer = { signedIn: true, mine: false, exchanged: true }
   it('hides the code until this viewer\'s request is approved; signing in or exchanging does not open it', () => {
@@ -182,7 +182,7 @@ describe('REQ-COMMUNITY-028 code shown after the author approves', () => {
   })
 })
 
-describe('REQ-COMMUNITY-024 E.G.O of an opened strip', () => {
+describe('E.G.O of an opened strip', () => {
   it('are listed in the grade order the strip marks use, ZAYIN to ALEPH, whatever order they were chosen in', () => {
     const chosen = { WAW: 'w', ZAYIN: 'z', HE: 'h' } as Record<string, string>
     expect(['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'].filter(grade => chosen[grade])).toEqual(['ZAYIN', 'HE', 'WAW'])

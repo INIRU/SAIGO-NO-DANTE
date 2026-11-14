@@ -26,25 +26,25 @@ const render = (text: string, upgradeHighlight?: string) =>
 const renderEffect = (text: string) =>
   renderToStaticMarkup(<KeywordProvider keywords={KEYWORDS}><EffectText text={text} color="#c8b898" /></KeywordProvider>)
 
-describe('REQ-MIRROR-DUNGEON-027 enhanced gift text tints what the enhancement changed', () => {
-  it('REQ-MIRROR-DUNGEON-027 colours the upgradeHighlight run when asked, and only that run', () => {
+describe('enhanced gift text tints what the enhancement changed', () => {
+  it('colours the upgradeHighlight run when asked, and only that run', () => {
     const html = render(BLOODY_GADGET.plusplus, GOLD)
     expect(html).toContain(`<span style="color:${GOLD}">무작위 아군 둘</span>이 `)
     expect(html.match(new RegExp(GOLD, 'g'))).toHaveLength(1)
     expect(html).not.toContain('upgradeHighlight')
   })
 
-  it('REQ-MIRROR-DUNGEON-027 keeps the plain colourless rendering when no colour is asked (REQ-SHARED-022)', () => {
+  it('keeps the plain colourless rendering when no colour is asked', () => {
     const html = render(BLOODY_GADGET.plusplus)
     expect(html).toContain('무작위 아군 둘')
     expect(html).not.toContain('color:')
   })
 
-  it('REQ-MIRROR-DUNGEON-027 leaves the base text untouched', () => {
+  it('leaves the base text untouched', () => {
     expect(renderEffect(BLOODY_GADGET.base)).not.toContain(GOLD)
   })
 
-  it('REQ-MIRROR-DUNGEON-027 compares each level to the one before it, as the game writes it: + tints the added bonus, ++ only the head-count', () => {
+  it('compares each level to the one before it, as the game writes it: + tints the added bonus, ++ only the head-count', () => {
     const plus = renderEffect(BLOODY_GADGET.plus)
     expect(plus).toContain(`color:${GOLD}`)
     expect(plus).toContain('추가로 얻음')
@@ -54,14 +54,14 @@ describe('REQ-MIRROR-DUNGEON-027 enhanced gift text tints what the enhancement c
     expect(plusplus.match(new RegExp(GOLD, 'g'))).toHaveLength(1)
   })
 
-  it('REQ-MIRROR-DUNGEON-027 tints a highlight that spans a line break on every line', () => {
+  it('tints a highlight that spans a line break on every line', () => {
     const html = renderEffect('<style="upgradeHighlight">첫 줄\n둘째 줄</style> 끝')
     expect(html.match(new RegExp(`color:${GOLD}`, 'g'))).toHaveLength(2)
     expect(html).toContain('첫 줄')
     expect(html).toContain('둘째 줄')
   })
 
-  it('REQ-MIRROR-DUNGEON-027 keeps bold and the surrounding text inside the tinted run', () => {
+  it('keeps bold and the surrounding text inside the tinted run', () => {
     const html = render('앞 <style="upgradeHighlight">값 <b>10</b>%</style> 뒤', GOLD)
     expect(html).toContain(`<span style="color:${GOLD}">값 <span style="font-weight:700">10</span>%</span>`)
   })

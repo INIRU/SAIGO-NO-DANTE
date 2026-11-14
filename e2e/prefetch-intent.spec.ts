@@ -6,7 +6,7 @@ test.setTimeout(90000)
 // Prefetch runs only in a production build: BASE_URL must point at `next start`.
 const DETAIL = /\/sinners\/[^/]+\/identities\/[^/]+$/
 
-// REQ-DECKS-049: a card on screen prefetches the detail's shell (requests with Next-Router-Prefetch); the whole detail
+// A card on screen prefetches the detail's shell (requests with Next-Router-Prefetch); the whole detail
 // (an RSC request without that header) only for the card the pointer rests on.
 test('an identity card prefetches its detail shell on sight and the whole detail only after the pointer rests on it', async ({ page }) => {
   const shells = new Set<string>()

@@ -15,7 +15,7 @@ import { normalizeUptie } from '@/features/decks'
 import { fetchEgoAttackSkillsByEgoId, type EgoAttackSkill } from '@/features/decks/server'
 
 
-// The detail page already has the deck from its first view: `?part=viewer` sends only what that lacks (REQ-DECKS-051).
+// The detail page already has the deck from its first view: `?part=viewer` sends only what that lacks.
 const VIEWER_COLUMNS = `
   id, user_id, vote_count, view_count,
   deck_identities(slot_order, identities(id, sinner_id, game_id)),

@@ -37,10 +37,10 @@ import { GET } from '@/app/api/decks/[id]/route'
 
 const get = (query = '') => GET(new NextRequest(`http://localhost/api/decks/d1${query}`), { params: Promise.resolve({ id: 'd1' }) })
 
-describe('REQ-DECKS-051 the deck detail does not download its first view again', () => {
+describe('the deck detail does not download its first view again', () => {
   beforeEach(() => { for (const key of Object.keys(selects)) delete selects[key] })
 
-  it('REQ-DECKS-051 ?part=viewer returns only what the rendered page lacks, without identity skills or passives', async () => {
+  it('?part=viewer returns only what the rendered page lacks, without identity skills or passives', async () => {
     const response = await get('?part=viewer')
     expect(response.status).toBe(200)
     const body = await response.json()
@@ -50,13 +50,13 @@ describe('REQ-DECKS-051 the deck detail does not download its first view again',
     expect(body.deck_code).toBe((await (await get()).json()).deck_code)
   })
 
-  it('REQ-DECKS-051 without the part the whole deck comes back as before', async () => {
+  it('without the part the whole deck comes back as before', async () => {
     const body = await (await get()).json()
     expect(body).toHaveProperty('deck_identities')
     expect(selects.decks[0]).toMatch(/skills\(/)
   })
 
-  it('REQ-DECKS-051 the page asks for the viewer part when it has the first view, and shares the gift list key with note chips', () => {
+  it('the page asks for the viewer part when it has the first view, and shares the gift list key with note chips', () => {
     const client = readFileSync(join(process.cwd(), 'app/[lang]/decks/[id]/DeckDetailClient.tsx'), 'utf8')
     expect(client).toMatch(/initialDeck \? `\/api\/decks\/\$\{id\}\?part=viewer` : `\/api\/decks\/\$\{id\}`/)
     expect(client).toMatch(/useSWR\('\/api\/ego-gifts', fetchNoteGifts/)

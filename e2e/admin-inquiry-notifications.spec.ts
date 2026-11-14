@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { encode } from 'next-auth/jwt'
 import { loadEnvConfig } from '@next/env'
-// REQ-COMMUNITY-017 REQ-COMMUNITY-018 REQ-ADMIN-007 REQ-ADMIN-008: an administrator's bell lists an inquiry waiting for
+// An administrator's bell lists an inquiry waiting for
 // an answer without flashing a scrollbar, and its row opens that inquiry in the inbox, which names the inquirer.
 // The session is signed with the local NextAuth key; the feed and the inbox are answered here, and nothing is written.
 test.use({ channel: 'chrome' })
@@ -27,7 +27,7 @@ const feed = {
     { id: 'c1', kind: 'comment', target: 'deck', href: '/decks/d1#deck-comments-title', title: '출혈 덱', actor: '돈키호테', avatar: null, excerpt: '댓글 내용', at: ago(90), unread: false },
   ],
 }
-for (const width of [1440, 390]) test(`REQ-COMMUNITY-017 REQ-COMMUNITY-018 REQ-ADMIN-007 REQ-ADMIN-008 admin inquiry notifications: bell, no scrollbar flash, inbox names ${width}`, async ({ page, context }, info) => {
+for (const width of [1440, 390]) test(`admin inquiry notifications: bell, no scrollbar flash, inbox names ${width}`, async ({ page, context }, info) => {
   test.setTimeout(90000)
   const email = process.env.ADMIN_EMAILS?.split(',')[0]?.trim()
   test.skip(!email || !process.env.NEXTAUTH_SECRET, 'Requires the local admin session configuration')

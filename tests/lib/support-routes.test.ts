@@ -96,7 +96,7 @@ describe('private support routes', () => {
     expect((await adminGET()).status).toBe(403)
     expect(m.db).not.toHaveBeenCalled()
   })
-  it('REQ-ADMIN-007 the admin inbox and thread carry the inquirer\'s profile name; the user\'s own reads do not', async () => {
+  it('the admin inbox and thread carry the inquirer\'s profile name; the user\'s own reads do not', async () => {
     const author = 'author:profiles!inquiries_user_id_fkey(username)'
     m.admin.mockResolvedValue(active)
     m.query.maybeSingle.mockResolvedValue(thread({ author: { username: '파우스트' } }))

@@ -18,8 +18,8 @@ const RAW = '[WhenUse] 본문 [Burst]\n\n<style="highlight">두번째 문단</st
   + '<coin=2>[OnSucceedAttack] 침잠 1\n- 추가</coin>\n'
   + '<coin=3>[OnSucceedAttack] 이 코인이 [SuperCoin]이면 +1</coin>'
 
-describe('REQ-SHARED-020 raw skill descriptions (<coin=N> blocks)', () => {
-  it('REQ-SHARED-020 splits the main text into lines and each coin block into its own section', () => {
+describe('raw skill descriptions (<coin=N> blocks)', () => {
+  it('splits the main text into lines and each coin block into its own section', () => {
     const parsed = parseSkillDescription(RAW)
     expect(parsed.globalEffects).toEqual(['[WhenUse] 본문 [Burst]', '<style="highlight">두번째 문단</style>'])
     expect([...parsed.paragraphBreaks]).toEqual([1])
@@ -30,19 +30,19 @@ describe('REQ-SHARED-020 raw skill descriptions (<coin=N> blocks)', () => {
     ])
   })
 
-  it('REQ-SHARED-020 marks a coin unbreakable by a line that starts with [SuperCoin], not by a mention inside a sentence', () => {
+  it('marks a coin unbreakable by a line that starts with [SuperCoin], not by a mention inside a sentence', () => {
     expect([...unbreakableCoinIndices(RAW)]).toEqual([0])
     expect([...unbreakableCoinIndices('<coin=2>[SuperCoin]<style="highlight"></style>\n[OnSucceedAttack] 피해</coin>')]).toEqual([1])
     // The main text may say "all coins become [SuperCoin]"; that is not a coin.
     expect([...unbreakableCoinIndices('[StartBattle]\n- 모든 코인이 [SuperCoin]으로 변경됨\n<coin=1>피해</coin>')]).toEqual([])
   })
 
-  it('REQ-SHARED-020 still reads the old unbreakable wording inside a coin block and an old [코인 N] line with [SuperCoin]', () => {
+  it('still reads the old unbreakable wording inside a coin block and an old [코인 N] line with [SuperCoin]', () => {
     expect([...unbreakableCoinIndices('<coin=1>일반</coin>\n<coin=2>파괴 불가 코인\n피해</coin>')]).toEqual([1])
     expect([...unbreakableCoinIndices('[코인 1] [SuperCoin]\n피해')]).toEqual([0])
   })
 
-  it('REQ-SHARED-020 keeps every line balanced: a tag open across lines reopens, and an unclosed main tag never reaches the coins', () => {
+  it('keeps every line balanced: a tag open across lines reopens, and an unclosed main tag never reaches the coins', () => {
     expect(parseSkillDescription('<style="highlight">가\n나</style>').globalEffects).toEqual(['<style="highlight">가', '<style="highlight">나</style>'])
     expect(parseSkillDescription('<coin=1><b>- 가\n- 나</b></coin>').coinSections[0].lines).toEqual(['<b>- 가', '<b>- 나</b>'])
     const parsed = parseSkillDescription('<style="highlight">본문\n<coin=1>효과</coin>')
@@ -50,13 +50,13 @@ describe('REQ-SHARED-020 raw skill descriptions (<coin=N> blocks)', () => {
     expect(parsed.coinSections[0].lines).toEqual(['효과'])
   })
 
-  it('REQ-SHARED-020 reads a raw description without coins as main lines only', () => {
+  it('reads a raw description without coins as main lines only', () => {
     const parsed = parseSkillDescription('[WhenUse] 가\n[OnHit] 나')
     expect(parsed.globalEffects).toEqual(['[WhenUse] 가', '[OnHit] 나'])
     expect(parsed.coinSections).toEqual([])
   })
 
-  it('REQ-SHARED-020 tells an unbreakable coin text from other text', () => {
+  it('tells an unbreakable coin text from other text', () => {
     expect(isUnbreakableCoinText('파괴 불가 코인 위력 증가')).toBe(true)
     expect(isUnbreakableCoinText('Unbreakable Coin')).toBe(true)
     expect(isUnbreakableCoinText('破壊不可コイン')).toBe(true)
@@ -66,7 +66,7 @@ describe('REQ-SHARED-020 raw skill descriptions (<coin=N> blocks)', () => {
     expect(isUnbreakableCoinText(null)).toBe(false)
   })
 
-  it('REQ-SHARED-020 lists display blocks: main lines, then each coin block whole; old text one block per line', () => {
+  it('lists display blocks: main lines, then each coin block whole; old text one block per line', () => {
     expect(skillDescriptionBlocks(RAW)).toEqual([
       { text: '[WhenUse] 본문 [Burst]', coinStart: false },
       { text: '', coinStart: false },
@@ -81,8 +81,8 @@ describe('REQ-SHARED-020 raw skill descriptions (<coin=N> blocks)', () => {
   })
 })
 
-describe('REQ-SHARED-020 E.G.O skill effect split', () => {
-  it('REQ-SHARED-020 splits the old [코인 N] format as before (follow-up lines belong to their coin)', () => {
+describe('E.G.O skill effect split', () => {
+  it('splits the old [코인 N] format as before (follow-up lines belong to their coin)', () => {
     expect(splitEgoSkillDescription('[사용시] 본문\n\n[코인 1] 효과1\n후속\n[코인 2] 파괴 불가 코인')).toEqual({
       normalEffect: '[사용시] 본문', coinEffects: ['효과1\n후속', '파괴 불가 코인'],
     })
@@ -90,7 +90,7 @@ describe('REQ-SHARED-020 E.G.O skill effect split', () => {
     expect(splitEgoSkillDescription('')).toEqual({ normalEffect: '', coinEffects: [] })
   })
 
-  it('REQ-SHARED-020 splits raw <coin=N> blocks, leaving coins without a block empty and the raw text untouched', () => {
+  it('splits raw <coin=N> blocks, leaving coins without a block empty and the raw text untouched', () => {
     expect(splitEgoSkillDescription('<style="highlight">본문 A</style>\n\n본문 B\n<coin=1>[SuperCoin]\n효과</coin>\n<coin=3>끝</coin>')).toEqual({
       normalEffect: '<style="highlight">본문 A</style>\n\n본문 B', coinEffects: ['[SuperCoin]\n효과', '', '끝'],
     })

@@ -7,7 +7,7 @@ const root = resolve(__dirname, '../..')
 const layoutClient = () => clientGraph('app/[lang]/layout.tsx')
 
 describe('layout client weight', () => {
-  it('REQ-SHARED-087 keeps validation, database clients and the translation table out of the code every page downloads', () => {
+  it('keeps validation, database clients and the translation table out of the code every page downloads', () => {
     const { packages, files } = layoutClient()
     const offenders = [...packages].filter(([name]) => /^(zod|@supabase\/supabase-js)(\/|$)/.test(name))
     expect(offenders, offenders.map(([name, from]) => `${name} ← ${from}`).join('\n')).toEqual([])
@@ -17,7 +17,7 @@ describe('layout client weight', () => {
     expect(packages.has('motion/react')).toBe(true)
   })
 
-  it('REQ-SHARED-087 loads the animation features after the page, so the motion engine is not in every first load', () => {
+  it('loads the animation features after the page, so the motion engine is not in every first load', () => {
     const provider = readFileSync(resolve(root, 'components/ui/MotionProvider.tsx'), 'utf8')
     expect(provider).not.toMatch(/import\s*\{[^}]*\bdomAnimation\b[^}]*\}\s*from/)
     expect(provider).toMatch(/features=\{loadFeatures\}/)

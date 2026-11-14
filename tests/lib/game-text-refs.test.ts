@@ -10,8 +10,8 @@ const rows: GameTextRefRow[] = [
   { id: 'OnSucceedAttack', kind: 'skilltag', name: '[적중시]', name_en: '[On Hit]', name_jp: null, description: null, description_en: null, description_jp: null, keyword_name: null },
 ]
 
-describe('REQ-SHARED-019 game text reference reads', () => {
-  it('REQ-SHARED-019 maps each id to kind, localized name (Korean fallback) and keyword_meta name', () => {
+describe('game text reference reads', () => {
+  it('maps each id to kind, localized name (Korean fallback) and keyword_meta name', () => {
     expect(gameTextRefNames(rows, 'en')).toEqual({
       Combustion: { k: 'keyword', n: 'Burn', kw: '화상' },
       CalcValue: { k: 'keyword', n: '계산값' },
@@ -23,14 +23,14 @@ describe('REQ-SHARED-019 game text reference reads', () => {
     expect(gameTextRefNames(rows, 'ko').Combustion.n).toBe('화상')
   })
 
-  it('REQ-KEYWORDS-011 hands an id its own icon file as stored, and no icon key when the row has none', () => {
+  it('hands an id its own icon file as stored, and no icon key when the row has none', () => {
     const names = gameTextRefNames([{ ...rows[0], id: 'FullReload', icon_slug: 'game-FullReload' }, { ...rows[0], id: 'Empty', icon_slug: null }, rows[0]], 'ko')
     expect(names.FullReload.i).toBe('game-FullReload')
     expect(names.Empty).not.toHaveProperty('i')
     expect(names.Combustion).not.toHaveProperty('i')
   })
 
-  it('REQ-SHARED-019 falls back to another language before the id when the name is missing (ko, en, jp order)', () => {
+  it('falls back to another language before the id when the name is missing (ko, en, jp order)', () => {
     for (const lang of ['ko', 'en', 'ja'] as const) {
       expect(gameTextRefNames(rows, lang).CantBreak.n).toBe('[破壊不可]')
       expect(gameTextRefNames(rows, lang).NoName.n).toBe('NoName')
@@ -42,12 +42,12 @@ describe('REQ-SHARED-019 game text reference reads', () => {
     expect(gameTextRefNames([{ ...both, name_en: null }], 'en').Both.n).toBe('日本語')
   })
 
-  it('REQ-SHARED-019 maps keywords with a description to it, falling back to Korean, and skips skill tags', () => {
+  it('maps keywords with a description to it, falling back to Korean, and skips skill tags', () => {
     expect(gameTextRefDescriptions(rows, 'en')).toEqual({ Combustion: 'At Turn End' })
     expect(gameTextRefDescriptions(rows, 'ja')).toEqual({ Combustion: '턴 종료 시' })
   })
 
-  it('REQ-SHARED-019 is invalidated with the other game data', () => {
+  it('is invalidated with the other game data', () => {
     expect(ALL_GAME_DATA_TAGS).toContain(CACHE_TAGS.gameTextRefs)
   })
 })

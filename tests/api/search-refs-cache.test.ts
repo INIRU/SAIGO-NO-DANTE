@@ -34,34 +34,34 @@ const load = async () => {
 const keyword = async () => (await load()).entries.find(e => e.type === 'keyword')!
 const lives = () => mocks.cacheLife.mock.calls.map(([life]) => life)
 
-describe('REQ-SHARED-020 search subtitles use the reference table without caching a failed read', () => {
+describe('search subtitles use the reference table without caching a failed read', () => {
   beforeEach(() => {
     mocks.cacheLife.mockClear()
     mocks.getGameTextRefNames.mockReset()
   })
 
-  it('REQ-SHARED-020 turns [Id] into its name and caches the index for good when the table is read', async () => {
+  it('turns [Id] into its name and caches the index for good when the table is read', async () => {
     mocks.getGameTextRefNames.mockResolvedValue({ Combustion: { k: 'keyword', n: '화상', kw: '화상' } })
     expect((await keyword()).sublabel).toBe('화상 3 부여')
     expect(lives()).toEqual(['max'])
   })
 
-  it('REQ-SHARED-020 does not cache for good an index built while the table read failed', async () => {
+  it('does not cache for good an index built while the table read failed', async () => {
     mocks.getGameTextRefNames.mockRejectedValue(new Error('game_text_refs: down'))
     expect((await keyword()).sublabel).toBe('[Combustion] 3 부여')
     expect(lives().at(-1)).not.toBe('max')
     expect(lives().at(-1)).toBe('page-1m')
   })
 
-  it('REQ-SHARED-020 does not cache for good an index built while the table is still empty', async () => {
+  it('does not cache for good an index built while the table is still empty', async () => {
     mocks.getGameTextRefNames.mockResolvedValue({})
     await load()
     expect(lives().at(-1)).toBe('page-1m')
   })
 })
 
-describe('REQ-SHARED-052 search index entries link to their detail', () => {
-  it('REQ-SHARED-052 links gifts and keywords to the detail they open and gives gifts their keyword as context', async () => {
+describe('search index entries link to their detail', () => {
+  it('links gifts and keywords to the detail they open and gives gifts their keyword as context', async () => {
     mocks.getGameTextRefNames.mockResolvedValue({ Combustion: { k: 'keyword', n: '화상', kw: '화상' } })
     const { entries } = await load()
     const gift = entries.find(e => e.type === 'egoGift')!

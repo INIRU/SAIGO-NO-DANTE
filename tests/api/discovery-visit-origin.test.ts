@@ -33,14 +33,14 @@ const visit = (headers: Record<string, string>) =>
 
 beforeEach(() => { upserts.length = 0; vi.stubEnv('NEXTAUTH_SECRET', 'test') })
 
-it('REQ-COMMUNITY-047 records a same-site visit when the app sits behind an https proxy', async () => {
+it('records a same-site visit when the app sits behind an https proxy', async () => {
   const res = await visit({ origin: 'https://saigo-no-dante.com', 'x-forwarded-proto': 'https' })
   expect(res.status).toBe(204)
   expect(upserts).toHaveLength(1)
   expect(res.headers.get('set-cookie')).toMatch(/Secure/i)
 })
 
-it('REQ-COMMUNITY-047 still refuses a visit sent from another site', async () => {
+it('still refuses a visit sent from another site', async () => {
   const res = await visit({ origin: 'https://evil.example', 'x-forwarded-proto': 'https' })
   expect(res.status).toBe(403)
   expect(upserts).toHaveLength(0)

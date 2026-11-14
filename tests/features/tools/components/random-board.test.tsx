@@ -22,8 +22,8 @@ async function render(props: Record<string, unknown> = {}) {
   )
 }
 
-describe('REQ-TOOLS-015 lock buttons on the board', () => {
-  it('REQ-TOOLS-015 puts an icon lock button on every identity card, pressed for the marked sinners', async () => {
+describe('lock buttons on the board', () => {
+  it('puts an icon lock button on every identity card, pressed for the marked sinners', async () => {
     const html = await render({ marks: ['s2', 's5'] })
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(2)
     expect(html.match(/aria-pressed="false"/g)).toHaveLength(10)
@@ -33,28 +33,28 @@ describe('REQ-TOOLS-015 lock buttons on the board', () => {
     expect(html).toMatch(/<button[^>]*aria-pressed="true"[^>]*><svg[\s\S]*?<\/svg><\/button>/)
   })
 
-  it('REQ-TOOLS-015 does not let a locked card be rerolled and keeps its lock reachable', async () => {
+  it('does not let a locked card be rerolled and keeps its lock reachable', async () => {
     const html = await render({ marks: ['s1'] })
     const first = html.split('<li class=')[1]
     expect(first).toContain('disabled')
     expect(first).toContain('aria-pressed="true"')
   })
 
-  it('REQ-TOOLS-015 gives the E.G.O cells their lock button too', async () => {
+  it('gives the E.G.O cells their lock button too', async () => {
     const html = await render({ view: 'ego', marks: ['s3'] })
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(1)
     expect(html.match(/aria-pressed=/g)).toHaveLength(12)
   })
 })
 
-describe('REQ-TOOLS-016 numbers on the board', () => {
-  it('REQ-TOOLS-016 shows the rolled number on exactly the numbered cards, with the SELECTED banner', async () => {
+describe('numbers on the board', () => {
+  it('shows the rolled number on exactly the numbered cards, with the SELECTED banner', async () => {
     const html = await render()
     expect(html.match(/class="_number_\w+"/g)).toHaveLength(3)
     expect(result.order).toHaveLength(3)
   })
 
-  it('REQ-TOOLS-005 shows no numbers when no order was rolled', async () => {
+  it('shows no numbers when no order was rolled', async () => {
     const { default: ResultGrid } = await import('@/features/tools/components/ResultGrid')
     const plain = { ...result, order: null }
     const html = renderToStaticMarkup(
@@ -65,8 +65,8 @@ describe('REQ-TOOLS-016 numbers on the board', () => {
   })
 })
 
-describe('REQ-TOOLS-019 reveal markup', () => {
-  it('REQ-TOOLS-019 reveals only while revealing, and only the cards the action drew, in rank order', async () => {
+describe('reveal markup', () => {
+  it('reveals only while revealing, and only the cards the action drew, in rank order', async () => {
     const quiet = await render()
     expect(quiet).not.toContain('data-reveal')
     const fresh = new Set(['s3', 's4'])
@@ -76,13 +76,13 @@ describe('REQ-TOOLS-019 reveal markup', () => {
     expect(html.match(/--rank:/g)).toHaveLength(12)
   })
 
-  it('REQ-TOOLS-019 marks the 3-star identity cards as golden', async () => {
+  it('marks the 3-star identity cards as golden', async () => {
     const html = await render()
     const threeStars = Object.values(result.identities).filter(identity => identity?.rarity === 3).length
     expect(html.match(/data-rare="true"/g) ?? []).toHaveLength(threeStars)
   })
 
-  it('REQ-TOOLS-019 numbers the summary under the board with the counts of the result', async () => {
+  it('numbers the summary under the board with the counts of the result', async () => {
     const { default: ResultSummary } = await import('@/features/tools/components/ResultSummary')
     const html = renderToStaticMarkup(<ResultSummary result={result} identityEnabled egoEnabled />)
     const threeStars = Object.values(result.identities).filter(identity => identity?.rarity === 3).length

@@ -72,7 +72,7 @@ it('reports run history write success and quota failure', () => {
   }
 })
 
-it('REQ-ASSIST-076 exports the gifts held at the end as final gifts, keeping the plan\'s start and observed gifts and enhancements', () => {
+it('exports the gifts held at the end as final gifts, keeping the plan\'s start and observed gifts and enhancements', () => {
   const source = createInitialState('hard')
   source.giftInventory = ['start_100', 'observe_200', 'final_300_plus', 'final_400']
   let run = runReducer(createInitialRunState(), { type: 'LOAD_FROM_PLAN', planState: source })

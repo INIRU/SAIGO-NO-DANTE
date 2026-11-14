@@ -43,7 +43,7 @@ describe('passive panel model', () => {
     expect(model.slots.map(row => [row.sinnerName, row.battle.length, row.support.length])).toEqual([['', 0, 0], ['unknown', 0, 0]])
   })
 
-  it('REQ-CATALOG-016 keeps every sin with its own count and meets the condition only when each sin is met', () => {
+  it('keeps every sin with its own count and meets the condition only when each sin is met', () => {
     const p = passive('진형 보존', { sin_affinity: 'envy', sin_count: 2, active_cond: 'stock', sin_requirements: [{ sin: 'envy', count: 2 }, { sin: 'sloth', count: 3 }] })
     expect(passiveRequirements(p)).toEqual([{ sin: 'envy', count: 2 }, { sin: 'sloth', count: 3 }])
     const short = getPassiveCondition(p, { envy: 5, sloth: 2 })
@@ -55,7 +55,7 @@ describe('passive panel model', () => {
     expect(getPassiveCondition(p, { envy: 2, sloth: 3 }).met).toBe(true)
   })
 
-  it('REQ-CATALOG-016 falls back to sin_affinity/sin_count when a row has no sin_requirements', () => {
+  it('falls back to sin_affinity/sin_count when a row has no sin_requirements', () => {
     expect(passiveRequirements(passive('옛 행', { sin_affinity: 'pride', sin_count: 1, sin_requirements: null }))).toEqual([{ sin: 'pride', count: 1 }])
     expect(passiveRequirements(passive('조건 없음', { sin_affinity: null, sin_count: null }))).toEqual([])
   })

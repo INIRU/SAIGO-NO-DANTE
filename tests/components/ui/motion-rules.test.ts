@@ -14,19 +14,19 @@ function walk(dir: string): string[] {
 const SOURCES = ['app', 'components', 'lib', 'hooks'].flatMap(walk)
 const read = (file: string) => readFileSync(join(ROOT, file), 'utf8')
 
-describe('REQ-SHARED-029 light motion', () => {
-  it('REQ-SHARED-029 no file imports the full motion component', () => {
+describe('light motion', () => {
+  it('no file imports the full motion component', () => {
     // `motion.div` bundles drag and layout animation, which the site does not use; `m.div` runs on the features LazyMotion provides.
     const full = SOURCES.filter(file => /import\s*\{[^}]*\bmotion\b[^}]*\}\s*from\s*['"]motion\/react['"]/.test(read(file)))
     expect(full).toEqual([])
   })
 
-  it('REQ-SHARED-029 the root layout provides LazyMotion (strict, domAnimation) through MotionProvider', () => {
+  it('the root layout provides LazyMotion (strict, domAnimation) through MotionProvider', () => {
     const provider = 'components/ui/MotionProvider.tsx'
     expect(existsSync(join(ROOT, provider))).toBe(true)
     const source = read(provider)
     expect(source).toMatch(/^'use client'/)
-    // domAnimation, in its own chunk loaded after the page (REQ-SHARED-087)
+    // domAnimation, in its own chunk loaded after the page
     expect(source).toMatch(/<LazyMotion features=\{loadFeatures\} strict>/)
     expect(source).toMatch(/import\('\.\/motion-features'\)/)
     expect(read('components/ui/motion-features.ts')).toMatch(/import \{ domAnimation \} from 'motion\/react'[\s\S]*export default domAnimation/)
@@ -34,7 +34,7 @@ describe('REQ-SHARED-029 light motion', () => {
     expect(read('app/[lang]/layout.tsx')).toMatch(/<MotionProvider>/)
   })
 
-  it('REQ-SHARED-029 no transition-all', () => {
+  it('no transition-all', () => {
     const all = SOURCES.filter(file => /transition-all|transition:\s*all\b/.test(read(file)))
     expect(all).toEqual([])
   })

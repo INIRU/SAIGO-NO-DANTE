@@ -8,8 +8,8 @@ import ja from '@/messages/ja.json'
 const queries = readFileSync(resolve(__dirname, '../../../lib/db/queries.ts'), 'utf8')
 const body = (name: string) => queries.slice(queries.indexOf(`export async function ${name}`), queries.indexOf('\n}\n', queries.indexOf(`export async function ${name}`)))
 
-describe('REQ-CATALOG-033 the identity and E.G.O browsers list the newest release first', () => {
-  it('REQ-CATALOG-033 both queries order by release date, newest first, then game id', () => {
+describe('the identity and E.G.O browsers list the newest release first', () => {
+  it('both queries order by release date, newest first, then game id', () => {
     for (const name of ['getAllIdentitiesForBrowser', 'getAllEGOsForBrowser']) {
       const fn = body(name)
       expect(fn, name).toMatch(/\.order\('release_date', \{ ascending: false, nullsFirst: false \}\)\s*\.order\('game_id', \{ ascending: false \}\)/)
@@ -17,7 +17,7 @@ describe('REQ-CATALOG-033 the identity and E.G.O browsers list the newest releas
     }
   })
 
-  it('REQ-CATALOG-033 the default sort is named for what it does in every language', () => {
+  it('the default sort is named for what it does in every language', () => {
     expect([ko, en, ja].map(m => m.browser.sort.default)).toEqual(['최신순', 'Newest', '新しい順'])
   })
 })

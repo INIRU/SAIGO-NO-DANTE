@@ -82,7 +82,7 @@ export function pushForFollow(actorId: string, targetId: string) {
   })
 }
 
-// in-memory, per server process; a restart forgets it (at worst one extra push). Move to a column if we scale out.
+// In-memory, per server process; a restart forgets it (at worst one extra push). Move to a column if we scale out.
 const lastPostPush = new Map<string, number>()
 const lastFollowPush = new Map<string, number>()
 

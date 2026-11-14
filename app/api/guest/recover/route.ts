@@ -14,7 +14,7 @@ const AUDIT_TARGET = { deck: 'deck', plan: 'planner', friend: 'friend_post' } as
 
 /**
  * POST /api/guest/recover — a guest whose browser lost the key that wrote a post proves the post is theirs with its
- * password; the post then belongs to the key of this request (REQ-COMMUNITY-030).
+ * password; the post then belongs to the key of this request.
  * Body: { kind: 'deck' | 'plan', id, pin } or { kind: 'support' | 'want', code, pin } (a friend post, by its friend code).
  * Refusals carry a code: wrong_pin, pin_locked (five wrong tries, 24 hours), no_pin, not_found, has_post.
  */

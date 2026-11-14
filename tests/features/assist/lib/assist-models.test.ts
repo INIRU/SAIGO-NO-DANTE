@@ -7,7 +7,7 @@ const dir = resolve(__dirname, '../../../../public/models/assist-scene')
 const text = (file: string) => readFileSync(resolve(dir, file), 'utf8')
 const sha = (file: string) => createHash('sha256').update(readFileSync(resolve(dir, file))).digest('hex')
 
-it('REQ-ASSIST-064 REQ-ASSIST-072 the shipped scene and icon models are the ones their provenance describes', () => {
+it('the shipped scene and icon models are the ones their provenance describes', () => {
   // A model file swapped without its record (or a record updated without the file) fails here.
   const provenance = text('PROVENANCE.md')
   for (const file of ['scene.onnx', 'icon-classifier.onnx']) expect(provenance, file).toContain('sha256 `' + sha(file).slice(0, 16))
@@ -17,7 +17,7 @@ it('REQ-ASSIST-064 REQ-ASSIST-072 the shipped scene and icon models are the ones
     'reward_choice', 'run_end', 'run_setup', 'sell', 'shop', 'start_gift', 'theme_select'])
 })
 
-it('REQ-ASSIST-065 the icon model knows the gifts added to the catalog since it was first trained', () => {
+it('the icon model knows the gifts added to the catalog since it was first trained', () => {
   const labels: string[] = JSON.parse(text('icon-labels.json'))
   for (const gift of ['9836', '9837', '9838', '9839', '9284', '9285', '9286', '9287', '9288', '9289', '9290', '9291']) expect(labels).toContain(gift)
   // Vestiges stay one class and an empty slot one.

@@ -4,7 +4,7 @@ import { expect, it, vi } from 'vitest'
 vi.mock('@sentry/nextjs', () => ({ withSentryConfig: (config: unknown) => config }))
 vi.mock('next-intl/plugin', () => ({ default: () => (config: unknown) => config }))
 
-it('REQ-SHARED-043 API responses carry X-Robots-Tag: noindex, and pages do not', async () => {
+it('API responses carry X-Robots-Tag: noindex, and pages do not', async () => {
   const { default: config } = await import('@/next.config')
   const rules = await (config as { headers: () => Promise<{ source: string; headers: { key: string; value: string }[] }[]> }).headers()
   const tagged = rules.filter(rule => rule.headers.some(header => header.key === 'X-Robots-Tag'))

@@ -48,37 +48,37 @@ const ctx = (id = S) => ({ params: Promise.resolve({ id }) })
 
 beforeEach(() => { owner = 'user-1'; signedIn = true; updates.length = 0 })
 
-it('REQ-COMMUNITY-042 rejects a blank or oversized title before anything else', async () => {
+it('rejects a blank or oversized title before anything else', async () => {
   expect((await POST(req('POST', { title: ' ' }))).status).toBe(400)
   expect((await POST(req('POST', { title: 'x'.repeat(61) }))).status).toBe(400)
 })
 
-it('REQ-COMMUNITY-042 creates a series for the signed-in user', async () => {
+it('creates a series for the signed-in user', async () => {
   const res = await POST(req('POST', { title: '화상 시리즈' }))
   expect(res.status).toBe(201)
   expect((await res.json()).series).toEqual({ id: S, title: '시리즈', count: 0 })
 })
 
-it('REQ-COMMUNITY-042 signed-out writes are refused', async () => {
+it('signed-out writes are refused', async () => {
   signedIn = false
   expect((await POST(req('POST', { title: 'x' }))).status).toBe(401)
 })
 
-it('REQ-COMMUNITY-042 only the owner changes or deletes a series', async () => {
+it('only the owner changes or deletes a series', async () => {
   owner = 'someone-else'
   expect((await PATCH(req('PATCH', { title: 'x' }), ctx())).status).toBe(404)
   expect((await DELETE(req('DELETE'), ctx())).status).toBe(404)
   expect(updates).toEqual([])
 })
 
-it('REQ-COMMUNITY-042 an order must list exactly the posts of the series', async () => {
+it('an order must list exactly the posts of the series', async () => {
   expect((await PATCH(req('PATCH', { order: [{ kind: 'deck', id: D1 }] }), ctx())).status).toBe(400)
   expect((await PATCH(req('PATCH', { order: [{ kind: 'plan', id: D1 }, { kind: 'deck', id: D2 }] }), ctx())).status).toBe(400)
   expect((await PATCH(req('PATCH', { order: [{ kind: 'deck', id: D2 }, { kind: 'deck', id: D1 }] }), ctx())).status).toBe(200)
   expect(updates.filter(update => update.table === 'series_items').map(update => update.values)).toEqual([{ position: 0 }, { position: 1 }])
 })
 
-it('REQ-COMMUNITY-042 a malformed series id is not found', async () => {
+it('a malformed series id is not found', async () => {
   expect((await PATCH(req('PATCH', { title: 'x' }), ctx('nope'))).status).toBe(404)
   void U
 })

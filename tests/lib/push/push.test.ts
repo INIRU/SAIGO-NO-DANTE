@@ -22,7 +22,7 @@ import { sendPushes, type PushNote } from '@/lib/push/send'
 const source = (path: string) => readFileSync(resolve(__dirname, '../../..', path), 'utf8')
 
 describe('push message', () => {
-  it('REQ-COMMUNITY-095 says what the bell says, in the subscription\'s language, and links to the place', () => {
+  it('says what the bell says, in the subscription\'s language, and links to the place', () => {
     const comment: PushNote = { to: 'u1', kind: 'comment', actor: '돈키', target: 'deck', targetId: 'd1', title: '화상 덱', excerpt: '잘 봤어요' }
     expect(pushMessage(comment, 'ko')).toEqual({ title: '돈키님이 화상 덱에 댓글을 남겼어요', body: '잘 봤어요', url: '/ko/decks/d1#deck-comments-title', tag: 'comment:d1' })
     expect(pushMessage({ to: 'u1', kind: 'follow', actor: 'Faust', target: 'user', targetId: 'u9' }, 'en'))
@@ -31,7 +31,7 @@ describe('push message', () => {
       .toMatchObject({ title: '익명님이 새 글을 올렸어요', body: '15층 플랜', url: '/ko/planner/community/p1' })
   })
 
-  it('REQ-COMMUNITY-095 pushes an author\'s new posts at most once an hour', () => {
+  it('pushes an author\'s new posts at most once an hour', () => {
     const seen = new Map<string, number>()
     expect(shouldPushPost(seen, 'a', 0)).toBe(true)
     expect(shouldPushPost(seen, 'a', 59 * 60_000)).toBe(false)
@@ -41,7 +41,7 @@ describe('push message', () => {
 })
 
 describe('push subscription', () => {
-  it('REQ-COMMUNITY-094 accepts a browser subscription with its language and nothing loose', () => {
+  it('accepts a browser subscription with its language and nothing loose', () => {
     const keys = { p256dh: 'BOr3k_-x', auth: 'aB_-9' }
     expect(pushSubscriptionSchema.safeParse({ endpoint: 'https://fcm.googleapis.com/fcm/send/x', keys, lang: 'ja' }).success).toBe(true)
     for (const bad of [
@@ -51,7 +51,7 @@ describe('push subscription', () => {
     ]) expect(pushSubscriptionSchema.safeParse(bad).success).toBe(false)
   })
 
-  it('REQ-COMMUNITY-094 turns the server\'s base64url key into bytes', () => {
+  it('turns the server\'s base64url key into bytes', () => {
     expect([...urlBase64ToUint8Array('AQID')]).toEqual([1, 2, 3])
     expect([...urlBase64ToUint8Array('-_8')]).toEqual([251, 255])
   })
@@ -79,7 +79,7 @@ describe('push sending', () => {
   })
   afterEach(() => vi.unstubAllEnvs())
 
-  it('REQ-COMMUNITY-095 sends to every subscription of a recipient who wants that kind, in its language', async () => {
+  it('sends to every subscription of a recipient who wants that kind, in its language', async () => {
     await sendPushes(db, [
       { to: 'u1', kind: 'comment', actor: '돈키', target: 'deck', targetId: 'd1', title: '덱', excerpt: '굿' },
       { to: 'u2', kind: 'follow', actor: '돈키', target: 'user', targetId: 'u9' },
@@ -89,19 +89,19 @@ describe('push sending', () => {
     expect(push.sent[1].payload.url).toBe('/en/decks/d1#deck-comments-title')
   })
 
-  it('REQ-COMMUNITY-095 forgets subscriptions the push service no longer knows', async () => {
+  it('forgets subscriptions the push service no longer knows', async () => {
     push.fail.set('https://push.example/2', 410)
     await sendPushes(db, [{ to: 'u1', kind: 'comment', actor: '돈키', target: 'deck', targetId: 'd1', title: '덱', excerpt: '굿' }])
     expect(deleted).toEqual(['https://push.example/2'])
   })
 
-  it('REQ-COMMUNITY-095 sends nothing without server keys', async () => {
+  it('sends nothing without server keys', async () => {
     vi.stubEnv('VAPID_PRIVATE_KEY', '')
     await sendPushes(db, [{ to: 'u1', kind: 'comment', actor: '돈키', target: 'deck', targetId: 'd1', title: '덱', excerpt: '굿' }])
     expect(push.sent).toEqual([])
   })
 
-  it('REQ-COMMUNITY-095 comments, follows and new posts push after the response', () => {
+  it('comments, follows and new posts push after the response', () => {
     const calls: [string, RegExp][] = [
       ['app/api/decks/[id]/comments/route.ts', /after\(\(\) => pushForComment\(\s*'deck'/],
       ['app/api/planner/[id]/comments/route.ts', /after\(\(\) => pushForComment\(\s*'plan'/],
@@ -114,7 +114,7 @@ describe('push sending', () => {
 })
 
 describe('push service worker', () => {
-  it('REQ-SHARED-059 shows the notification and opens or focuses its page', () => {
+  it('shows the notification and opens or focuses its page', () => {
     const worker = source('public/push-sw.js')
     expect(worker).toContain("addEventListener('push'")
     expect(worker).toContain('showNotification(')
@@ -123,7 +123,7 @@ describe('push service worker', () => {
     expect(worker).toContain('.focus()')
   })
 
-  it('REQ-SHARED-059 is left alone by the development worker cleanup', () => {
+  it('is left alone by the development worker cleanup', () => {
     expect(source('components/pwa/ServiceWorkerRegister.tsx')).toMatch(/PUSH_SCOPE/)
   })
 })

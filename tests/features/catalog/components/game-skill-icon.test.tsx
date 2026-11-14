@@ -15,7 +15,7 @@ function icon(props: Partial<Parameters<typeof GameSkillIcon>[0]> = {}) {
 }
 
 describe('game skill icon', () => {
-  it('REQ-CATALOG-035 draws the sin-coloured frame, glow and coin plate of the skill tier', () => {
+  it('draws the sin-coloured frame, glow and coin plate of the skill tier', () => {
     const html = icon()
     expect(html).toContain(asset('pride-3'))
     expect(html).toContain(asset('pride-3-glow'))
@@ -23,14 +23,14 @@ describe('game skill icon', () => {
     expect(html).toContain('https://example.test/skill.webp')
   })
 
-  it('REQ-CATALOG-035 shows the base power and the coin power with its sign', () => {
+  it('shows the base power and the coin power with its sign', () => {
     const html = icon({ basePower: 16, coinPower: -2 })
     expect(html).toMatch(/>16</)
     expect(html).toMatch(/>-2</)
     expect(icon()).toMatch(/>\+4</)
   })
 
-  it('REQ-CATALOG-035 puts the attack type badge and its glow on attack skills only', () => {
+  it('puts the attack type badge and its glow on attack skills only', () => {
     expect(icon()).toContain(asset('pride-pierce'))
     expect(icon()).toContain(asset('pride-attack-glow'))
     const evade = icon({ attackType: null, tier: 1, sin: 'sloth' })
@@ -39,13 +39,13 @@ describe('game skill icon', () => {
     expect(evade).not.toMatch(/sloth-(slash|pierce|blunt)/)
   })
 
-  it('REQ-CATALOG-035 draws an unknown sin with the neutral frame and an E.G.O tier with the tier 3 frame', () => {
+  it('draws an unknown sin with the neutral frame and an E.G.O tier with the tier 3 frame', () => {
     expect(icon({ sin: 'unknown', tier: 99 })).toContain(asset('neutral-3'))
   })
 })
 
 describe('game skill name plate and level icon', () => {
-  it('REQ-CATALOG-035 puts the name on the sin-coloured game plate', async () => {
+  it('puts the name on the sin-coloured game plate', async () => {
     const { default: GameSkillName } = await import('@/features/catalog/components/GameSkillName')
     const html = renderToStaticMarkup(<GameSkillName name="피를 머금은 향기" sin="pride" />)
     expect(html).toContain(asset('pride-name'))
@@ -53,7 +53,7 @@ describe('game skill name plate and level icon', () => {
     expect(renderToStaticMarkup(<GameSkillName name="x" sin={null} />)).toContain(asset('neutral-name'))
   })
 
-  it('REQ-CATALOG-035 picks the level icon by defence type: sword for attack and counter, arrow shield for evade and guard', async () => {
+  it('picks the level icon by defence type: sword for attack and counter, arrow shield for evade and guard', async () => {
     const { skillLevelIconUrl } = await import('@/features/catalog/components/GameSkillName')
     expect(skillLevelIconUrl('pierce')).toBe(asset('level-attack'))
     expect(skillLevelIconUrl('counter')).toBe(asset('level-attack'))
@@ -70,7 +70,7 @@ describe('game skill box', () => {
     name: '날 세워 칼을 웃거라, 낙엽 향 나듯 폭포를 울거라', skillType: 'slash', level: 69, weight: 2,
     weightLabel: '공격 가중치', coins: [{}, {}, {}, { unbreakable: true }],
   }
-  it('REQ-CATALOG-036 lays the skill out like the game skill box: coins, the whole name on one line, level and weight', async () => {
+  it('lays the skill out like the game skill box: coins, the whole name on one line, level and weight', async () => {
     const { default: GameSkillBox } = await import('@/features/catalog/components/GameSkillBox')
     const html = renderToStaticMarkup(<GameSkillBox {...base} />)
     expect(html).toContain(base.name)
@@ -86,13 +86,13 @@ describe('game skill box', () => {
     expect(html).toContain('공격 가중치')
   })
 
-  it('REQ-CATALOG-036 writes the skill tier under the icon only when given (a base skill 1-3)', async () => {
+  it('writes the skill tier under the icon only when given (a base skill 1-3)', async () => {
     const { default: GameSkillBox } = await import('@/features/catalog/components/GameSkillBox')
     expect(renderToStaticMarkup(<GameSkillBox {...base} tierLabel="SKILL 3" />)).toMatch(/rgb\(161,106,59\)[^>]*>SKILL 3</)
     expect(renderToStaticMarkup(<GameSkillBox {...base} />)).not.toContain('SKILL')
   })
 
-  it('REQ-CATALOG-036 colours an effect-lowered attack level red and a coin by its game colour', async () => {
+  it('colours an effect-lowered attack level red and a coin by its game colour', async () => {
     const { default: GameSkillBox } = await import('@/features/catalog/components/GameSkillBox')
     const html = renderToStaticMarkup(<GameSkillBox {...base} levelChange={-1} coins={[{ color: 'PURPLE' }]} skillType="evade" attackType={null} />)
     expect(html).toContain('rgb(153,0,0)')
@@ -102,7 +102,7 @@ describe('game skill box', () => {
 })
 
 describe('bare skill icon', () => {
-  it('REQ-CATALOG-037 draws the frame alone when no power is given, and the small skill frame uses it', async () => {
+  it('draws the frame alone when no power is given, and the small skill frame uses it', async () => {
     const bare = renderToStaticMarkup(<GameSkillIcon iconUrl="https://example.test/skill.webp" sin="wrath" tier={2} attackType="blunt" />)
     expect(bare).toContain(asset('wrath-2'))
     expect(bare).toContain(asset('wrath-blunt'))

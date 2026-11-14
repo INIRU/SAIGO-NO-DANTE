@@ -18,7 +18,7 @@ const bonesOutsideSkippedBoxes = (html: string) => {
   return outside
 }
 
-it('REQ-SHARED-095 a keyword placeholder card shimmers only while on screen', () => {
+it('a keyword placeholder card shimmers only while on screen', () => {
   for (const compact of [false, true]) {
     const html = renderToStaticMarkup(<KeywordCardSkeleton compact={compact} />)
     expect(html).toMatch(/bone/)

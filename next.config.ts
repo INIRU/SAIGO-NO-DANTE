@@ -11,7 +11,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 // The AdSense code (adsbygoogle.js) and what it loads: ad scripts, ad frames, the consent message (Funding Choices) and
 // the traffic-quality checks. AdSense supports only a nonce-based strict CSP, which would make every prerendered page
-// per-request; these host families are the fallback. an allowlist Google may outgrow, check the console's
+// per-request; these host families are the fallback. An allowlist Google may outgrow, check the console's
 // CSP reports after AdSense changes.
 const ADSENSE_HOSTS = 'https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://*.googleadservices.com https://*.adtrafficquality.google https://fundingchoicesmessages.google.com'
 const contentSecurityPolicyDirectives = [

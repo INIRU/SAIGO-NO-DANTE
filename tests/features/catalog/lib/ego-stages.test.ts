@@ -4,8 +4,8 @@ import { egoPassiveAtStage } from '@/features/catalog/lib/ego-stages'
 
 const passive = (over: Record<string, unknown>) => ({ name: 'n', min_stage: 1, max_stage: 5, description: '', ...over })
 
-describe('egoPassiveAtStage (REQ-SHARED-020)', () => {
-  it('REQ-SHARED-020 closes the tags of one passive before the next, so a highlight never runs on into it', () => {
+describe('egoPassiveAtStage', () => {
+  it('closes the tags of one passive before the next, so a highlight never runs on into it', () => {
     const ego = { stage_passives: [
       passive({ description: '<style="highlight">- 가', description_en: '<style="highlight">- a' }),
       passive({ description: '나', description_en: 'b' }),
@@ -15,7 +15,7 @@ describe('egoPassiveAtStage (REQ-SHARED-020)', () => {
     expect(shown.passive_content_en).toBe('<style="highlight">- a</style>\n\nb')
   })
 
-  it('REQ-SHARED-020 joins the older text as before and picks the passives of the stage', () => {
+  it('joins the older text as before and picks the passives of the stage', () => {
     const ego = { stage_passives: [
       passive({ description: '가' }),
       passive({ description: '나', min_stage: 4 }),

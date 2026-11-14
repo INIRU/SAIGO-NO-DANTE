@@ -174,7 +174,7 @@ it('converts decoded plans without dropping goals, notes, constraints, or skill 
   expect(runReducer(createInitialRunState(), { type: 'LOAD_FROM_PLAN', planState: restored }).sourcePlanSnapshot).toEqual(restored)
 })
 
-it('REQ-ASSIST-068 a fusion whose result is not recorded (a vestige) only removes its materials', () => {
+it('a fusion whose result is not recorded (a vestige) only removes its materials', () => {
   let run = createInitialRunState()
   for (const giftId of ['1', '2', '3']) run = runReducer(run, { type: 'ACQUIRE_GIFT', giftId })
   const fused = runReducer(run, { type: 'CRAFT_FUSION', materialIds: ['1', '2'], resultId: null })

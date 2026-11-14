@@ -13,12 +13,12 @@ const WANT_LIFE_MS = 24 * 60 * 60 * 1000
 type Db = ReturnType<ReturnType<typeof createAdminClient>['schema']>
 const kindOf = (value: unknown) => value === 'want' ? 'want' : 'support'
 
-/** Want posts live one day (REQ-COMMUNITY-022): the expired ones are deleted after want posts are read and whenever one is written. */
+/** Want posts live one day: the expired ones are deleted after want posts are read and whenever one is written. */
 const dropExpiredWants = (db: Db) => db.from('friend_posts').delete().eq('kind', 'want').lt('created_at', new Date(Date.now() - WANT_LIFE_MS).toISOString())
 
 /**
  * Posts of a kind (?kind=want, support by default), newest first, optionally only those with ?identity=<id>. A post's code
- * is in the response only for viewers its visibility allows (REQ-COMMUNITY-020). own: the viewer's post of this kind, also
+ * is in the response only for viewers its visibility allows. own: the viewer's post of this kind, also
  * when the filter or its age keeps it out of the list.
  */
 export async function GET(request: NextRequest) {
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Approval posts (REQ-COMMUNITY-028): this viewer's request on each, and everyone's requests on the viewer's own post.
+    // Approval posts: this viewer's request on each, and everyone's requests on the viewer's own post.
     // The table comes with a later migration than the board: until it is applied there are simply no requests.
     const requestOf = new Map<string, string>()
     let requests: { id: string; name: string | null; userId: string | null; guestTag: string | null; status: string; createdAt: string }[] = []
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // The author is here: their post shows it, written at most every 10 minutes (REQ-COMMUNITY-023).
+    // The author is here: their post shows it, written at most every 10 minutes.
     const now = Date.now()
     if (ownRow && seenIsStale(ownRow.seen_at, now)) {
       const seenAt = new Date(now).toISOString()
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** Saves the author's support post: one per author, so a second save replaces the first (REQ-COMMUNITY-019). */
+/** Saves the author's support post: one per author, so a second save replaces the first. */
 export async function POST(request: NextRequest) {
   try {
     const admin = createAdminClient(), db = admin.schema('limbus')
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
     if (await isBlocked(admin, author)) return NextResponse.json(fail('blocked'), { status: 403 })
 
     const body = await request.json().catch(() => null)
-    // A guest's password for a new post (REQ-COMMUNITY-029); screens from before it existed send none.
+    // A guest's password for a new post; screens from before it existed send none.
     const pin = author.kind === 'guest' ? guestPinOf(body?.pin) : null
     if (pin === false) return NextResponse.json(fail('invalid_request'), { status: 400 })
     if (kindOf(body?.kind) === 'want') return await saveWant(db, author, body, pin)
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * Saves the author's "wanted identity" post. It keeps the time it was first written, so saving again does not extend its
- * day; identities a save adds are counted in friend_want_stats, which outlives the post (REQ-COMMUNITY-022).
+ * day; identities a save adds are counted in friend_want_stats, which outlives the post.
  */
 async function saveWant(db: Db, author: Author, body: unknown, pin: string | null) {
   const ids = wantIdentityIds(body)
@@ -200,7 +200,7 @@ async function saveWant(db: Db, author: Author, body: unknown, pin: string | nul
   if (saved.error?.code === '23505') return NextResponse.json(fail('duplicate_code'), { status: 409 })
   if (saved.error) throw saved.error
 
-  // read-then-write, so two saves in the same instant can lose a count; use an SQL function if the numbers must be exact.
+  // Read-then-write, so two saves in the same instant can lose a count; use an SQL function if the numbers must be exact.
   const added = newlyWanted(existing.data?.identity_ids ?? [], post.identityIds)
   if (added.length) {
     const day = new Date().toISOString().slice(0, 10)

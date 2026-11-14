@@ -23,8 +23,8 @@ function Formatter({ text }: { text: string }) {
 }
 const render = (text: string) => renderToStaticMarkup(<KeywordProvider keywords={KEYWORDS}><Formatter text={text} /></KeywordProvider>)
 
-describe('REQ-KEYWORDS-005 keywords of game text are underlined', () => {
-  it('REQ-KEYWORDS-005 underlines a [Id] keyword in its own colour, not a condition tag', () => {
+describe('keywords of game text are underlined', () => {
+  it('underlines a [Id] keyword in its own colour, not a condition tag', () => {
     const html = render('[OnSucceedAttack] [Combustion] 3 부여')
     const keyword = html.slice(html.indexOf('화상') - 400, html.indexOf('화상'))
     expect(keyword).toContain('text-decoration-line:underline')

@@ -41,15 +41,15 @@ function words(text: string, locale: 'ko' | 'en' | 'ja', allowed: ReadonlySet<st
   return findPlainKeywords(text, plainKeywordMatcher(CATALOG, locale), allowed, blocked).map(hit => text.slice(hit.from, hit.to))
 }
 
-describe('REQ-KEYWORDS-007 plain keywords of older skill text', () => {
-  it('REQ-KEYWORDS-007 finds 진동 and 침잠쇄도 in the skill text of 개화 E.G.O:: 동백 (the owner example)', () => {
+describe('plain keywords of older skill text', () => {
+  it('finds 진동 and 침잠쇄도 in the skill text of 개화 E.G.O:: 동백 (the owner example)', () => {
     const own = new Set(['진동', '침잠', '침잠쇄도'])
     expect(words('진동 횟수 6을 얻음', 'ko', own)).toEqual(['진동'])
     expect(words('침잠 횟수 1 증가', 'ko', own)).toEqual(['침잠'])
     expect(words('이 6 이상이면, 침잠쇄도\n자신의 진동 횟수가 10 이상이면, 피해량의 40%만큼 추가 피해', 'ko', own)).toEqual(['침잠쇄도', '진동'])
   })
 
-  it('REQ-KEYWORDS-007 takes the longest name first and never draws a part of a longer keyword', () => {
+  it('takes the longest name first and never draws a part of a longer keyword', () => {
     expect(words('진동 폭발 시 진동 횟수 2 증가', 'ko')).toEqual(['진동 폭발', '진동'])
     expect(words('침잠쇄도', 'ko')).toEqual(['침잠쇄도'])
     // 참격 보호 is a keyword of its own (not in the list): neither it nor the 보호 inside it is drawn.
@@ -57,13 +57,13 @@ describe('REQ-KEYWORDS-007 plain keywords of older skill text', () => {
     expect(words('Tremor Burst; after Tremor Burst, Inflict 2 Tremor', 'en')).toEqual(['Tremor Burst', 'Tremor Burst', 'Tremor'])
   })
 
-  it('REQ-KEYWORDS-007 finds nothing without an allowed set, and only the keywords of that set', () => {
+  it('finds nothing without an allowed set, and only the keywords of that set', () => {
     expect(words('진동 횟수 6을 얻음', 'ko', new Set())).toEqual([])
     expect(findPlainKeywords('진동 횟수 6을 얻음', plainKeywordMatcher(CATALOG, 'ko'), undefined)).toEqual([])
     expect(words('진동 3 부여, 침잠 2 부여', 'ko', new Set(['침잠']))).toEqual(['침잠'])
   })
 
-  it('REQ-KEYWORDS-007 does not start inside a word: Hangul, kana or kanji right before the name stops the match', () => {
+  it('does not start inside a word: Hangul, kana or kanji right before the name stops the match', () => {
     expect(words('자신의진동 3 부여', 'ko')).toEqual([])
     expect(words('대상에게 진동 3 부여', 'ko')).toEqual(['진동'])
     expect(words('(진동 3)', 'ko')).toEqual(['진동'])
@@ -73,7 +73,7 @@ describe('REQ-KEYWORDS-007 plain keywords of older skill text', () => {
     expect(words('「出血', 'ja')).toEqual([])
   })
 
-  it('REQ-KEYWORDS-007 does not run on into another word: only a space, digit, punctuation or a particle may follow', () => {
+  it('does not run on into another word: only a space, digit, punctuation or a particle may follow', () => {
     expect(words('충전하는 동안', 'ko')).toEqual([])
     expect(words('충전소에서', 'ko')).toEqual([])
     expect(words('충전을 보유한 아군', 'ko')).toEqual(['충전'])
@@ -82,7 +82,7 @@ describe('REQ-KEYWORDS-007 plain keywords of older skill text', () => {
     expect(words('充電を保有した', 'ja')).toEqual(['充電'])
   })
 
-  it('REQ-KEYWORDS-007 draws counted keywords (ordinary words) only next to their number', () => {
+  it('draws counted keywords (ordinary words) only next to their number', () => {
     expect(words('다음 턴에 신속 1 얻음', 'ko')).toEqual(['신속'])
     expect(words('보호 2를 얻음', 'ko')).toEqual(['보호'])
     expect(words('탄환이 0이면', 'ko')).toEqual(['탄환'])
@@ -102,7 +102,7 @@ describe('REQ-KEYWORDS-007 plain keywords of older skill text', () => {
     expect(words('呪い 3を付与', 'ja')).toEqual(['呪い'])
   })
 
-  it('REQ-KEYWORDS-007 leaves keywords that are not on the list as written', () => {
+  it('leaves keywords that are not on the list as written', () => {
     for (const text of ['스킬 1개를 버림', '소수점 버림)', '새벽 사무소 소속 아군에게', 'E.G.O::경멸, 경외 료슈', '捨てる', '夜明事務所所属']) {
       expect(words(text, 'ko')).toEqual([])
       expect(words(text, 'ja')).toEqual([])
@@ -111,7 +111,7 @@ describe('REQ-KEYWORDS-007 plain keywords of older skill text', () => {
     expect(words('Discard 1 Skill. Dawn Office allies. E.G.O::Contempt', 'en')).toEqual([])
   })
 
-  it('REQ-KEYWORDS-007 matches English names as whole words, with the capitals the game writes', () => {
+  it('matches English names as whole words, with the capitals the game writes', () => {
     expect(words('Inflict 2 Bleed next turn', 'en')).toEqual(['Bleed'])
     expect(words('Gain +3 Charge Count', 'en')).toEqual(['Charge'])
     expect(words('At 5+ Burn, Coin Power +1', 'en')).toEqual(['Burn'])
@@ -126,7 +126,7 @@ describe('REQ-KEYWORDS-007 plain keywords of older skill text', () => {
     expect(words('Inflict 2 Slash Protection', 'en')).toEqual([])
   })
 
-  it('REQ-KEYWORDS-007 does not touch a quotation: skill, passive and E.G.O names stay as written', () => {
+  it('does not touch a quotation: skill, passive and E.G.O names stay as written', () => {
     expect(words("‘진동 폭발’로 발동 후 진동 3 부여", 'ko')).toEqual(['진동'])
     expect(words('"Tremor Burst" instead, then 2 Tremor', 'en')).toEqual(['Tremor'])
     expect(words("Use 'Sinking Deluge' and inflict 2 Sinking", 'en')).toEqual(['Sinking'])
@@ -139,23 +139,23 @@ describe('REQ-KEYWORDS-007 plain keywords of older skill text', () => {
     expect(quotedRanges('open ‘never closed')).toEqual([[5, 18]])
   })
 
-  it('REQ-KEYWORDS-007 keeps out of ranges the caller blocks (the identity own skill names win)', () => {
+  it('keeps out of ranges the caller blocks (the identity own skill names win)', () => {
     const text = '침잠의 파도 후 침잠 3 부여'
     expect(words(text, 'ko')).toEqual(['침잠', '침잠'])
     expect(words(text, 'ko', ALL, [[0, 6]])).toEqual(['침잠'])
   })
 
-  it('REQ-KEYWORDS-007 reads a Japanese keyword spelled with a space as the whole keyword', () => {
+  it('reads a Japanese keyword spelled with a space as the whole keyword', () => {
     expect(words('振動 爆発。\n振動 回数が2増加', 'ja')).toEqual(['振動 爆発', '振動'])
   })
 
-  it('REQ-KEYWORDS-007 never draws a name two keywords share', () => {
+  it('never draws a name two keywords share', () => {
     const clash: Record<string, KeywordInfo> = { 가: { desc: '', nameEn: 'Same' }, 나: { desc: '', nameEn: 'Same' } }
     expect(findPlainKeywords('Inflict 2 Same', plainKeywordMatcher(clash, 'en'), new Set(['가', '나']), [], { 가: 'free', 나: 'free' })).toEqual([])
   })
 
   // Snippets of the corpus audit over every identity and E.G.O skill and passive text (ko/en/ja): what it drew and what it rejected.
-  it('REQ-KEYWORDS-007 corpus audit: draws these stored lines', () => {
+  it('corpus audit: draws these stored lines', () => {
     expect(words('다음 턴에 신속 1, 방어 레벨 증가 2 부여', 'ko')).toEqual(['신속', '방어 레벨 증가'])
     expect(words('대상에게 참격 취약 이 있으면 스킬 위력 +2', 'ko')).toEqual(['참격 취약'])
     expect(words('자신의 호흡 이 5 이상이면, 합 위력 +1', 'ko')).toEqual(['호흡'])
@@ -170,7 +170,7 @@ describe('REQ-KEYWORDS-007 plain keywords of older skill text', () => {
     expect(words('出血 1を付与\n呼吸 回数が1増加', 'ja')).toEqual(['出血', '呼吸'])
   })
 
-  it('REQ-KEYWORDS-007 corpus audit: leaves these stored lines as written', () => {
+  it('corpus audit: leaves these stored lines as written', () => {
     // Words that are keywords in the game but ordinary words in prose, or part of a name: never on the list.
     expect(words('높은 순으로 버림.\n다음 턴에 주시 부여', 'ko')).toEqual([])
     expect(words('E.G.O:: 마탄 오티스 인격인 경우, 포자탄을 소모하는 스킬', 'ko')).toEqual([])
@@ -187,13 +187,13 @@ describe('REQ-KEYWORDS-007 plain keywords of older skill text', () => {
     expect(words('対象に麻痺 2を付与', 'ja')).toEqual([])
   })
 
-  it('REQ-KEYWORDS-007 builds the search once per catalog and language', () => {
+  it('builds the search once per catalog and language', () => {
     expect(plainKeywordMatcher(CATALOG, 'ko')).toBe(plainKeywordMatcher(CATALOG, 'ko'))
     expect(plainKeywordMatcher(CATALOG, 'en')).not.toBe(plainKeywordMatcher(CATALOG, 'ko'))
   })
 })
 
-describe('REQ-KEYWORDS-010 keywords named in a keyword description', () => {
+describe('keywords named in a keyword description', () => {
   const KW: Record<string, KeywordInfo> = {
     ...CATALOG,
     '지령의 가호': { desc: '', nameEn: 'Grace of the Prescript', nameJp: '指令の加護' },
@@ -207,14 +207,14 @@ describe('REQ-KEYWORDS-010 keywords named in a keyword description', () => {
   const found = (text: string, locale: 'ko' | 'en' | 'ja', loose = true) =>
     findPlainKeywords(text, plainKeywordMatcher(KW, locale, loose), ALL_KW, [], KEYWORD_TEXT_KEYWORDS).map(hit => text.slice(hit.from, hit.to))
 
-  it('REQ-KEYWORDS-010 finds the battle keywords and the specific keyword names other keywords mention, in all three languages', () => {
+  it('finds the battle keywords and the specific keyword names other keywords mention, in all three languages', () => {
     expect(found('- 화상 위력, 화상 횟수 또는 출혈을 부여하는 기본 스킬', 'ko')).toEqual(['화상', '화상', '출혈'])
     expect(found('편성할 수 있는 지령의 가호 최댓값: 9, 지령 표식이 새겨진', 'ko')).toEqual(['지령의 가호', '지령 표식'])
     expect(found('Max Grace of the Prescript: 9; inflict 2 Burn', 'en')).toEqual(['Grace of the Prescript', 'Burn'])
     expect(found('編成できる指令の加護の最大値', 'ja')).toEqual(['指令の加護'])
   })
 
-  it('REQ-KEYWORDS-010 reads Japanese particles before a keyword and 威力・回数 after it, in keyword descriptions only', () => {
+  it('reads Japanese particles before a keyword and 威力・回数 after it, in keyword descriptions only', () => {
     expect(found('対象に出血 1を付与', 'ja')).toEqual(['出血'])
     expect(found('自分の火傷回数が3以上なら、敵の出血と火傷の合計', 'ja')).toEqual(['火傷', '出血', '火傷'])
     expect(found('振動威力', 'ja')).toEqual(['振動'])
@@ -224,7 +224,7 @@ describe('REQ-KEYWORDS-010 keywords named in a keyword description', () => {
     expect(found('対象に出血 1を付与', 'ja', false)).toEqual([])
   })
 
-  it('REQ-KEYWORDS-010 never draws a name that is also an E.G.O gift or an ordinary word', () => {
+  it('never draws a name that is also an E.G.O gift or an ordinary word', () => {
     // 잔불·지령·시선의 경멸 are keywords whose names are (or sit inside) gift names: never drawn.
     expect(found('잔불 수치만큼 화상 위력 증가', 'ko')).toEqual(['화상'])
     expect(found('Gain Embers equal to Burn Potency', 'en')).toEqual(['Burn'])
@@ -238,7 +238,7 @@ describe('REQ-KEYWORDS-010 keywords named in a keyword description', () => {
     expect(found('부하가 걸리면', 'ko')).toEqual([])
   })
 
-  it('REQ-KEYWORDS-010 keeps every name of the skill list', () => {
+  it('keeps every name of the skill list', () => {
     for (const [name, tier] of Object.entries(PLAIN_KEYWORDS)) expect(KEYWORD_TEXT_KEYWORDS[name]).toBe(tier)
   })
 })

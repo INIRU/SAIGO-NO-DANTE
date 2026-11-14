@@ -30,15 +30,15 @@ function relativeLinks(file: string): string[] {
     .filter(Boolean)
 }
 
-describe('REQ-SHARED-028 guide documents', () => {
-  it('REQ-SHARED-028 relative links in the guide documents point at files that exist', () => {
+describe('guide documents', () => {
+  it('relative links in the guide documents point at files that exist', () => {
     const broken = GUIDES.flatMap(file => relativeLinks(file)
       .filter(target => !existsSync(resolve(ROOT, dirname(file), target)))
       .map(target => `${file} -> ${target}`))
     expect(broken).toEqual([])
   })
 
-  it('REQ-SHARED-028 docs/README.md starts new work, links the assist document and sends sync work to the extraction tool', () => {
+  it('docs/README.md starts new work, links the assist document and sends sync work to the extraction tool', () => {
     const readme = readFileSync(join(ROOT, 'docs/README.md'), 'utf8')
     expect(readme).toContain('## 새 작업 시작하기')
     expect(relativeLinks('docs/README.md')).toContain('guides/assist-evaluation.md')
@@ -50,14 +50,15 @@ describe('REQ-SHARED-028 guide documents', () => {
     expect(existsSync(join(ROOT, 'scripts/sync'))).toBe(false)
   })
 
-  it('REQ-SHARED-028 docs/ holds guides and reference only, with no one-off reports', () => {
+  it('docs/ holds guides and reference only, with no one-off reports', () => {
     const top = readdirSync(join(ROOT, 'docs')).sort()
     expect(top).toEqual(['README.md', 'guides', 'reference'])
   })
 
-  it('REQ-SHARED-028 nothing points at the removed docs/data-pipeline.md', () => {
+  it('nothing points at the removed docs/data-pipeline.md', () => {
     expect(existsSync(join(ROOT, 'docs/data-pipeline.md'))).toBe(false)
     const sources = [
+      ...GUIDES,
       ...['scripts', 'lib'].flatMap(dir => walk(dir, file => /\.(ts|tsx|mjs|cjs|py)$/.test(file))),
     ]
     expect(sources.filter(file => readFileSync(join(ROOT, file), 'utf8').includes('data-pipeline.md'))).toEqual([])

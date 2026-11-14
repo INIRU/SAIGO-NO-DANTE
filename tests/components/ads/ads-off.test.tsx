@@ -11,7 +11,7 @@ const root = resolve(__dirname, '../../..')
 const source = (path: string) => readFileSync(resolve(root, path), 'utf8')
 
 describe('ads switched off', () => {
-  it('REQ-SHARED-097 draws no ad, no reserved place and no ad script while the switch is off', () => {
+  it('draws no ad, no reserved place and no ad script while the switch is off', () => {
     expect(ADS_ON).toBe(false)
     for (const place of ['top', 'inline', 'hero', 'left', 'right', 'panel'] as const)
       expect(renderToStaticMarkup(<AdSlot slot="1234567890" place={place} />), place).toBe('')

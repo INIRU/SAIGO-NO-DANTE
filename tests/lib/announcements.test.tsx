@@ -85,12 +85,12 @@ describe('announcement content boundary', () => {
 })
 const image = (name: string) => `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/limbus-assets/announcements/${name}.webp`
 describe('announcement previews', () => {
-  it('REQ-ADMIN-012 collapses whitespace and cuts the excerpt with an ellipsis', () => {
+  it('collapses whitespace and cuts the excerpt with an ellipsis', () => {
     expect(announcementExcerpt('  안녕하세요.\n\n  새   기능입니다.  ')).toBe('안녕하세요. 새 기능입니다.')
     expect(announcementExcerpt('가'.repeat(10), 6)).toBe('가가가가가…')
     expect(announcementExcerpt('')).toBe('')
   })
-  it('REQ-ADMIN-012 keeps only id, title, date, pin, cover and excerpt', () => {
+  it('keeps only id, title, date, pin, cover and excerpt', () => {
     const doc = { type: 'doc', content: [
       { type: 'paragraph', content: [{ type: 'text', text: '본문 첫 줄' }] },
       { type: 'image', attrs: { src: 'https://evil.example/x.webp' } },
@@ -100,7 +100,7 @@ describe('announcement previews', () => {
     expect(preview).toEqual({ id: 'a1', title: '제목', created_at: '2026-10-21T09:00:00Z', pinned: true, cover: image('abc-1'), excerpt: '본문 첫 줄' })
     expect(announcementPreview({ id: 'b', title: 't', content: '평문', content_doc: null, pinned: false, created_at: '2026-10-01T00:00:00Z' }).excerpt).toBe('평문')
   })
-  it('REQ-ADMIN-010 finds the older and newer announcement by creation date, whatever the pin order', () => {
+  it('finds the older and newer announcement by creation date, whatever the pin order', () => {
     const items = [
       { id: 'pinned-old', created_at: '2026-09-01T00:00:00Z' },
       { id: 'new', created_at: '2026-10-20T00:00:00Z' },

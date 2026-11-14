@@ -55,7 +55,7 @@ it('deletes by slot and reports a missing table as a plain error', async () => {
   expect((await GET(req('GET'))).status).toBe(503)
 })
 
-it('REQ-PLANNER-020 reports a failed account lookup as 503, not as an empty preset list', async () => {
+it('reports a failed account lookup as 503, not as an empty preset list', async () => {
   rpcError = { message: 'function limbus.discovery_user_id(text) does not exist' }
   const res = await GET(req('GET'))
   expect(res.status).toBe(503)

@@ -70,7 +70,7 @@ type Found = DamageChange & { sign: number }
  * The changes a text makes to skill damage, in the order written. A change that scales ("…당 +10% (최대 30%)",
  * "+(합 횟수 x 6)% (최대 30%)") counts as its stated maximum.
  */
-// pattern matching on game sentences; a wrong or missing value is corrected by the user in the calculator. If the game data ever carries gift ability values, read those instead.
+// Pattern matching on game sentences; a wrong or missing value is corrected by the user in the calculator. If the game data ever carries gift ability values, read those instead.
 export function damageChanges(text: string): DamageChange[] {
   const changes: DamageChange[] = []
   // A maximum written on its own line belongs to the line above it.
@@ -176,7 +176,7 @@ export function buildDamageSources(
       }
       continue
     }
-    // a stack keyword is offered as its stacks only; were a text to hold the sentence and another damage percent, that percent would go unread. No keyword does (2026-10-05); offer both rows if one appears.
+    // A stack keyword is offered as its stacks only; were a text to hold the sentence and another damage percent, that percent would go unread. No keyword does (2026-10-05); offer both rows if one appears.
     if (stack) { stackRows.push({ ...row, values: [], stack: stack.effect, side: stack.effect.side, rank: stack.rank }); continue }
     const changes = damageChanges(info.desc)
     for (const side of ['self', 'target'] as const) {

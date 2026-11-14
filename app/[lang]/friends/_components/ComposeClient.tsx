@@ -35,7 +35,7 @@ export default function ComposeClient({ kind }: { kind: Kind }) {
   const { mutate } = useSWRConfig()
   const own = useSWR([`/api/friend-codes?kind=${kind}`, api.signedIn], ([url]) => api.load(url), { revalidateOnFocus: false })
   const mine = own.data?.own ?? null
-  // A guest without a post here: a new one takes a password, and one written with a lost key comes back by its code and password (REQ-COMMUNITY-031).
+  // A guest without a post here: a new one takes a password, and one written with a lost key comes back by its code and password.
   const needsPin = guest && !!own.data && !mine
 
   // The saved post goes into the editor once, so saving again edits it; without one the code last used here is offered.

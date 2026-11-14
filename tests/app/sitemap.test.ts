@@ -49,7 +49,7 @@ describe('sitemap', () => {
     expect(entries.find(entry => entry.url.endsWith('/ko/terms'))?.lastModified).toBeUndefined()
   })
 
-  it('REQ-SHARED-038 lists the planner, the news calendar and the friend code board, without changefreq or priority', async () => {
+  it('lists the planner, the news calendar and the friend code board, without changefreq or priority', async () => {
     const { default: sitemap } = await import('@/app/sitemap')
     const entries = await sitemap()
     const urls = entries.map(entry => entry.url)
@@ -62,7 +62,7 @@ describe('sitemap', () => {
     }
   })
 
-  it('REQ-SHARED-044 leaves out personal or empty pages while keeping the community board', async () => {
+  it('leaves out personal or empty pages while keeping the community board', async () => {
     const { default: sitemap } = await import('@/app/sitemap')
     const urls = (await sitemap()).map(entry => entry.url)
 
@@ -70,13 +70,13 @@ describe('sitemap', () => {
     expect(urls).toContain('https://saigo-no-dante.com/ko/planner/community')
   })
 
-  it('REQ-MOTION-006 lists the skill motion page', async () => {
+  it('lists the skill motion page', async () => {
     const { default: sitemap } = await import('@/app/sitemap')
     const urls = (await sitemap()).map(entry => entry.url)
 
     expect(urls).toContain('https://saigo-no-dante.com/ko/motion/skills')
   })
-  it('REQ-MOTION-022 lists every skill motion address, and the rest when the list cannot be read', async () => {
+  it('lists every skill motion address, and the rest when the list cannot be read', async () => {
     const { default: sitemap } = await import('@/app/sitemap')
     const entries = await sitemap()
     const skill = entries.find(entry => entry.url === 'https://saigo-no-dante.com/ko/motion/skills/watch?skill=id10116~1011601')

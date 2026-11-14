@@ -24,13 +24,13 @@ const identityModal = (suggestedIds?: string[]) => renderToStaticMarkup(
 )
 
 describe('identity picker suggestions', () => {
-  it('REQ-DECKS-022 lists the suggested identities first under the ribbon, in the given order, and not again below', () => {
+  it('lists the suggested identities first under the ribbon, in the given order, and not again below', () => {
     const html = identityModal(['i3', 'i1'])
     expect(html).toContain('>label<')
     expect(names(html, 'data-identity')).toEqual(['다', '가', '나'])
   })
 
-  it('REQ-DECKS-024 draws no ribbon without suggestions, or for ids the sinner does not have', () => {
+  it('draws no ribbon without suggestions, or for ids the sinner does not have', () => {
     expect(identityModal()).not.toContain('>label<')
     expect(identityModal(['elsewhere'])).not.toContain('>label<')
     expect(names(identityModal(['elsewhere']), 'data-identity')).toEqual(['가', '나', '다'])
@@ -44,13 +44,13 @@ describe('E.G.O picker suggestions', () => {
     <PlannerEgoSelectModal open sinner={sinner} egos={egos} selectedEgosByGrade={{}} suggestions={suggestedIds?.map(id => ({ id }))} onClose={() => {}} onSelect={() => {}} onDeselect={() => {}} />,
   )
 
-  it('REQ-DECKS-023 lists the suggested E.G.O first under the ribbon, and keeps them in their grade rows', () => {
+  it('lists the suggested E.G.O first under the ribbon, and keeps them in their grade rows', () => {
     const html = render(['e2'])
     expect(html).toContain('>label<')
     expect(names(html, 'data-ego')).toEqual(['와우', '자인', '와우'])
   })
 
-  it('REQ-DECKS-024 draws no ribbon without suggestions', () => {
+  it('draws no ribbon without suggestions', () => {
     expect(render()).not.toContain('>label<')
   })
 })
@@ -62,7 +62,7 @@ describe('theme pack picker suggestions', () => {
       countLabel={count => `${count}개`} themes={themes} suggested={suggested} onClose={() => {}} onSelectTheme={() => {}} lang="ko" />,
   )
 
-  it('REQ-PLANNER-029 puts the packs similar plans picked first, each with its pick count, and lists them once', () => {
+  it('puts the packs similar plans picked first, each with its pick count, and lists them once', () => {
     const html = render([{ id: 3, count: 12 }, { id: 99, count: 5 }])
     expect(html).toContain('>label<')
     expect(html).toContain('>12<')
@@ -70,7 +70,7 @@ describe('theme pack picker suggestions', () => {
     expect(html.indexOf('팩3')).toBeLessThan(html.indexOf('팩1'))
   })
 
-  it('REQ-PLANNER-029 draws no ribbon without suggestions or when none of them is offered on the floor', () => {
+  it('draws no ribbon without suggestions or when none of them is offered on the floor', () => {
     expect(render()).not.toContain('>label<')
     expect(render([{ id: 99, count: 5 }])).not.toContain('>label<')
   })
@@ -83,14 +83,14 @@ describe('gift picker suggestions', () => {
     return <GiftCatalog gifts={gifts} getGiftKeywordIcon={() => null} filters={useGiftCatalogFilters()} pinned={pinned} onGiftClick={() => {}} />
   }
 
-  it('REQ-PLANNER-030 shows a pinned group marked as the suggestion ribbon before the others, taken gifts first', () => {
+  it('shows a pinned group marked as the suggestion ribbon before the others, taken gifts first', () => {
     const html = renderToStaticMarkup(<Catalog pinned={[{ ids: new Set(['3']), label: '추천', ribbon: true }]} />)
     expect([...html.matchAll(/<section[^>]*aria-label="([^"]+)"/g)].map(match => match[1])[0]).toBe('추천')
     expect(html.slice(html.indexOf('aria-label="추천"'))).toContain('>label<')
     expect(html.indexOf('기프트3')).toBeLessThan(html.indexOf('기프트1'))
   })
 
-  it('REQ-PLANNER-030 keeps the plain heading for groups that are not the suggestion', () => {
+  it('keeps the plain heading for groups that are not the suggestion', () => {
     const html = renderToStaticMarkup(<Catalog pinned={[{ ids: new Set(['3']), label: '최근' }]} />)
     expect(html).toContain('>최근<')
     expect(html).not.toContain('>label<')

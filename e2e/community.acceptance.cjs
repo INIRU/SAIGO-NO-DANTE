@@ -348,7 +348,7 @@ async function cleanup() {
     await p.setViewportSize({ width, height: 900 });
     await p.goto(base + "/ko");
     if (width >= 1024) {
-      // Support sits in the avatar menu (REQ-SHARED-031).
+      // Support sits in the avatar menu.
       await p.getByRole("button", { name: "사용자 메뉴 열기", exact: true }).click();
       await p.getByRole("link", { name: "문의", exact: true }).waitFor();
     } else {

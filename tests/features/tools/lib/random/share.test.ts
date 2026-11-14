@@ -10,15 +10,15 @@ const base: RollSnapshot = {
   locks: [], rerolls: {}, marks: [], collectionCode: null,
 }
 
-describe('REQ-TOOLS-017 the share link', () => {
-  it('REQ-TOOLS-017 writes only the seed when everything else is the default', () => {
+describe('the share link', () => {
+  it('writes only the seed when everything else is the default', () => {
     expect(encodeSnapshot(base)).toBe('s=k3j2h1')
     expect(decodeSnapshot('s=k3j2h1')).toEqual(base)
     expect(decodeSnapshot('?s=k3j2h1')).toEqual(base)
     expect(decodeSnapshot(new URLSearchParams('s=k3j2h1'))).toEqual(base)
   })
 
-  it('REQ-TOOLS-017 round trips every setting, lock, reroll count and mark', () => {
+  it('round trips every setting, lock, reroll count and mark', () => {
     const full: RollSnapshot = {
       seed: 'zz9',
       settings: {
@@ -39,7 +39,7 @@ describe('REQ-TOOLS-017 the share link', () => {
     expect(decodeSnapshot(query)).toEqual(full)
   })
 
-  it('REQ-TOOLS-017 omits marks that are exactly the locked sinners and keeps them when they differ', () => {
+  it('omits marks that are exactly the locked sinners and keeps them when they differ', () => {
     const locked = { ...base, locks: [{ sinnerId: 's1', identityRef: '10101', egoRefs: [], number: null }], marks: ['s1'] }
     expect(new URLSearchParams(encodeSnapshot(locked)).has('m')).toBe(false)
     expect(decodeSnapshot(encodeSnapshot(locked))?.marks).toEqual(['s1'])
@@ -49,11 +49,11 @@ describe('REQ-TOOLS-017 the share link', () => {
     expect(decodeSnapshot(encodeSnapshot(none))?.marks).toEqual([])
   })
 
-  it('REQ-TOOLS-017 refuses a link without a usable seed', () => {
+  it('refuses a link without a usable seed', () => {
     for (const query of ['', 'x=1', 's=', 's=BAD SEED', 's=' + 'a'.repeat(20), 'code=abc']) expect(decodeSnapshot(query)).toBeNull()
   })
 
-  it('REQ-TOOLS-017 reads wrong pieces as the defaults and never throws', () => {
+  it('reads wrong pieces as the defaults and never throws', () => {
     const snapshot = decodeSnapshot('s=ok1&t=zz&r=9x&k=%EA%B1%B4.99~a~b~c~d&d=9-3&l=%7E%7E..%7E&rr=s1.-4~s2.x~s3.999&m=%3Cb%3E~s4&code=')!
     expect(snapshot.settings.identityEnabled).toBe(true)
     expect(snapshot.settings.egoEnabled).toBe(true)
@@ -67,7 +67,7 @@ describe('REQ-TOOLS-017 the share link', () => {
     expect(snapshot.collectionCode).toBeNull()
   })
 
-  it('REQ-TOOLS-017 reopens the link to the same rolled result, rerolls and locks included', () => {
+  it('reopens the link to the same rolled result, rerolls and locks included', () => {
     const first = newRoll(data, { seed: 'one', settings: { ...base.settings, deploy: { min: 1, max: 12 } }, marks: [], collectionCode: null, previous: null }, null)
     const second = newRoll(data, { seed: 'two', settings: { ...base.settings, deploy: { min: 2, max: 8 } }, marks: ['s2', 's7'], collectionCode: null, previous: first.result }, null)
     const rerolled = rerollSinner(data, second.snapshot, null, second.result, 's1')!

@@ -12,7 +12,7 @@ const render = (locale: string, messages: typeof ko) => renderToStaticMarkup(
   <NextIntlClientProvider locale={locale} messages={messages} timeZone="Asia/Seoul"><DiscordSupportLink /></NextIntlClientProvider>)
 
 describe('support Discord link in the home hero', () => {
-  it('REQ-HOME-009 opens the support server in a new window with a name, a kind and a label in every language', () => {
+  it('opens the support server in a new window with a name, a kind and a label in every language', () => {
     for (const [locale, messages] of [['ko', ko], ['en', en], ['ja', ja]] as const) {
       const html = render(locale, messages as typeof ko)
       expect(html).toContain('href="https://discord.gg/efaGjQwsVB"')
@@ -24,7 +24,7 @@ describe('support Discord link in the home hero', () => {
     }
   })
 
-  it('REQ-HOME-009 sits under the Limpi link in the hero actions', () => {
+  it('sits under the Limpi link in the hero actions', () => {
     const home = readFileSync(resolve(__dirname, '../../app/[lang]/(home)/HomeClient.tsx'), 'utf8')
     expect(home).toMatch(/<LimpiLink \/>\s*<DiscordSupportLink \/>/)
   })

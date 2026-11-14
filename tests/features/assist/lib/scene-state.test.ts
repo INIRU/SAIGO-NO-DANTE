@@ -31,7 +31,7 @@ it('ends on a stable exit scene, floor change, stop or a long other scene, then 
   expect(eventExitAt({ label: 'theme_select', since: 2_000 }, 2_100)).toBe(2_000)
 })
 
-it('REQ-ASSIST-077 shows the formation on the dungeon entry and formation screens, in the run start too', () => {
+it('shows the formation on the dungeon entry and formation screens, in the run start too', () => {
   // Video review 2026-10-23: entry screen run_setup, the formation screen battle_setup (0.5–0.95), start gifts start_gift.
   expect([...FORMATION_SCENES].sort()).toEqual(['battle_setup', 'run_setup'])
   expect(FORMATION_SCENES.has('start_gift')).toBe(false)

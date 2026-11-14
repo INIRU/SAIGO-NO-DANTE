@@ -20,11 +20,11 @@ it('EGO 상세는 업로드가 검증된 CG만 사용하고 미등록 이미지�
   expect(getEgoArtworkUrl('')).toBe('')
 })
 
-describe('REQ-CATALOG-016 getEgoArtworkUrl precedence', () => {
+describe('getEgoArtworkUrl precedence', () => {
   const profile = `${STORAGE_BASE}/sinners/faust/ego/Hollow/20211_awaken_profile.webp`
   const stored = `${STORAGE_BASE}/sinners/faust/ego/Hollow/20211_cg-b2a9a36548b9.webp`
 
-  it('REQ-CATALOG-016 uses the stored artwork_url before the hand-kept map and the profile', () => {
+  it('uses the stored artwork_url before the hand-kept map and the profile', () => {
     expect(getEgoArtworkUrl(profile, stored)).toBe(stored)
     // 20205 is in lib/generated/ego-artwork.json, yet the row's own URL still wins.
     const mapped = `${STORAGE_BASE}/sinners/faust/ego/9%202/20205_awaken_profile.webp`
@@ -32,12 +32,12 @@ describe('REQ-CATALOG-016 getEgoArtworkUrl precedence', () => {
     expect(getEgoArtworkUrl(mapped, own)).toBe(own)
   })
 
-  it('REQ-CATALOG-016 falls back to the map when artwork_url is missing, null or blank', () => {
+  it('falls back to the map when artwork_url is missing, null or blank', () => {
     const mapped = `${STORAGE_BASE}/sinners/faust/ego/9%202/20205_awaken_profile.webp`
     for (const none of [undefined, null, '', '   ']) expect(getEgoArtworkUrl(mapped, none)).toMatch(/\/9%202\/20205_cg-[a-f0-9]{12}\.webp$/)
   })
 
-  it('REQ-CATALOG-016 keeps the profile when neither artwork_url nor the map has the EGO', () => {
+  it('keeps the profile when neither artwork_url nor the map has the EGO', () => {
     for (const none of [undefined, null, '']) expect(getEgoArtworkUrl(profile, none)).toBe(profile)
     expect(getEgoArtworkUrl('', null)).toBe('')
   })

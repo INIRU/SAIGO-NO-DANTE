@@ -24,8 +24,8 @@ const states = [
 ]
 const render = (current: string, list = states, voices: VoiceLink[] = []) => renderToStaticMarkup(<MotionScenarios states={list} current={current} onPick={() => {}} voices={voices} onVoice={async () => {}} onVoiceStop={() => {}} />)
 
-describe('REQ-MOTION-046 scenarios', () => {
-  it('REQ-MOTION-046 lists one row per video and each link once with its faces', () => {
+describe('scenarios', () => {
+  it('lists one row per video and each link once with its faces', () => {
     const html = render('v:base')
     expect(html.match(/data-scenario=/g)).toHaveLength(2)
     expect(html.match(/data-partner=/g)).toHaveLength(2)
@@ -33,7 +33,7 @@ describe('REQ-MOTION-046 scenarios', () => {
     expect(html).toMatch(/aria-pressed="true"[^>]*data-scenario="v:base"/)
   })
 
-  it('REQ-MOTION-046 shows the max switch only under the chosen link', () => {
+  it('shows the max switch only under the chosen link', () => {
     expect(render('v:base')).not.toContain('role="switch"')
     const normal = render('v:link-10114')
     expect(normal).toMatch(/aria-pressed="true"[^>]*data-partner="10114"/)
@@ -41,7 +41,7 @@ describe('REQ-MOTION-046 scenarios', () => {
     expect(render('v:link-10114-max')).toMatch(/<button[^>]*role="switch"[^>]*aria-checked="true"/)
   })
 
-  it('REQ-MOTION-046 finds the video of a link at the chosen max, or its other video when that one is missing', () => {
+  it('finds the video of a link at the chosen max, or its other video when that one is missing', () => {
     expect(pickLinkState(states, '10114', true)?.state).toBe('v:link-10114-max')
     expect(pickLinkState(states, '10212', false)?.state).toBe('v:link-10212')
     expect(pickLinkState(states.slice(0, 2), '10114', true)?.state).toBe('v:link-10114')
@@ -50,7 +50,7 @@ describe('REQ-MOTION-046 scenarios', () => {
 
   const buffs = [{ name: '해금 - II', icon: '/k/unlock.webp', stack: '1' }, { name: '대행 [헤르메스]', icon: null, stack: '9' }]
 
-  it('REQ-MOTION-046 writes a scenario from the game values and drops the sentence', () => {
+  it('writes a scenario from the game values and drops the sentence', () => {
     const html = render('v:base', [state('v:base', '기본'), state('v:form', '가면 벗음', { conditions: buffs, extras: [{ text: '치명타', icon: null }, { text: '색욕 공명 4', icon: '/sins/lust.webp' }] })])
     expect(html).not.toContain('가면 벗음')
     expect(html.indexOf('/k/unlock.webp')).toBeLessThan(html.indexOf('해금 - II'))
@@ -61,7 +61,7 @@ describe('REQ-MOTION-046 scenarios', () => {
     expect(html).not.toContain('<h3')
   })
 
-  it('REQ-MOTION-046 keeps a scenario the data says nothing about: its sentence in Korean, a number elsewhere', () => {
+  it('keeps a scenario the data says nothing about: its sentence in Korean, a number elsewhere', () => {
     const list = [state('v:base', '기본'), state('v:head', '코인 앞면'), state('v:1', '하나', { conditions: buffs }), state('v:2', '둘', { conditions: buffs })]
     const ko = render('v:base', list)
     expect(ko).toContain('코인 앞면')
@@ -76,7 +76,7 @@ describe('REQ-MOTION-046 scenarios', () => {
     } finally { locale.value = 'ko' }
   })
 
-  it('REQ-MOTION-046 tells two same-looking scenarios apart by the index sentence, not the label made from their one labelKey', () => {
+  it('tells two same-looking scenarios apart by the index sentence, not the label made from their one labelKey', () => {
     const key = '지령의 가호 9 + 정신력 45 + 변신'
     const html = render('v:base', [states[0], state('v:form', key, { conditions: buffs, sentence: '개화' }), state('v:mark', key, { conditions: buffs, sentence: '개화 · 지령 표식' })])
     expect(html).toContain('>개화<')
@@ -84,18 +84,18 @@ describe('REQ-MOTION-046 scenarios', () => {
     expect(html).not.toContain(key)
   })
 
-  it('REQ-MOTION-046 writes a cut-in as the ally\'s face and the buff', () => {
+  it('writes a cut-in as the ally\'s face and the buff', () => {
     const list = [states[0], state('v:b', '차원 표류 1', { conditions: [{ name: '차원 표류', icon: '/k/d.webp', stack: '1' }] }), state('v:cutin', '아군 공격 뒤 끼어듦 (차원 표류 1)', { conditions: [{ name: '차원 표류', icon: '/k/d.webp', stack: '1' }] })]
     const html = renderToStaticMarkup(<MotionScenarios states={list} current="v:base" allies={{ 'v:cutin': person('10201', '파우스트') }} onPick={() => {}} voices={[]} onVoice={async () => {}} onVoiceStop={() => {}} />)
     expect(html).not.toContain('끼어듦')
     expect(html.lastIndexOf('/p/10201.webp')).toBeGreaterThan(html.indexOf('data-scenario="v:cutin"'))
   })
 
-  it('REQ-MOTION-046 shows the ally of a formation by its face', () => {
+  it('shows the ally of a formation by its face', () => {
     expect(render('v:base', [states[0], state('v:with-10114', '아군 오', { allies: [person('10114', '이상')] })])).toContain('/p/10114.webp')
   })
 
-  it('REQ-MOTION-056 tells the best state from the same buffs by its ally, so both keep their chips', () => {
+  it('tells the best state from the same buffs by its ally, so both keep their chips', () => {
     const buff = { conditions: [{ name: '전투 감각', icon: '/k/f.webp', stack: '3' }] }
     const html = render('v:base', [states[0], state('v:b-Firstlight-3', '전투 감각 3', buff), state('v:best', '최고', { ...buff, allies: [person('11216', '그레고르')] })])
     expect(html).not.toContain('전투 감각 3<')
@@ -103,7 +103,7 @@ describe('REQ-MOTION-046 scenarios', () => {
     expect(html.lastIndexOf('/p/11216.webp')).toBeGreaterThan(html.indexOf('data-scenario="v:best"'))
   })
 
-  it('REQ-MOTION-033 shows one row with every partner of a link', () => {
+  it('shows one row with every partner of a link', () => {
     const duo = [states[0], state('v:link-11216+11009', 'L', link([person('11216', '그레고르'), person('11009', '싱클레어')], false))]
     const html = render('v:link-11216+11009', duo)
     expect(html.match(/data-partner=/g)).toHaveLength(1)
@@ -111,7 +111,7 @@ describe('REQ-MOTION-046 scenarios', () => {
     expect(html).toContain('/p/11009.webp')
   })
 
-  it('REQ-MOTION-046 lists the dead allies as rows with their faces', () => {
+  it('lists the dead allies as rows with their faces', () => {
     const list = [state('v:base', '기본'), state('v:dead-1', '아비 사망', { dead: [person('10115', '이상')] }), state('v:dead-all', '4명 사망', { dead: [person('10115', '이상'), person('10916', '로쟈')] })]
     const html = render('v:dead-all', list)
     expect(html).toMatch(/aria-pressed="true"[^>]*data-scenario="v:dead-all"/)
@@ -122,7 +122,7 @@ describe('REQ-MOTION-046 scenarios', () => {
 
   const voice = (id: string): VoiceLink => ({ id, identities: ['10315'], main: '10315', partners: [], dead: [], when: 'roundStart', label: `대사 ${id}`, labelEn: `Line ${id}`, cues: [], pools: [], seconds: 3 })
 
-  it('REQ-MOTION-046 puts the link lines under the scenarios, in the page language (Japanese reads English)', () => {
+  it('puts the link lines under the scenarios, in the page language (Japanese reads English)', () => {
     const html = render('v:base', [states[0], states[5]], [voice('a'), voice('b')])
     expect(html.match(/data-voice=/g)).toHaveLength(2)
     expect(html).toContain('대사 a')
@@ -132,8 +132,8 @@ describe('REQ-MOTION-046 scenarios', () => {
   })
 })
 
-describe('REQ-MOTION-044 the skill strip', () => {
-  it('REQ-MOTION-044 draws each skill in the game frame from the icon it is given, a line before another form', () => {
+describe('the skill strip', () => {
+  it('draws each skill in the game frame from the icon it is given, a line before another form', () => {
     const skill = (key: string, skillId: number, form: string | null): MotionSkill => ({ key, skillId, title: `s${skillId}`, form, states: [], frame: { sin: 'gloom', slot: 2, attack: 'pierce' } })
     const html = renderToStaticMarkup(<MotionSkillStrip icon={s => `/icon/${s.skillId}.webp`} skills={[skill('a', 1061301, null), skill('b', 1061302, null), skill('c', 1061391, 'awaken')]} selectedKey="b" onPick={() => {}} />)
     expect(html.match(/<button/g)).toHaveLength(3)
@@ -144,25 +144,25 @@ describe('REQ-MOTION-044 the skill strip', () => {
   })
 })
 
-describe('REQ-MOTION-041 the timeline', () => {
+describe('the timeline', () => {
   const chapters = [{ f: 0, kind: 'skill' as const, key: '<s:1>' }, { f: 100, kind: 'coin' as const, key: '<coin:1>' }]
   const store = { subscribe: () => () => {}, get: () => 150 }
 
-  it('REQ-MOTION-041 splits the track at the chapters, whole when there are none', () => {
+  it('splits the track at the chapters, whole when there are none', () => {
     expect(chapterSpans(chapters, 300)).toEqual([{ from: 0, to: 100 }, { from: 100, to: 300 }])
     expect(chapterSpans([], 300)).toEqual([{ from: 0, to: 300 }])
     // A first chapter after frame 0 leaves no gap at the start of the track.
     expect(chapterSpans([{ f: 30, kind: 'skill', key: '' }], 300)).toEqual([{ from: 0, to: 30 }, { from: 30, to: 300 }])
   })
 
-  it('REQ-MOTION-041 finds the chapter of a frame', () => {
+  it('finds the chapter of a frame', () => {
     expect(currentChapter(chapters, 0)?.f).toBe(0)
     expect(currentChapter(chapters, 99)?.f).toBe(0)
     expect(currentChapter(chapters, 100)?.f).toBe(100)
     expect(currentChapter([], 10)).toBeUndefined()
   })
 
-  it('REQ-MOTION-041 stands a mark on the track at its frame, higher for a critical hit, and merges the targets of one frame', () => {
+  it('stands a mark on the track at its frame, higher for a critical hit, and merges the targets of one frame', () => {
     const marks = [{ f: 60, kind: 'hit' as const }, { f: 60, kind: 'hit' as const }, { f: 150, kind: 'hit' as const, critical: true }, { f: 200, kind: 'kill' as const }, { f: 250, kind: 'hit' as const, kill: true }]
     const html = renderToStaticMarkup(<MotionTimeline store={store} frames={300} chapters={chapters} marks={marks} label="frame" onSeek={() => {}} />)
     expect(html.match(/data-mark=/g)).toHaveLength(4)

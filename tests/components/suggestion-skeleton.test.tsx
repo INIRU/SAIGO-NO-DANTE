@@ -24,8 +24,8 @@ const sinner = { id: 'faust', name_kr: '파우스트' }
 const identity = (id: string, name: string) => ({ id, sinner_id: 'faust', name_kr: name, rarity: 3, game_id: '10201', folder_name: name })
 const identities = [identity('i1', '가'), identity('i2', '나')]
 
-describe('REQ-DECKS-048 loading state of the suggestions', () => {
-  it('REQ-DECKS-048 is loading from the first ask until the answer or the failure, never without a url', () => {
+describe('loading state of the suggestions', () => {
+  it('is loading from the first ask until the answer or the failure, never without a url', () => {
     swr.result = {}
     expect(useSuggestionState('/api/discovery/suggest?x')).toEqual({ data: null, loading: true })
     expect(useSuggestionState(null)).toEqual({ data: null, loading: false })
@@ -36,12 +36,12 @@ describe('REQ-DECKS-048 loading state of the suggestions', () => {
   })
 })
 
-describe('REQ-DECKS-048 identity picker', () => {
+describe('identity picker', () => {
   const render = (props: { suggestionsLoading?: boolean; suggestions?: { id: string }[] }) => renderToStaticMarkup(
     <PlannerIdentitySelectModal open sinner={sinner} identities={identities} onClose={() => {}} onSelect={() => {}} {...props} />,
   )
 
-  it('REQ-DECKS-048 holds the suggestion group while it loads: the ribbon bar, six cards, each with partner faces and a reason line', () => {
+  it('holds the suggestion group while it loads: the ribbon bar, six cards, each with partner faces and a reason line', () => {
     const html = render({ suggestionsLoading: true })
     expect(html).toContain('data-suggestion-skeleton="identity"')
     expect(html).toContain('role="status"')
@@ -53,7 +53,7 @@ describe('REQ-DECKS-048 identity picker', () => {
     expect(html).toContain('data-identity')
   })
 
-  it('REQ-DECKS-048 swaps the skeleton for the group when the suggestions arrive, and leaves nothing when they come back empty', () => {
+  it('swaps the skeleton for the group when the suggestions arrive, and leaves nothing when they come back empty', () => {
     const arrived = render({ suggestions: [{ id: 'i2' }] })
     expect(arrived).not.toContain('data-suggestion-skeleton')
     expect(arrived).toContain('>label<')
@@ -63,13 +63,13 @@ describe('REQ-DECKS-048 identity picker', () => {
   })
 })
 
-describe('REQ-DECKS-048 E.G.O picker', () => {
+describe('E.G.O picker', () => {
   const egos = [{ id: 'e1', sinner_id: 'faust', name: '자인', name_kr: '자인', grade: 'ZAYIN' }]
   const render = (suggestionsLoading: boolean) => renderToStaticMarkup(
     <PlannerEgoSelectModal open sinner={sinner} egos={egos} selectedEgosByGrade={{}} suggestionsLoading={suggestionsLoading} onClose={() => {}} onSelect={() => {}} onDeselect={() => {}} />,
   )
 
-  it('REQ-DECKS-048 holds the group with six E.G.O. shapes and their notes while it loads, then lets go', () => {
+  it('holds the group with six E.G.O. shapes and their notes while it loads, then lets go', () => {
     const html = render(true)
     expect(html).toContain('data-suggestion-skeleton="ego"')
     expect(count(html, 'data-tile-skeleton="ego"')).toBe(6)
@@ -79,14 +79,14 @@ describe('REQ-DECKS-048 E.G.O picker', () => {
   })
 })
 
-describe('REQ-PLANNER-042 theme pack and gift pickers', () => {
+describe('theme pack and gift pickers', () => {
   const themes = [1, 2, 3].map(id => ({ id, name: `팩${id}`, image_url: null, ego_gift_ids: [], floor_info: null }))
   const theme = (suggestionsLoading: boolean, suggested?: { id: number; count: number }[]) => renderToStaticMarkup(
     <ThemePackPickerModal title="5층" closeLabel="닫기" emptyLabel="없음" searchLabel="검색" noResultsLabel="결과 없음"
       countLabel={n => `${n}개`} themes={themes} suggested={suggested} suggestionsLoading={suggestionsLoading} onClose={() => {}} onSelectTheme={() => {}} lang="ko" />,
   )
 
-  it('REQ-PLANNER-042 holds the theme pack group with the ribbon bar and six posters while it loads', () => {
+  it('holds the theme pack group with the ribbon bar and six posters while it loads', () => {
     const html = theme(true)
     expect(html).toContain('data-suggestion-skeleton="theme"')
     expect(html).toContain('aspect-ratio:416 / 684')
@@ -94,14 +94,14 @@ describe('REQ-PLANNER-042 theme pack and gift pickers', () => {
     expect(html).toContain('팩1')
   })
 
-  it('REQ-PLANNER-042 swaps the poster shapes for the real group, and leaves nothing for an empty answer', () => {
+  it('swaps the poster shapes for the real group, and leaves nothing for an empty answer', () => {
     const arrived = theme(false, [{ id: 3, count: 12 }])
     expect(arrived).not.toContain('data-suggestion-skeleton')
     expect(arrived).toContain('>label<')
     expect(theme(false)).not.toContain('data-suggestion-skeleton')
   })
 
-  it('REQ-PLANNER-042 holds the gift group above the gift list while it loads', () => {
+  it('holds the gift group above the gift list while it loads', () => {
     const gifts = [{ id: '1', game_id: 1, name: '기프트1', keyword: 'Burn', grade: '1', is_synthesis: false, image_url: null }] as never[]
     const render = (suggestionsLoading: boolean) => renderToStaticMarkup(
       <FloorGiftPickerModal open title="5층" floorGifts={gifts} allGifts={gifts} selectedIds={new Set()} suggestionsLoading={suggestionsLoading} onToggle={() => {}} onClose={() => {}} />,
@@ -112,7 +112,7 @@ describe('REQ-PLANNER-042 theme pack and gift pickers', () => {
     expect(render(false)).not.toContain('data-suggestion-skeleton')
   })
 
-  it('REQ-PLANNER-042 draws the group skeleton as a status region with hidden bones, with no grey pulse boxes', () => {
+  it('draws the group skeleton as a status region with hidden bones, with no grey pulse boxes', () => {
     const html = renderToStaticMarkup(<GiftGroupSkeleton count={8} />)
     expect(html).toContain('role="status"')
     expect(html).toContain('aria-busy="true"')
@@ -121,23 +121,23 @@ describe('REQ-PLANNER-042 theme pack and gift pickers', () => {
   })
 })
 
-describe('REQ-DECKS-048 shapes', () => {
-  it('REQ-DECKS-048 draws the card as 290:428 with a note of three overlapping faces and a reason line', () => {
+describe('shapes', () => {
+  it('draws the card as 290:428 with a note of three overlapping faces and a reason line', () => {
     const html = renderToStaticMarkup(<IdentityTileSkeleton />)
     expect(html).toContain('aspect-ratio:290 / 428')
     expect(count(html, 'width:1.75rem')).toBe(3)
     expect(renderToStaticMarkup(<IdentityTileSkeleton note={false} />)).not.toContain('data-suggestion-note-skeleton')
   })
 
-  it('REQ-DECKS-048 puts the group title bar above tiles of a given grid', () => {
+  it('puts the group title bar above tiles of a given grid', () => {
     const html = renderToStaticMarkup(<SuggestionGroupSkeleton shape="theme" count={4} tilesClassName="grid grid-cols-3" />)
     expect(count(html, 'aspect-ratio:416 / 684')).toBe(4)
     expect(html.indexOf('data-suggestion-title-skeleton')).toBeLessThan(html.indexOf('aspect-ratio'))
   })
 })
 
-describe('REQ-COMMUNITY-084 recommendation lanes', () => {
-  it('REQ-COMMUNITY-084 draws the lane as a heading, a count and post cards on the lane\'s own grid', () => {
+describe('recommendation lanes', () => {
+  it('draws the lane as a heading, a count and post cards on the lane\'s own grid', () => {
     const html = renderToStaticMarkup(<RecommendationLaneSkeleton kind="planner" />)
     expect(html).toContain('data-recommendation-skeleton')
     expect(html).toContain('flex-wrap')
@@ -146,7 +146,7 @@ describe('REQ-COMMUNITY-084 recommendation lanes', () => {
     expect(html).toContain('role="status"')
   })
 
-  it('REQ-COMMUNITY-084 draws the identity page recommendations as the companion row, then the popular lane', () => {
+  it('draws the identity page recommendations as the companion row, then the popular lane', () => {
     const html = renderToStaticMarkup(<IdentityRecommendationsSkeleton />)
     expect(count(html, 'aspect-ratio:290 / 428')).toBe(6)
     expect(html).toContain('w-[6.25rem]')

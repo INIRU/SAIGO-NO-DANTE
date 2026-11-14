@@ -63,7 +63,7 @@ describe('plannerReducer partial LOAD_PLAN', () => {
   })
 })
 
-describe('REQ-PLANNER-044 floor gifts without a theme pack', () => {
+describe('floor gifts without a theme pack', () => {
   it('keeps gifts picked before the pack, and clears them when the pack changes or is removed', () => {
     let state = createInitialState('hard')
     state = plannerReducer(state, { type: 'SET_FLOOR_GIFTS', floor: 1, giftIds: ['9001', '9002'] })

@@ -10,7 +10,7 @@ vi.mock('@/features/account/components/SupportDesk', () => ({
 const page = async (query: Record<string, string | string[]>) =>
   renderToStaticMarkup(await InquiriesPage({ params: Promise.resolve({ lang: 'ko' }), searchParams: Promise.resolve(query) }))
 
-it('REQ-ADMIN-008 the inbox starts on the inquiry named in the address, and on the list without one', async () => {
+it('the inbox starts on the inquiry named in the address, and on the list without one', async () => {
   const id = '8a5b7a52-5f0f-4d0e-9f3c-0d2b2f4a1c11'
   expect(await page({ id })).toContain(`data-desk="admin" data-initial-id="${id}"`)
   expect(await page({})).toContain('data-desk="admin" data-initial-id=""')

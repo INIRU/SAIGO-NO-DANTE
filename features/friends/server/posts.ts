@@ -22,7 +22,7 @@ export const ownerFilter = (viewer: Author, userColumn = 'user_id', keyColumn = 
   viewer.kind === 'user' ? { column: userColumn, value: viewer.userId } : { column: keyColumn, value: viewer.keyHash }
 
 /**
- * Author columns of a new post. A guest's password is hashed with the post's id (REQ-COMMUNITY-029), so that id is made
+ * Author columns of a new post. A guest's password is hashed with the post's id, so that id is made
  * here instead of by the database.
  */
 export function friendAuthorColumns(author: Author, pin: string | null) {
@@ -33,7 +33,7 @@ export function friendAuthorColumns(author: Author, pin: string | null) {
   return { id, ...owner, pin_hash: guestPinHash('friend', id, pin) }
 }
 
-/** Whether an admin barred this author from the board (REQ-COMMUNITY-025). */
+/** Whether an admin barred this author from the board. */
 export async function isBlocked(admin: Admin, author: Author): Promise<boolean> {
   const owner = ownerFilter(author)
   const { data, error } = await admin.schema('limbus').from('friend_blocks').select('created_at').eq(owner.column, owner.value).limit(1)

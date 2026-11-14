@@ -81,7 +81,7 @@ beforeEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('REQ-DECKS-058 the deck update API checks its input', () => {
+describe('the deck update API checks its input', () => {
   it.each([
     ['a title that is not a string', { ...goodBody, title: 5 }],
     ['a title that is too long', { ...goodBody, title: 'x'.repeat(201) }],
@@ -91,13 +91,13 @@ describe('REQ-DECKS-058 the deck update API checks its input', () => {
     ['an ego slot without an id', { ...goodBody, egoSlots: [{ grade: 'ZAYIN' }] }],
     ['tags that is not an array', { ...goodBody, tags: 'tag' }],
     ['a tag that is not a string', { ...goodBody, tags: [1] }],
-  ])('REQ-DECKS-058 %s is a 400 and writes nothing', async (_label, body) => {
+  ])('%s is a 400 and writes nothing', async (_label, body) => {
     const res = await patch(body)
     expect(res.status).toBe(400)
     expect(writes()).toEqual([])
   })
 
-  it('REQ-DECKS-058 a blocked rate limit is a 429 before any database call', async () => {
+  it('a blocked rate limit is a 429 before any database call', async () => {
     rateAllowed = false
     const res = await patch(goodBody)
     expect(res.status).toBe(429)
@@ -105,14 +105,14 @@ describe('REQ-DECKS-058 the deck update API checks its input', () => {
     expect(rpcCalls).toEqual([])
   })
 
-  it('REQ-DECKS-058 the bookmark toggle is rate limited too', async () => {
+  it('the bookmark toggle is rate limited too', async () => {
     rateAllowed = false
     const res = await BOOKMARK(new NextRequest('http://localhost/api/decks/d1/bookmark', { method: 'POST' }), { params: Promise.resolve({ id: 'd1' }) })
     expect(res.status).toBe(429)
     expect(calls).toEqual([])
   })
 
-  it('REQ-DECKS-058 tags are written only when the body has them', async () => {
+  it('tags are written only when the body has them', async () => {
     expect((await patch(goodBody)).status).toBe(200)
     expect(rpcCalls[0].args.p_patch).not.toHaveProperty('tags')
 
@@ -121,7 +121,7 @@ describe('REQ-DECKS-058 the deck update API checks its input', () => {
     expect(rpcCalls[0].args.p_patch).toMatchObject({ tags: ['a'] })
   })
 
-  it('REQ-DECKS-061 a valid update is one replace_deck call and no other write', async () => {
+  it('a valid update is one replace_deck call and no other write', async () => {
     const res = await patch({ ...goodBody, content_type: '무한', main_keywords: ['참격'] })
     expect(res.status).toBe(200)
     expect(calls.filter(c => c.op !== 'select')).toEqual([])
@@ -135,7 +135,7 @@ describe('REQ-DECKS-058 the deck update API checks its input', () => {
     })
   })
 
-  it('REQ-DECKS-061 a failed replace_deck is a 500 with a fixed message and no other write', async () => {
+  it('a failed replace_deck is a 500 with a fixed message and no other write', async () => {
     rpcError = { message: 'secret db text' }
     const log = vi.spyOn(console, 'error').mockImplementation(() => {})
     const res = await patch(goodBody)

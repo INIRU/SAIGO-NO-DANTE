@@ -8,7 +8,7 @@ vi.mock('@/components/ui/BaseModal', () => ({ default: ({ children }: { children
 vi.mock('@/features/decks/components/DeckCard', () => ({ default: ({ deck }: { deck: { title: string } }) => <article data-deck-card>{deck.title}</article> }))
 vi.mock('@/features/planner/components/PlanCard', () => ({ default: () => <article data-plan-card /> }))
 
-it('REQ-COMMUNITY-045 the card picker uses the gift picker frame and shows results as board cards', async () => {
+it('the card picker uses the gift picker frame and shows results as board cards', async () => {
   const { NoteCardPicker } = await import('@/features/notes/components/NoteCardBlock')
   const html = renderToStaticMarkup(<NoteCardPicker kind="deck" onKind={() => {}} onSelect={() => {}} onClose={() => {}} />)
   expect(html).toContain('note-direct-picker')

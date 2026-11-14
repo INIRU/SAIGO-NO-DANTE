@@ -17,7 +17,7 @@ describe('guest copy', () => {
     expect(getGuestCopy('en').claimed(1, 2)).toBe('Moved 1 deck and 2 plans.')
   })
 
-  it('REQ-COMMUNITY-031 says why a new post cannot go up with this password', () => {
+  it('says why a new post cannot go up with this password', () => {
     for (const locale of ['ko', 'en', 'ja']) {
       const copy = getGuestCopy(locale)
       expect(['', '48', '1234', '0000', '4821'].map(pin => guestPinProblem(pin, locale))).toEqual([copy.pinRequired, copy.pinRequired, copy.pinWeak, copy.pinWeak, null])
@@ -25,7 +25,7 @@ describe('guest copy', () => {
     }
   })
 
-  it('REQ-COMMUNITY-031 names each result of a password recovery in every locale', () => {
+  it('names each result of a password recovery in every locale', () => {
     for (const locale of ['ko', 'en', 'ja']) {
       const copy = getGuestCopy(locale)
       const named = ['wrong_pin', 'pin_locked', 'no_pin', 'not_found'].map(code => guestRecoverMessage(code, locale))

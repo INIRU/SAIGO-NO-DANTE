@@ -53,7 +53,7 @@ describe('admin user boundaries', () => {
     expect(response.status).toBe(500)
     expect(await response.text()).not.toContain('private database diagnostic')
   })
-  it('REQ-ADMIN-009 sets and clears the partner code through the audited RPC and rejects other values', async () => {
+  it('sets and clears the partner code through the audited RPC and rejects other values', async () => {
     expect((await PATCH(request({ partner: 'limpi' }), ctx)).status).toBe(200)
     expect(m.rpc).toHaveBeenLastCalledWith('admin_set_partner', expect.objectContaining({ p_actor_email: 'admin@example.invalid', p_target_id: id, p_partner: 'limpi' }))
     expect((await PATCH(request({ partner: null }), ctx)).status).toBe(200)

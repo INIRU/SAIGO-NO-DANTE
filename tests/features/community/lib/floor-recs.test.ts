@@ -26,12 +26,12 @@ const model = buildFloorModel([
 const ask = (extra = {}) => ({ floor: 5, identities: ['B1', 'C1'], candidates: ['1', '2', '3', '4'], now: NOW, ...extra })
 
 describe('theme pack suggestions', () => {
-  it('REQ-PLANNER-040 weighs each plan by how much it looks like this one, so the pack similar plans took on the floor comes first', () => {
+  it('weighs each plan by how much it looks like this one, so the pack similar plans took on the floor comes first', () => {
     expect(rankThemes(model, ask())[0].id).toBe('1')
     expect(rankThemes(model, ask({ identities: ['E1', 'F1'] }))[0].id).toBe('2')
   })
 
-  it('REQ-PLANNER-040 counts the plans like this one that took each pack, and falls back to what everyone takes when it knows nothing of the plan', () => {
+  it('counts the plans like this one that took each pack, and falls back to what everyone takes when it knows nothing of the plan', () => {
     const rows = rankThemes(model, ask())
     expect(rows.find(row => row.id === '1')!.count).toBe(6)
     expect(rows.find(row => row.id === '2')!.count).toBe(0)
@@ -40,14 +40,14 @@ describe('theme pack suggestions', () => {
     expect(blank.every(row => Number.isFinite(row.score))).toBe(true)
   })
 
-  it('REQ-PLANNER-040 follows the packs already chosen on other floors', () => {
+  it('follows the packs already chosen on other floors', () => {
     // Plans that took pack 4 on floor 4 and also pack 1 on floor 5 are the six burn plans; the two Z1 plans took pack 3.
     const withOthers = rankThemes(model, ask({ identities: [], others: [{ floor: 4, theme: '3' }] }))
     expect(withOthers[0].id).toBe('2')
     expect(rankThemes(model, ask({ identities: [], others: [{ floor: 4, theme: '4' }] }))[0].id).toBe('1')
   })
 
-  it('REQ-PLANNER-040 says why: the keyword the pack\'s gifts share with the team, else similar plans, else what is common', () => {
+  it('says why: the keyword the pack\'s gifts share with the team, else similar plans, else what is common', () => {
     const rows = rankThemes(model, ask())
     expect(rows.find(row => row.id === '1')!.reasons).toEqual(['keyword:화상', 'synergy'])
     expect(rows.find(row => row.id === '4')!.reasons).toEqual(['meta'])
@@ -55,14 +55,14 @@ describe('theme pack suggestions', () => {
 })
 
 describe('gift suggestions', () => {
-  it('REQ-PLANNER-041 ranks the pack\'s gifts by what similar plans took on this floor and drops the gifts the plan already has', () => {
+  it('ranks the pack\'s gifts by what similar plans took on this floor and drops the gifts the plan already has', () => {
     const rows = rankGifts(model, ask({ theme: '1', candidates: ['9001', '9002'] }))
     expect(rows.map(row => row.id)).toEqual(['9001', '9002'])
     expect(rows[0].count).toBe(6)
     expect(rankGifts(model, ask({ theme: '1', candidates: ['9001', '9002'], taken: ['9001'] })).map(row => row.id)).toEqual(['9002'])
   })
 
-  it('REQ-PLANNER-041 prefers a gift whose keyword matches the team when nothing else separates them', () => {
+  it('prefers a gift whose keyword matches the team when nothing else separates them', () => {
     // Pack 5 has no plan behind it: only the keyword tells the gifts apart.
     const rows = rankGifts(model, ask({ theme: '5', candidates: ['9001', '9003', '9004'], identities: ['B1', 'C1'] }))
     expect(rows[0].id).toBe('9001')
@@ -70,7 +70,7 @@ describe('gift suggestions', () => {
     expect(rankGifts(model, ask({ theme: '5', candidates: ['9001', '9003', '9004'], identities: ['E1', 'F1'] }))[0].id).toBe('9003')
   })
 
-  it('REQ-PLANNER-041 ranks by what plans took on the floor when the floor\'s pack is not known', () => {
+  it('ranks by what plans took on the floor when the floor\'s pack is not known', () => {
     const rows = rankGifts(model, ask({ candidates: ['9001', '9003', '9004'] }))
     expect(rows[0].id).toBe('9001')
     expect(rows.every(row => Number.isFinite(row.score))).toBe(true)

@@ -13,8 +13,8 @@ function resetBody() {
   return hook.slice(start, end)
 }
 
-describe('REQ-ASSIST-084 resetReadings', () => {
-  it('REQ-ASSIST-084 clears blessings, clear bonus, popup acquisitions and their refs in one place', () => {
+describe('resetReadings', () => {
+  it('clears blessings, clear bonus, popup acquisitions and their refs in one place', () => {
     const body = resetBody()
     for (const part of ['setBlessings(null)', 'lastBlessingRead.current = \'\'', 'blessingRequest.current = null',
       'setClearBonus(null)', 'lastBonusRead.current = \'\'', 'bonusRequest.current = null', 'bonusNames.current = null', 'selectionHeader.current = null',
@@ -25,7 +25,7 @@ describe('REQ-ASSIST-084 resetReadings', () => {
       'setScene(null)', 'setThemeSelectionFloor(null)']) expect(body, part).toContain(part)
   })
 
-  it('REQ-ASSIST-084 stop, start and both error paths call it instead of listing the resets again', () => {
+  it('stop, start and both error paths call it instead of listing the resets again', () => {
     expect(hook.match(/resetReadings\(\)/g)?.length).toBe(4)
     // the reset list exists once: in resetReadings
     expect(hook.match(/setThemeSelectionFloor\(null\)/g)?.length).toBe(1)

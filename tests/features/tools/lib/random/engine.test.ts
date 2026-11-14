@@ -15,14 +15,14 @@ const lockOf = (result: ReturnType<typeof roll>, id: string): LockedSlot => ({
   identity: result.identities[id], egos: result.egos[id] ?? [], number: result.order ? result.order.indexOf(id) + 1 || null : null,
 })
 
-describe('REQ-TOOLS-014 seeded roll', () => {
-  it('REQ-TOOLS-014 gives the same result for the same seed and options, and another one for another seed', () => {
+describe('seeded roll', () => {
+  it('gives the same result for the same seed and options, and another one for another seed', () => {
     const options = { deploy: { min: 1, max: 12 } }
     expect(picks(roll('alpha', options))).toBe(picks(roll('alpha', options)))
     expect(picks(roll('alpha', options))).not.toBe(picks(roll('beta', options)))
   })
 
-  it('REQ-TOOLS-005 draws one identity per sinner from its own pool and one E.G.O per grade it has, always with a ZAYIN', () => {
+  it('draws one identity per sinner from its own pool and one E.G.O per grade it has, always with a ZAYIN', () => {
     const result = roll('pools')
     for (const sinner of SINNERS) {
       expect(result.identities[sinner.id]?.sinner_id).toBe(sinner.id)
@@ -34,7 +34,7 @@ describe('REQ-TOOLS-014 seeded roll', () => {
     expect(result.order).toBeNull()
   })
 
-  it('REQ-TOOLS-005 respects the identity, E.G.O and rarity switches', () => {
+  it('respects the identity, E.G.O and rarity switches', () => {
     const egoOnly = roll('flags', { identityEnabled: false })
     expect(Object.values(egoOnly.identities)).toEqual([])
     expect(egoOnly.order).toBeNull()
@@ -43,12 +43,12 @@ describe('REQ-TOOLS-014 seeded roll', () => {
     expect(Object.values(threeStar.identities).every(identity => identity?.rarity === 3)).toBe(true)
   })
 
-  it('REQ-TOOLS-005 still rolls with Math.random when no source is given', () => {
+  it('still rolls with Math.random when no source is given', () => {
     const result = generateRandom(SINNERS, IDENTITIES, EGOS, BASE_OPTIONS)
     expect(Object.values(result.identities).filter(Boolean)).toHaveLength(12)
   })
 
-  it('REQ-TOOLS-014 rerolls a pool to another entry, repeatably', () => {
+  it('rerolls a pool to another entry, repeatably', () => {
     const pool = IDENTITIES.filter(identity => identity.sinner_id === 's1')
     const picked = rerollIdentity(pool, pool[0], rngFromSeed('again'))
     expect(picked?.id).not.toBe(pool[0].id)
@@ -57,8 +57,8 @@ describe('REQ-TOOLS-014 seeded roll', () => {
   })
 })
 
-describe('REQ-TOOLS-015 locked slots', () => {
-  it('REQ-TOOLS-015 keeps a locked slot as it was and still draws the others from the seed', () => {
+describe('locked slots', () => {
+  it('keeps a locked slot as it was and still draws the others from the seed', () => {
     const first = roll('first')
     const locks = { s3: lockOf(first, 's3'), s9: lockOf(first, 's9') }
     const second = roll('second', { locks })
@@ -72,7 +72,7 @@ describe('REQ-TOOLS-015 locked slots', () => {
     expect(picks(roll('second', { locks }))).toBe(picks(second))
   })
 
-  it('REQ-TOOLS-015 locks only what exists: an empty locked identity is drawn, locked E.G.O stay', () => {
+  it('locks only what exists: an empty locked identity is drawn, locked E.G.O stay', () => {
     const base = roll('egos', { identityEnabled: false })
     const locks = { s2: lockOf(base, 's2') }
     const next = roll('next', { locks })
@@ -80,7 +80,7 @@ describe('REQ-TOOLS-015 locked slots', () => {
     expect(next.egos.s2).toEqual(base.egos.s2)
   })
 
-  it('REQ-TOOLS-015 counts a locked identity toward the keyword condition', () => {
+  it('counts a locked identity toward the keyword condition', () => {
     const burn = IDENTITIES.find(identity => identity.sinner_id === 's1' && identity.keywords.includes('화상'))!
     const locks = { s1: { identity: burn, egos: [], number: null } }
     for (const seed of seeds.slice(0, 40)) {
@@ -92,10 +92,10 @@ describe('REQ-TOOLS-015 locked slots', () => {
   })
 })
 
-describe('REQ-TOOLS-016 random deployment order', () => {
+describe('random deployment order', () => {
   const range = (min: number, max: number) => ({ deploy: { min, max } })
 
-  it('REQ-TOOLS-016 numbers N sinners 1..N without gaps, N inside the range, the rest unnumbered', () => {
+  it('numbers N sinners 1..N without gaps, N inside the range, the rest unnumbered', () => {
     for (const seed of seeds) {
       const { order } = roll(seed, range(1, 12))
       expect(order).not.toBeNull()
@@ -106,14 +106,14 @@ describe('REQ-TOOLS-016 random deployment order', () => {
     }
   })
 
-  it('REQ-TOOLS-016 reaches both ends of the default 1 to 12 range and varies who goes first', () => {
+  it('reaches both ends of the default 1 to 12 range and varies who goes first', () => {
     const counts = seeds.map(seed => roll(seed, range(1, 12)).order!.length)
     expect(counts).toContain(1)
     expect(counts).toContain(12)
     expect(new Set(seeds.map(seed => roll(seed, range(1, 12)).order![0])).size).toBeGreaterThan(5)
   })
 
-  it('REQ-TOOLS-016 stays inside a narrower range, and a fixed range gives exactly that many', () => {
+  it('stays inside a narrower range, and a fixed range gives exactly that many', () => {
     for (const seed of seeds.slice(0, 100)) {
       const count = roll(seed, range(4, 7)).order!.length
       expect(count).toBeGreaterThanOrEqual(4)
@@ -122,22 +122,22 @@ describe('REQ-TOOLS-016 random deployment order', () => {
     }
   })
 
-  it('REQ-TOOLS-016 gives the same count and order for the same seed', () => {
+  it('gives the same count and order for the same seed', () => {
     for (const seed of seeds.slice(0, 20)) expect(roll(seed, range(1, 12)).order).toEqual(roll(seed, range(1, 12)).order)
   })
 
-  it('REQ-TOOLS-016 numbers no sinner without an identity, and skips the order when identities are off', () => {
+  it('numbers no sinner without an identity, and skips the order when identities are off', () => {
     expect(roll('x', { ...range(1, 12), identityEnabled: false }).order).toBeNull()
   })
 
-  it('REQ-TOOLS-016 clamps a bad range to 1..12 with min not above max', () => {
+  it('clamps a bad range to 1..12 with min not above max', () => {
     expect(normalizeDeployRange({ min: 0, max: 99 })).toEqual({ min: 1, max: 12 })
     expect(normalizeDeployRange({ min: 9, max: 4 })).toEqual({ min: 9, max: 9 })
     expect(normalizeDeployRange({ min: 2.6, max: 5.2 })).toEqual({ min: 3, max: 5 })
     expect(normalizeDeployRange({ min: Number.NaN, max: Number.NaN })).toEqual({ min: 1, max: 12 })
   })
 
-  it('REQ-TOOLS-015 keeps a locked slot at its number and a locked unnumbered slot out of the order', () => {
+  it('keeps a locked slot at its number and a locked unnumbered slot out of the order', () => {
     for (const seed of seeds.slice(0, 120)) {
       const locks: Record<string, LockedSlot> = {
         s3: { identity: IDENTITIES.find(i => i.sinner_id === 's3')!, egos: [], number: 5 },
@@ -154,7 +154,7 @@ describe('REQ-TOOLS-016 random deployment order', () => {
     }
   })
 
-  it('REQ-TOOLS-015 numbers locked slots even when the range cannot hold them, without gaps', () => {
+  it('numbers locked slots even when the range cannot hold them, without gaps', () => {
     const locks: Record<string, LockedSlot> = { s3: { identity: IDENTITIES.find(i => i.sinner_id === 's3')!, egos: [], number: 6 } }
     for (const seed of seeds.slice(0, 40)) {
       const { order } = roll(seed, { ...range(1, 2), locks })

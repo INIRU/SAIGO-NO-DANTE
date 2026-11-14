@@ -63,7 +63,7 @@ export const authorColumns = (author: Author) => author.kind === 'user'
   ? { user_id: author.userId, guest_tag: null }
   : { user_id: null, guest_tag: author.tag }
 
-/** The key that wrote a guest post, and the hash of its password when one was sent (REQ-COMMUNITY-029). */
+/** The key that wrote a guest post, and the hash of its password when one was sent. */
 export async function recordGuestAuthorship(admin: Admin, author: Author, kind: GuestPostKind, id: string, pin: string | null = null) {
   if (author.kind !== 'guest') return null
   const { error } = await admin.schema('limbus').from('guest_authorship')

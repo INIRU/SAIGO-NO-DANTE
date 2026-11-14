@@ -10,7 +10,7 @@ const root = resolve(__dirname, '../../..')
 const source = (path: string) => readFileSync(resolve(root, path), 'utf8')
 
 describe('update notice', () => {
-  it('REQ-SHARED-098 tells the page the build the server runs now, never from a cache', async () => {
+  it('tells the page the build the server runs now, never from a cache', async () => {
     const response = await GET()
     expect(response.headers.get('cache-control')).toBe('no-store')
     expect(await response.json()).toEqual({ build: process.env.NEXT_PUBLIC_BUILD_ID ?? null })
@@ -18,7 +18,7 @@ describe('update notice', () => {
     expect(source('next.config.ts')).toMatch(/NEXT_PUBLIC_BUILD_ID: process\.env\.GITHUB_SHA \|\| String\(Date\.now\(\)\)/)
   })
 
-  it('REQ-SHARED-098 asks to reload only when the server runs another build than the page', () => {
+  it('asks to reload only when the server runs another build than the page', () => {
     expect(isNewBuild('a', 'b')).toBe(true)
     expect(isNewBuild('a', 'a')).toBe(false)
     // no answer (offline, an error page) or a page without a number never asks
@@ -26,7 +26,7 @@ describe('update notice', () => {
     expect(isNewBuild(undefined, 'b')).toBe(false)
   })
 
-  it('REQ-SHARED-098 shows a small closable card in the bottom-left corner with one reload button, never a popup over the page', () => {
+  it('shows a small closable card in the bottom-left corner with one reload button, never a popup over the page', () => {
     const notice = source('components/pwa/UpdateNotice.tsx')
     expect(notice).toMatch(/registration\?\.update\(\)/)
     expect(notice).toMatch(/location\.reload\(\)/)

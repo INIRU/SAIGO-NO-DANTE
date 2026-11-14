@@ -2,7 +2,7 @@ import { expect, it } from 'vitest'
 import { BLESSING_KEEP_MS, BLESSING_SCENE, onBlessingScreen, showsBlessingScreen } from '@/features/assist/lib/blessing-screen'
 import { FORMATION_SCENES } from '@/features/assist/lib/scene-state'
 
-it('REQ-ASSIST-081 reads the starlight screen from its title and entry button in any card colour', () => {
+it('reads the starlight screen from its title and entry button in any card colour', () => {
   // OCR of the 2026-10 blue screen (spacing and line breaks as read).
   expect(showsBlessingScreen('시지프 별의 가호\n보유 1741 사용 가능 120\n시작의 별 +\n가호 전체 선택 전체 강화\n입장')).toBe(true)
   expect(showsBlessingScreen('시지프 별 의가호 ... 입 장')).toBe(true)
@@ -14,13 +14,13 @@ it('REQ-ASSIST-081 reads the starlight screen from its title and entry button in
   expect(showsBlessingScreen('거울 던전 입장')).toBe(false)
 })
 
-it('REQ-ASSIST-081 keeps the screen for a while after the read', () => {
+it('keeps the screen for a while after the read', () => {
   expect(onBlessingScreen(1000, 1000 + BLESSING_KEEP_MS - 1)).toBe(true)
   expect(onBlessingScreen(1000, 1000 + BLESSING_KEEP_MS)).toBe(false)
   expect(onBlessingScreen(0, 10)).toBe(false)
 })
 
-it('REQ-ASSIST-081 counts the starlight screen as the run start, after the formation (2026-10 order)', () => {
+it('counts the starlight screen as the run start, after the formation (2026-10 order)', () => {
   expect(BLESSING_SCENE).toBe('start_gift')
   expect(FORMATION_SCENES.has(BLESSING_SCENE)).toBe(false)
 })

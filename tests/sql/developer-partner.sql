@@ -1,4 +1,4 @@
--- REQ-ACCOUNT-011, REQ-ADMIN-009. Run against a configured development database; every fixture is rolled back.
+-- Run against a configured development database; every fixture is rolled back.
 begin;
 do $$
 declare owner_id uuid; v_key uuid; result jsonb; i integer; actor_email text;

@@ -26,7 +26,7 @@ describe('recommender catalog', () => {
     themes: [{ id: 1001, difficulty: 'normal', ego_gift_ids: [9001], specific_ego_gift_ids: [9002, 9001], floor_info: { 노말: [1] } }],
   })
 
-  it('REQ-DECKS-047 weighs a status keyword by how often the kit mentions it (log of tags in skills and passives), at least 1 for its own skill keywords', () => {
+  it('weighs a status keyword by how often the kit mentions it (log of tags in skills and passives), at least 1 for its own skill keywords', () => {
     const status = catalog.identities.I1.status
     expect(status[at('화상')]).toBeCloseTo(1 + Math.log(3))
     expect(status[at('호흡')]).toBeCloseTo(1)
@@ -35,7 +35,7 @@ describe('recommender catalog', () => {
     expect(catalog.identities.I1.kw).toEqual(['속박'])
   })
 
-  it('REQ-DECKS-047 flags the LCB starter, counts skill cards per sin at the 3-2-1 distribution, and keeps battle passives that depend on sins', () => {
+  it('flags the LCB starter, counts skill cards per sin at the 3-2-1 distribution, and keeps battle passives that depend on sins', () => {
     expect(catalog.identities.S0.starter).toBe(true)
     expect(catalog.identities.I1.starter).toBe(false)
     expect(catalog.identities.I1.sins).toEqual({ wrath: 5, pride: 1 })
@@ -45,7 +45,7 @@ describe('recommender catalog', () => {
     ])
   })
 
-  it('REQ-DECKS-047 weighs a rarer affiliation more, lists packs with their gifts once, and pads an E.G.O cost to the seven sins', () => {
+  it('weighs a rarer affiliation more, lists packs with their gifts once, and pads an E.G.O cost to the seven sins', () => {
     expect(catalog.idf.faction['엄지']).toBeGreaterThan(catalog.idf.faction['거미집'])
     expect(catalog.themes['1001'].gifts).toEqual(['9001', '9002'])
     expect(catalog.gifts).toEqual({ 9001: '화상', 9002: '공통' })
@@ -54,7 +54,7 @@ describe('recommender catalog', () => {
     expect(catalog.egos.E1.kw).toEqual(['속박'])
   })
 
-  it('REQ-DECKS-047 compares kits by cosine of their keyword shares and treats an empty kit as nothing alike', () => {
+  it('compares kits by cosine of their keyword shares and treats an empty kit as nothing alike', () => {
     const burn = statusShare(catalog.identities.I1.status), none = statusShare(catalog.identities.I2.status)
     expect(cosine(burn, burn)).toBeCloseTo(1)
     expect(cosine(burn, none)).toBe(0)

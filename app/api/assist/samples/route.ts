@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
 // Samples sent before the training consent (no consent version in the metadata) were promised deletion after 180 days;
 // later ones are kept (sampleExpiresAt is the same rule for downloaded copies).
-// lazy retention, at most 20 expired samples per POST; move to a scheduled job if volume outgrows it.
+// Lazy retention, at most 20 expired samples per POST; move to a scheduled job if volume outgrows it.
 async function purgeExpired() {
   const admin = createAdminClient()
   const { data, error } = await admin.schema('limbus').from('assist_samples').select('id, path, frame_count')

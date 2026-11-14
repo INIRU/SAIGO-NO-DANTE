@@ -18,8 +18,8 @@ const count = (html: string, needle: string) => html.split(needle).length - 1
 
 beforeEach(() => { state.status = 'authenticated'; state.swr = {} })
 
-describe('REQ-COMMUNITY-012 personal shelf', () => {
-  it('REQ-COMMUNITY-012 holds the place with the title and three card skeletons while choosing', () => {
+describe('personal shelf', () => {
+  it('holds the place with the title and three card skeletons while choosing', () => {
     const html = render()
     expect(html).toContain('data-phase="choosing"')
     expect(html).toContain('aria-busy="true"')
@@ -30,13 +30,13 @@ describe('REQ-COMMUNITY-012 personal shelf', () => {
     expect(count(html, 'data-card="true"')).toBe(0)
   })
 
-  it('REQ-COMMUNITY-012 the placeholder puts no block element inside a paragraph (browsers close such a <p>, which breaks hydration)', () => {
+  it('the placeholder puts no block element inside a paragraph (browsers close such a <p>, which breaks hydration)', () => {
     const html = render()
     expect(html).toContain('data-skeleton')
     expect(html).not.toMatch(/<p\b[^>]*>(?:(?!<\/p>)[\s\S])*<div\b/)
   })
 
-  it('REQ-COMMUNITY-012 shows cached picks at once without the reveal', () => {
+  it('shows cached picks at once without the reveal', () => {
     state.swr = { data: { items: [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }] } }
     const html = render()
     expect(html).toContain('data-phase="ready"')
@@ -46,12 +46,12 @@ describe('REQ-COMMUNITY-012 personal shelf', () => {
     expect(html).not.toContain('data-card-skeleton')
   })
 
-  it('REQ-COMMUNITY-012 draws nothing for a logged-out visitor', () => {
+  it('draws nothing for a logged-out visitor', () => {
     state.status = 'unauthenticated'
     expect(render()).toBe('')
   })
 
-  it('REQ-COMMUNITY-012 draws nothing when the cached answer has no picks (no skeleton was shown, nothing to fold)', () => {
+  it('draws nothing when the cached answer has no picks (no skeleton was shown, nothing to fold)', () => {
     state.swr = { data: { items: [] } }
     expect(render()).toBe('')
   })
