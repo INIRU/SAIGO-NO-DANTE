@@ -7,6 +7,7 @@ import QuietImage from '@/components/ui/QuietImage'
 import { getSinIconUrl } from '@/lib/constants/sin'
 import { NOTE_COLOR_SINS, isNoteColorSin } from '@/lib/notes/text-style'
 import { useNoteNew } from './NoteNewDot'
+import './note-editor.css'
 
 const toolClass = 'note-tool relative flex h-9 w-9 items-center justify-center text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-panel)] disabled:opacity-40'
 

@@ -1,0 +1,11 @@
+/* The note image lightbox (NoteLightboxImage). */
+/* Note image lightbox: the picture fits the screen on the deep background; a button wraps the small picture in the reading view. */
+.note-image-button{display:block;max-width:100%;padding:0;border:0;background:none;cursor:zoom-in}
+.note-image-button:focus-visible{outline:2px solid var(--gold-light);outline-offset:3px}
+.popup-surface.note-lightbox>:first-child{background:transparent!important;border:0!important;box-shadow:none!important}
+.note-lightbox-frame{position:relative;display:grid;place-items:center;max-height:calc(100dvh - 1.5rem)}
+.note-lightbox-image{display:block;max-width:calc(96vw - 1.5rem);max-height:calc(100dvh - 1.5rem);width:auto;height:auto;object-fit:contain;cursor:zoom-out}
+.note-lightbox-close{position:absolute;top:.25rem;right:.25rem;z-index:1;display:grid;place-items:center;width:2.5rem;height:2.5rem;border-radius:50%;background:var(--bg-card);color:var(--text-primary);transition:background-color .15s ease,color .15s ease}
+@media (hover:hover){
+  .note-lightbox-close:hover{background:var(--bg-elevated);color:var(--gold-light)}
+}

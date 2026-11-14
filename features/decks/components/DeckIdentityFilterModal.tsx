@@ -11,6 +11,7 @@ import CharacterPickerFilters from '@/components/ui/CharacterPickerFilters'
 import IdentityFrameCard from '@/components/cards/IdentityFrameCard'
 import { filterStyles } from '@/components/board/FilterControls'
 import { compareReleaseDate } from '@/lib/utils/release-order'
+import '@/components/ui/character-picker.css'
 
 export type DeckFilterSinner = {
   id: string

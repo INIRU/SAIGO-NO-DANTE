@@ -5,6 +5,7 @@ import { ChevronDown, Link as LinkIcon } from 'lucide-react'
 import { showError, showSuccess } from '@/lib/toast'
 import { NOTE_TOC_MIN, activeHeading, type NoteHeading } from '@/features/notes/lib/toc'
 import { tr } from '@/features/notes/lib/tr'
+import './note-toc.css'
 
 /** The reader's line near the top of the screen (below the sticky navigation) that decides which heading is being read. */
 const READING_LINE = 120

@@ -13,6 +13,7 @@ import { compareReleaseDate } from '@/lib/utils/release-order'
 import { assetName, type NoteAssetData } from '@/features/notes/lib/assets'
 import { NoteAssetArtwork } from './NoteAssetArtwork'
 import { fetchNoteAssets } from './NoteBlockViewer'
+import '@/components/ui/character-picker.css'
 
 export default function NoteCharacterPicker({ kind, onSelect, onClose }: {
   kind: 'identity' | 'ego'; onSelect: (asset: NoteAssetData) => void; onClose: () => void

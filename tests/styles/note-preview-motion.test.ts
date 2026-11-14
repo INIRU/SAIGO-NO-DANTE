@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { KEYWORD_TOOLTIP_Z } from '@/lib/keywords/tooltip-stack'
 
-const css = readFileSync(resolve(__dirname, '../../app/globals.css'), 'utf8')
+const css = readFileSync(resolve(__dirname, '../../features/notes/components/note-preview-card.css'), 'utf8')
 const rule = (selector: string) => css.match(new RegExp(`${selector.replace(/[[\]().-]/g, '\\$&')}\\{([^}]*)\\}`))?.[1] ?? ''
 
 describe('the preview card opens in place', () => {

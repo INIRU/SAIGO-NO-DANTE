@@ -28,10 +28,10 @@ describe('bars that stick under the navbar', () => {
   })
 
   it('no sticky element animates its top: every one that follows the navbar slides instead', () => {
-    const files = ['app/globals.css', 'features/tools/components/CalculatorArena.module.css', 'features/account/components/DocsTab.tsx',
+    const files = ['app/globals.css', 'features/notes/components/note-toc.css', 'features/tools/components/CalculatorArena.module.css', 'features/account/components/DocsTab.tsx',
       'features/account/components/PlaygroundTab.tsx', 'features/mirror-dungeon/components/GiftCatalog.tsx']
     for (const file of files) expect(source(file), file).not.toMatch(/transition:top|transition-\[top\]/)
-    expect(source('app/globals.css')).toContain('top:calc(var(--nav-height) + 4.5rem)')
+    expect(source('features/notes/components/note-toc.css')).toContain('top:calc(var(--nav-height) + 4.5rem)')
     expect(source('features/notes/components/NoteToc.tsx')).toContain('className="note-toc nav-slide"')
     expect(source('features/tools/components/CalculatorArena.module.css')).toContain('top:calc(var(--nav-height) + 1.5rem)')
     for (const file of ['features/tools/components/DamageCalculator.tsx', 'features/tools/components/ClashCalculator.tsx']) expect(source(file), file).toContain('nav-slide')

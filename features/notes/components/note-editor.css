@@ -1,0 +1,158 @@
+/* The note editor only: its document, toolbar, block controls, mark tools and character count. Always loaded after note-blocks.css and character-picker.css. */
+/* Shared document body: visible Korean fallback and stable composition layout. */
+.note-document-content { min-height: 14rem; padding: 1.25rem; outline: none; color: var(--text-primary); font-family: var(--font-body), sans-serif; font-size: .875rem; line-height: 1.8; overflow-wrap: anywhere; }
+.note-document-content p { min-height: 1.8em; }
+.note-document-content h1, .note-document-content h2 { margin: 1.3rem 0 .5rem; font-family: var(--font-heading); color: var(--gold); font-size: 1.125rem; }
+.note-document-content ul { list-style: disc; padding-left: 1.5rem; }
+.note-document-content ol { list-style: decimal; padding-left: 1.5rem; }
+.note-document-content blockquote { border-left: 2px solid var(--gold-dim); padding-left: 1rem; }
+.note-document-content .is-empty::before { content: attr(data-placeholder); float: left; height: 0; color: var(--text-muted); pointer-events: none; }
+.note-accordion-editor{position:relative;overflow:visible}
+.note-accordion-toggle,.note-accordion-delete{position:absolute;top:.6rem;z-index:2;width:2rem;height:2rem;display:grid;place-items:center;background:transparent;color:var(--text-secondary);border:0;border-radius:.25rem}
+.note-accordion-toggle{left:.5rem}
+.note-accordion-delete{right:.4rem}
+.note-accordion-default{position:absolute;top:.85rem;right:2.7rem;z-index:2;height:1.5rem;padding:0 .5rem;border:1px solid var(--border);border-radius:.25rem;background:transparent;color:var(--text-secondary);font-size:.75rem;line-height:1;white-space:nowrap}
+.note-accordion-default[aria-pressed=true]{border-color:var(--gold-dim,var(--gold));color:var(--gold)}
+.note-accordion-editor .note-accordion-content [data-note-title]{padding-right:9rem}
+.note-accordion-toggle svg{transition:transform .22s ease}
+.note-accordion-editor[data-collapsed] .note-accordion-toggle svg{transform:rotate(-90deg)}
+.note-accordion-content [data-note-title]{padding:1rem 2.8rem;min-height:3.2rem;font-size:1rem;font-weight:600;background:#241c1266;border-radius:.5rem .5rem 0 0}
+.note-accordion-content [data-note-body]{padding:.5rem 1.25rem 1.25rem;min-height:5rem}
+.note-accordion-editor[data-collapsed]>.note-accordion-content>div>[data-note-body]{display:none}
+[data-note-title].is-empty::before,[data-note-body] p.is-empty::before{content:attr(data-placeholder);color:var(--text-muted);pointer-events:none;float:left;height:0;font-weight:400}
+.note-asset-node{display:inline-block;vertical-align:top;width:5.5rem;margin:.5rem .7rem .5rem 0;max-width:100%;position:relative}
+.note-asset-node .note-asset-view{width:100%;margin:0}
+.note-asset-node--theme,.note-asset-node--identity{width:7rem}
+.note-asset-node--ego{width:9.5rem}
+.note-asset-node--skill{width:min(100%,32rem)}
+.note-asset-node--sin,.note-asset-node--keyword{width:auto;min-width:5rem}
+.note-empty-slot{width:5.5rem;aspect-ratio:1;border:1px dashed #8f6b2c;border-radius:.35rem;background:#241c1266;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.65rem;color:var(--text-secondary);font-size:.75rem;cursor:pointer;transition:background .2s,border-color .2s}
+.note-empty-slot--theme,.note-empty-slot--identity{width:7rem;aspect-ratio:2/3}
+.note-empty-slot--skill{width:100%;min-height:7rem;aspect-ratio:auto}
+.note-empty-slot:hover{background:#352819;border-color:var(--gold-light)}
+.note-block-actions{display:flex;justify-content:flex-end;gap:.3rem;height:1.4rem;opacity:0;transition:opacity .15s}
+.note-block-actions button,.note-block-actions span{display:grid;place-items:center;color:var(--text-secondary);width:1.4rem}
+.note-asset-node:is(:hover,:focus-within,[data-selected]) .note-block-actions{opacity:1}
+.note-asset-node[data-selected] .note-empty-slot{outline:2px solid var(--gold)}
+.note-asset-replace{display:block;margin:.35rem auto 0;color:var(--gold);font-size:.75rem;min-height:1.8rem}
+.note-block-menu{position:relative}
+.note-insert-button{display:flex;align-items:center;gap:.4rem;min-height:2.25rem;padding:0 .6rem;color:var(--gold-light);font-size:.85rem}
+.note-command-menu{position:absolute;top:100%;left:0;z-index:80;width:17rem;max-width:80vw;max-height:22rem;overflow:auto;padding:.35rem;background:#1a1510;border:1px solid var(--border);border-radius:.4rem;box-shadow:0 .8rem 2rem #0008}
+.note-command-menu button{display:flex;align-items:center;gap:.6rem;width:100%;padding:.65rem .75rem;text-align:left;border-radius:.25rem;font-size:.9rem}
+.note-command-menu button:is(:hover,[data-active]){background:#352819;color:var(--gold-light)}
+.note-command-menu small{font-size:.75rem;color:var(--text-muted);margin-left:auto}
+.note-command-menu kbd{font-size:.7rem;padding:.1rem .3rem;border:1px solid var(--border);border-radius:.2rem}
+.note-video-editor{position:relative;width:min(100%,42rem);margin:1rem 0;background:var(--bg-card);border-radius:.5rem;overflow:hidden}
+.note-video-editor .note-video{margin:0}
+.note-video-delete{position:absolute;right:.5rem;top:.5rem;z-index:2;padding:.5rem;border-radius:50%;background:var(--bg-deep);color:var(--text-secondary)}
+.note-video-input{display:flex;flex-wrap:wrap;gap:.75rem;padding:1.5rem}
+.note-video-input strong{width:100%}
+.note-video-input input{min-width:0;flex:1;background:var(--bg-deep);padding:.7rem;border:1px solid var(--border);border-radius:.3rem;font-size:.9rem}
+.note-video-input button{padding:.6rem .9rem;background:var(--gold);color:var(--bg-deep);border-radius:.3rem;font-weight:600}
+.note-video-input [role=alert]{width:100%;color:#f28d86}
+.note-upload{padding:1rem;border:1px dashed var(--border);color:var(--gold);margin:1rem 0}
+.note-block-menu :focus-visible,.note-accordion-editor button:focus-visible,.note-asset-node button:focus-visible{outline:2px solid var(--gold-light);outline-offset:3px}
+@media(max-width:40rem){
+  .note-accordion-content [data-note-body]{padding:.5rem .75rem 1rem}
+  .note-block-actions{opacity:1}
+}
+@media(prefers-reduced-motion:reduce){
+  .note-accordion-toggle svg,.note-empty-slot{transition:none}
+}
+.note-editor-toolbar{background:#1a151066;border-radius:.4rem .4rem 0 0}
+.note-editor-toolbar>button:disabled{opacity:.4}
+.note-preview-button{margin-left:auto;display:flex;align-items:center;gap:.5rem;min-height:2.25rem;padding:0 .75rem;color:var(--gold-light);font-size:.9rem}
+.note-editor-preview{min-height:20rem;padding:1.5rem}
+.note-editor-shell .note-document-content{padding:1.5rem;min-height:24rem;font-size:1rem}
+.note-document-content>.node-noteAsset,.note-document-content [data-note-body]>.node-noteAsset{display:inline-block;vertical-align:top}
+.note-document-content .node-noteAsset{max-width:100%}
+.note-document-content .node-noteAccordion,.note-document-content .node-noteAsset,.note-document-content .node-noteVideo{animation:note-block-enter .22s ease-out}
+@keyframes note-block-enter{from{opacity:0;transform:translateY(.25rem)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:40rem){
+  .note-editor-shell .note-document-content,.note-editor-preview{padding:1rem}
+  .note-editor-toolbar{gap:.1rem}
+  .note-preview-button{margin-left:0}
+}
+@media(prefers-reduced-motion:reduce){
+  .note-document-content .react-renderer{animation:none}
+}
+.note-link-form{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;padding:.8rem 1rem;background:var(--bg-card)}
+.note-link-form input{flex:1;min-width:8rem;background:var(--bg-deep);border:1px solid var(--border);padding:.6rem;border-radius:.3rem}
+.note-link-form button{min-height:2.5rem;padding:.5rem;color:var(--gold)}
+.note-link-form [role=alert]{width:100%;color:#e48b7f;font-size:.875rem}
+.note-keyword-node{display:inline;vertical-align:baseline;font-size:inherit;line-height:inherit}
+.note-keyword-insert{display:inline-flex;align-items:center;gap:.2em;padding:.1em .4em;border-radius:.25rem;background:var(--bg-elevated);color:var(--gold);font-size:inherit;vertical-align:baseline}
+.note-keyword-node.ProseMirror-selectednode{outline:1px solid var(--gold);border-radius:.2em}
+.note-block-menu{display:flex;flex-wrap:wrap;gap:.25rem}
+.plan-intro .note-document-content{min-height:7rem}
+.note-gift-inline-node{display:inline}
+.note-gift-inline-node.ProseMirror-selectednode{outline:1px solid var(--gold);border-radius:.2em}
+/* Block controls: move back, move forward, delete (drag only where a mouse can). Delete sits apart from the moves. */
+.note-block-actions{justify-content:flex-start}
+.note-block-actions .note-block-delete{margin-left:auto}
+/* Touch: tap a card to select it; its controls float above it as a small bar with finger-sized buttons. */
+@media(pointer:coarse){
+  .note-block-drag{display:none!important}
+  .note-block-actions{position:absolute;z-index:6;bottom:calc(100% - .25rem);left:50%;height:auto;gap:.125rem;padding:.1875rem;border:1px solid var(--border);border-radius:.375rem;background:#17120c;box-shadow:0 .375rem 1rem rgba(0,0,0,.55);transform:translate(-50%,.25rem);opacity:0;pointer-events:none;transition:opacity .15s,transform .15s}
+  .note-asset-node:is([data-selected],:focus-within) .note-block-actions{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+  .note-block-actions button{width:2.25rem;height:2.25rem;border-radius:.25rem;color:var(--text-primary)}
+  .note-block-actions button:active{background:#2e2417}
+  .note-block-actions .note-block-delete{margin-left:.25rem;color:#ef8a7a}
+}
+@media(max-width:40rem){
+  .note-document-content .node-noteAsset[data-kind='identity'],.note-document-content .node-noteAsset[data-kind='theme'],.note-document-content .node-noteAsset[data-kind='gift']{width:calc((100% - 2rem)/4 - 1px);margin-right:.5rem}
+  .note-document-content .node-noteAsset[data-kind='ego']{width:calc((100% - 1.5rem)/3 - 1px);margin-right:.5rem}
+  .note-document-content .node-noteAsset[data-kind] > .note-asset-node{width:100%;margin-right:0}
+  .note-empty-slot,.note-empty-slot--theme,.note-empty-slot--identity{width:100%}
+  .note-asset-replace{min-height:1.5rem;margin-top:.125rem;font-size:.6875rem}
+}
+.note-document-content a:not(.note-card a){color:var(--gold-light);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--gold-light) 45%,transparent);text-underline-offset:.2rem;transition:text-decoration-color .15s ease}
+.note-document-content a:not(.note-card a):hover{text-decoration-color:var(--gold-light)}
+.note-callout-kinds{display:flex;gap:.25rem}
+.note-callout-kinds button{min-height:1.75rem;padding:0 .7rem;border-radius:.25rem;font-family:var(--font-heading);font-size:.8125rem;color:var(--text-muted);transition:background-color .15s ease,color .15s ease}
+.note-callout-kinds button[aria-pressed=true]{background:color-mix(in srgb,var(--callout) 18%,transparent);color:var(--callout)}
+@media (hover:hover){
+  .note-callout-kinds button:not([aria-pressed=true]):hover{color:var(--text-secondary)}
+}
+.note-callout-delete{display:grid;place-items:center;width:1.75rem;height:1.75rem;margin-left:auto;border-radius:.25rem;color:var(--text-muted);transition:color .15s ease,background-color .15s ease}
+@media (hover:hover){
+  .note-callout-delete:hover{color:#e06a5f;background:#9b2c2326}
+}
+.note-document-content table{width:100%;margin:1rem 0;border-collapse:collapse;table-layout:fixed;font-size:.9rem}
+.note-document-content :is(th,td){position:relative;padding:.45rem .65rem;border:1px solid var(--border);vertical-align:top;text-align:left}
+.note-document-content th{background:var(--bg-elevated);color:var(--text-primary);font-weight:600}
+.note-document-content :is(td,th)>p{margin:0;min-height:0}
+.note-document-content .selectedCell::after{content:"";position:absolute;inset:0;background:#c8900a33;pointer-events:none}
+.note-document-content .tableWrapper{overflow-x:auto}
+.note-document-content hr{margin:1.25rem 0;border:0;border-top:1px solid var(--border)}
+.note-card-node.note-asset-node{position:relative;display:block;width:24rem;max-width:100%;margin:1rem 0}
+.note-editor-toolbar [data-active=true]{background:var(--bg-elevated);color:var(--gold-light)}
+.note-mark-tool{position:relative;display:inline-flex}
+.note-color-popover{position:absolute;z-index:80;top:calc(100% + .25rem);display:flex;flex-direction:column;gap:.375rem;padding:.5rem;background:var(--bg-card);border:1px solid var(--border);border-radius:.4rem;box-shadow:0 .8rem 2rem #0008}
+.note-color-swatches{display:flex;gap:.25rem}
+.note-color-swatch{display:grid;place-items:center;width:2.25rem;height:2.25rem;border-radius:.3rem;transition:background-color .15s ease,transform .15s ease}
+.note-color-swatch img{width:1.5rem;height:1.5rem;object-fit:contain}
+.note-color-swatch[aria-pressed=true]{background:color-mix(in srgb,var(--gold) 28%,var(--bg-card))}
+.note-color-clear{display:flex;align-items:center;gap:.375rem;min-height:2rem;padding:0 .5rem;border-radius:.3rem;color:var(--text-secondary);font-size:.8125rem;transition:background-color .15s ease,color .15s ease}
+@media (hover:hover){
+  .note-color-swatch:hover{background:var(--bg-elevated);transform:translateY(-1px)}
+  .note-color-clear:hover{background:var(--bg-elevated);color:var(--text-primary)}
+}
+@media (prefers-reduced-motion:no-preference){
+  .note-color-popover{animation:note-popover-in .15s ease-out}
+  @keyframes note-popover-in{from{opacity:0;transform:translateY(-.25rem)}}
+}
+@media (prefers-reduced-motion:reduce){
+  .note-color-swatch{transition:none}
+  .note-color-swatch:hover{transform:none}
+}
+.note-mention-node{display:inline}
+.note-mention-node.ProseMirror-selectednode{outline:1px solid var(--gold);border-radius:.2em}
+/* Character count under the note editor: muted digits, gold from 90% of the limit, the error colour at it. */
+.note-editor-footer{display:flex;justify-content:flex-end;padding:.375rem .75rem;border-top:1px solid color-mix(in srgb,var(--border) 60%,transparent)}
+.note-count{font-family:var(--font-title);font-size:.875rem;letter-spacing:.04em;color:var(--text-muted);font-variant-numeric:tabular-nums;transition:color .15s ease}
+.note-count[data-state=near]{color:var(--gold-light)}
+.note-count[data-state=limit]{color:var(--error)}
+@media (prefers-reduced-motion: no-preference){
+  .note-command-menu{ transform-origin: top; animation: pop-in var(--dur-quick) var(--ease-out); }
+}

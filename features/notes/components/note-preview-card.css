@@ -1,0 +1,24 @@
+/* The preview card of a mention or a gift name (NotePreviewCard). */
+/* Preview card of a mention or a gift name: hover/focus card on a pointer, modal on touch. */
+.note-preview-host{display:inline}
+.note-preview-popover{position:fixed;z-index:10050;width:min(21rem,calc(100vw - 1rem));padding:.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem;box-shadow:0 .75rem 2rem #000a;color:var(--text-primary);overflow-y: auto; scrollbar-gutter: stable;overscroll-behavior:contain}
+.note-preview-popover[data-above]{translate:0 -100%}
+.note-preview-card{display:flex;gap:.875rem;align-items:flex-start;font-size:.875rem;line-height:1.5}
+.note-preview-art{flex:0 0 5.5rem;width:5.5rem}
+.note-preview-card[data-kind=identity] .note-preview-art{flex-basis:6.5rem;width:6.5rem}
+.note-preview-card[data-kind=ego] .note-preview-art{flex-basis:6.5rem;width:6.5rem}
+.note-preview-text{display:flex;min-width:0;flex:1;flex-direction:column;gap:.25rem}
+.note-preview-text>strong{font-family:var(--font-heading);font-size:1rem;font-weight:400;color:var(--text-primary);overflow-wrap:anywhere}
+.note-preview-text>small{color:var(--text-secondary);font-size:.8125rem}
+.note-preview-keyword{display:flex;align-items:center;gap:.25rem;font-family:var(--font-heading)}
+.note-preview-keyword>img{width:1rem;height:1rem;object-fit:contain}
+.note-preview-card[data-kind=gift] .note-preview-text>div{margin-top:.25rem;padding-top:.5rem;border-top:1px solid var(--border);font-family:var(--font-game-text)}
+.note-preview-modal{display:flex;flex-direction:column;gap:1rem;padding:1.25rem}
+.note-preview-more{align-self:flex-end;padding:.5rem .875rem;border-radius:.4rem;background:var(--bg-elevated);color:var(--gold-light);font-size:.875rem;text-decoration:none;transition:background-color .15s ease}
+/* The card appears where it sits, 0.25rem toward the name; `translate` (its place above) is not animated. */
+@media (prefers-reduced-motion:no-preference){
+  .note-preview-popover{animation:note-preview-in .16s cubic-bezier(.23,1,.32,1)}
+  .note-preview-popover[data-above]{animation-name:note-preview-in-above}
+  @keyframes note-preview-in{from{opacity:0;transform:translateY(-.25rem)}}
+  @keyframes note-preview-in-above{from{opacity:0;transform:translateY(.25rem)}}
+}

@@ -5,6 +5,7 @@ import { X } from 'lucide-react'
 import BaseModal from '@/components/ui/BaseModal'
 import { lightboxStartTransform } from '@/features/notes/lib/lightbox'
 import { tr } from '@/features/notes/lib/tr'
+import './note-lightbox.css'
 
 
 /** The big picture: grows out of the picture that was pressed (unless the reader asked for less motion). */

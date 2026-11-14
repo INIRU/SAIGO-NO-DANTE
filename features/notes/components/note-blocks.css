@@ -1,0 +1,93 @@
+/* The note body in the reading view and in the editor's block views: text, accordion, asset cards, callout, table, marks, mentions. Imported by NoteBlockViewer and NoteAssetArtwork; the editor loads it before note-editor.css. */
+.note-document-image { display: block; height: auto; max-height: 36rem; max-width: 100%; object-fit: contain; margin: 1rem 0; }
+/* Visual note blocks: shared by the editor and the lightweight document viewer. */
+.note-block-document{font-family:var(--font-body),sans-serif;font-size:1rem;line-height:1.75;color:var(--text-secondary);overflow-wrap:anywhere}
+.note-block-document p{margin:.7rem 0;white-space:pre-wrap}
+.note-block-document h2,.note-block-document h3{font-family:var(--font-heading);font-size:1.25rem;font-weight:700;color:var(--text-primary);margin:1.2rem 0 .6rem}
+.note-block-document ul{list-style:disc;padding-left:1.5rem}
+.note-block-document ol{list-style:decimal;padding-left:1.5rem}
+.note-block-document blockquote{border-left:2px solid var(--gold);padding-left:1rem;margin:1rem 0}
+.note-block-document a{color:var(--gold-light);text-underline-offset:.2rem}
+.note-block-document pre{overflow:auto;padding:1rem;background:var(--bg-deep);border-radius:.4rem}
+.note-accordion{margin:1rem 0;background:var(--bg-card);border:1px solid #3a2a1566;border-radius:.5rem;overflow:clip;color:var(--text-primary)}
+.note-accordion-heading{padding:.75rem 1rem;display:flex;align-items:center;gap:.5rem;background:#241c1266;font-weight:600;font-size:1rem}
+.note-accordion-heading>button{display:grid;place-items:center;flex-shrink:0;width:2rem;height:2rem;color:var(--gold);border-radius:.25rem;cursor:pointer}
+.note-accordion-heading>button:hover{background:var(--bg-elevated)}
+.note-accordion-heading svg{transition:transform .22s ease}
+.note-accordion[data-open=false] .note-accordion-heading svg{transform:rotate(-90deg)}
+.note-accordion-panel{display:grid;grid-template-rows:1fr;opacity:1;transition:grid-template-rows .24s ease,opacity .2s ease}
+.note-accordion-panel>div{min-height:0;overflow:hidden}
+.note-accordion[data-open=false] .note-accordion-panel{grid-template-rows:0fr;opacity:0}
+.note-accordion-body{padding:.5rem 1.25rem 1.25rem}
+.note-asset-view{display:inline-block;vertical-align:top;width:5.5rem;margin:.5rem .7rem .5rem 0;max-width:100%;position:relative}
+.note-asset-view--theme,.note-asset-view--identity{width:7rem}
+.note-asset-view--ego{width:9.5rem}
+.note-asset-view--skill{width:min(100%,32rem)}
+.note-asset-view--sin,.note-asset-view--keyword{width:auto;min-width:5rem}
+.note-asset-caption{display:block;text-align:center;margin-top:.4rem;font-size:.8rem;line-height:1.45;color:var(--text-secondary);word-break:keep-all}
+.note-asset-art{display:flex;align-items:center;flex-direction:column;gap:.4rem;position:relative}
+.note-asset-art>img{width:100%;height:auto;object-fit:contain;border-radius:.2rem}
+.note-asset-art--theme>img{aspect-ratio:2/3}
+.note-asset-art--ego>img{aspect-ratio:1}
+.note-asset-art--ego .note-ego-grade{width:3.5rem;aspect-ratio:auto}
+.note-asset-art--sin>img,.note-asset-art--keyword>img{width:2.5rem;height:2.5rem}
+.note-asset-art--keyword,.note-asset-art--sin{padding:.75rem;background:#241c1266;border-radius:.35rem;font-size:.85rem}
+.note-asset-unavailable{display:grid;place-items:center;min-height:5rem;background:var(--bg-panel);font-size:.8rem;padding:.5rem}
+.note-video{position:relative;width:min(100%,42rem);margin:1rem 0;background:var(--bg-card);border-radius:.5rem;overflow:hidden}
+.note-video>button,.note-video iframe{width:100%;aspect-ratio:16/9;border:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.65rem;background:#211a14;color:var(--text-primary)}
+.note-video-play{width:3.5rem;height:2.5rem;background:#c83030;border-radius:.65rem;display:grid;place-items:center;color:white}
+.note-video>a{display:block;padding:.6rem 1rem;font-size:.85rem;color:var(--gold)}
+.note-block-document :focus-visible{outline:2px solid var(--gold-light);outline-offset:3px}
+@media(max-width:40rem){
+  .note-accordion-body{padding:.5rem .75rem 1rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .note-accordion-panel,.note-accordion-heading svg{transition:none}
+}
+.note-keyword-label{display:inline;vertical-align:baseline;font-size:inherit;line-height:inherit}
+.note-keyword-label strong{font-weight:600}
+/* Phones: four cards (three E.G.O, drawn at 70%) to a row, so a row of picks reads as one row instead of wrapping like a new line. */
+@media(max-width:40rem){
+  /* Viewer: the card sits in the text. Editor: each card is wrapped by its node view, so the wrapper takes the width. */
+  .note-block-document .note-asset-view--identity,.note-block-document .note-asset-view--theme,.note-block-document .note-asset-view--gift{width:calc((100% - 2rem)/4 - 1px);margin-right:.5rem}
+  .note-block-document .note-asset-view--ego{width:calc((100% - 1.5rem)/3 - 1px);margin-right:.5rem}
+  .note-asset-caption{font-size:.6875rem}
+}
+/* Note links: accent colour and underline so they read as links in the viewer and the editor. */
+.note-block-document a[href]:not(.note-card a){color:var(--gold-light);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--gold-light) 45%,transparent);text-underline-offset:.2rem;transition:text-decoration-color .15s ease}
+.note-block-document a[href]:not(.note-card a):hover{text-decoration-color:var(--gold-light)}
+/* Note blocks: callout, table, divider, deck/plan card. Shared by the editor and the viewer. */
+/* Callout: a head row (kind name; in the editor the kind switch and delete) above the text, so buttons never sit on it. */
+.note-callout{--callout:var(--gold);--callout-bg:color-mix(in srgb,var(--gold) 7%,var(--bg-card));margin:1rem 0;border:1px solid var(--border);border-left:3px solid var(--callout);border-radius:.4rem;background:var(--callout-bg);overflow:hidden}
+.note-callout[data-variant=warning]{--callout:#c0453a;--callout-bg:color-mix(in srgb,#9b2c23 12%,var(--bg-card))}
+.note-callout-head{display:flex;align-items:center;gap:.5rem;min-height:2.25rem;padding:.35rem .5rem .35rem .9rem;border-bottom:1px solid color-mix(in srgb,var(--callout) 22%,transparent);user-select:none}
+.note-callout-head>strong{font-family:var(--font-heading);font-size:.875rem;color:var(--callout)}
+.note-callout-body{padding:.6rem .9rem .7rem}
+.note-callout-body>p:first-child{margin-top:0}
+.note-callout-body>p:last-child{margin-bottom:0}
+.note-block-document table{width:100%;margin:1rem 0;border-collapse:collapse;table-layout:fixed;font-size:.9rem}
+.note-block-document :is(th,td){position:relative;padding:.45rem .65rem;border:1px solid var(--border);vertical-align:top;text-align:left}
+.note-block-document th{background:var(--bg-elevated);color:var(--text-primary);font-weight:600}
+.note-block-document :is(td,th)>p{margin:0;min-height:0}
+.note-block-table{overflow-x:auto}
+.note-block-document hr{margin:1.25rem 0;border:0;border-top:1px solid var(--border)}
+.note-card{position:relative;display:block;width:24rem;max-width:100%;margin:1rem 0}
+.note-card-node .note-card{width:100%;margin:0}
+.note-card-unavailable{padding:1rem;border:1px dashed var(--border);color:var(--text-muted);font-size:.85rem}
+/* Note text marks: a sin colour is the game's sin colour mixed into the text colour; inside a highlight the mix is lighter so both stay at 4.5:1 (lib/notes/text-style.ts, tests/features/notes/lib/note-marks.test.ts). */
+.note-sin-color{--note-sin-text:color-mix(in srgb,var(--note-sin) var(--note-sin-mix,70%),var(--text-primary));color:var(--note-sin-text)}
+.note-highlight{--note-sin-mix:35%;background:color-mix(in srgb,var(--gold-light) 20%,transparent);color:inherit;border-radius:.2em;padding:.05em .2em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+/* @ mention: an inline label like the gift label (icon at text height, then the name); no box. A link in the viewer, plain in the editor. */
+.note-mention{display:inline-flex;align-items:baseline;gap:.2em;margin:0 .1em;font:inherit;line-height:inherit;vertical-align:baseline;color:var(--gift-color,#c8b898);background:none}
+.note-mention>img{align-self:center;width:1.35em;height:1.35em;object-fit:cover;object-position:top;flex-shrink:0}
+.note-mention strong{font-weight:600}
+a.note-mention{text-decoration:underline;text-decoration-color:transparent;text-underline-offset:.2em;transition:text-decoration-color .15s}
+.note-block-document a[href].note-mention:not(.note-card a){color:var(--gift-color,#c8b898);text-decoration:underline;text-decoration-color:transparent}
+a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-mention:not(.note-card a):is(:hover,:focus-visible){text-decoration-color:currentColor}
+.note-heading{scroll-margin-top:calc(var(--nav-offset) + 4.5rem)}
+/* "Expand all / collapse all": a plain text button, right-aligned above the first accordion. */
+.note-accordion-all{display:block;margin:1rem 0 -.5rem auto;padding:.25rem 0;color:var(--text-secondary);font-size:.8125rem;transition:color .15s ease}
+.note-accordion-all:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
+@media (hover:hover){
+  .note-accordion-all:hover{color:var(--gold-light)}
+}

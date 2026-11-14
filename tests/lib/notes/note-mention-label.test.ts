@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-const css = readFileSync('app/globals.css', 'utf8')
+// .note-mention is in the note body sheet; .note-gift-label stays in globals (the game text placeholders use it too).
+const css = ['features/notes/components/note-blocks.css', 'app/globals.css'].map(path => readFileSync(path, 'utf8')).join('\n')
 const rule = (selector: string) => css.match(new RegExp(selector.replace(/[.[\]]/g, '\\$&') + '\\{[^}]*\\}'))?.[0] ?? ''
 
 describe('a mention is a label like the gift label, not a pill', () => {

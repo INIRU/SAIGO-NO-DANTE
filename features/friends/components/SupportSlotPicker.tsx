@@ -14,6 +14,7 @@ import { assetName } from '@/features/notes'
 import { compareReleaseDate } from '@/lib/utils/release-order'
 import type { SupportedLang } from '@/lib/i18n/types'
 import SupportStrips, { EGO_GRADES, type EgoGrade, type SupportSlot } from './SupportStrips'
+import '@/components/ui/character-picker.css'
 import styles from './SupportSlotPicker.module.css'
 
 const RARITIES = [3, 2, 1].map(n => ({ value: String(n), label: '0'.repeat(n) }))

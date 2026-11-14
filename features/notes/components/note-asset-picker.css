@@ -1,0 +1,140 @@
+/* The note asset pickers (identity, E.G.O, skill, gift, keyword, card and the catalog picker). Always loaded after character-picker.css, which holds the picker frame. */
+.note-picker-controls{display:flex;gap:.6rem;margin-bottom:1rem;flex-shrink:0}
+.note-tier-dropdown{flex-shrink:0;z-index:2}
+.note-tier-dropdown [role=menu]{right:0;left:auto}
+.note-tier-dropdown [role=menuitem]{min-height:2.5rem;font-size:.875rem}
+.note-picker-search{display:flex;flex:1;min-width:0;align-items:center;gap:.6rem;background:var(--bg-deep);border:1px solid var(--border);border-radius:.4rem;padding:.7rem .8rem}
+.note-picker-search input{min-width:0;width:100%;background:none;outline:none;font-size:1rem}
+.note-picker-grid--skills{grid-template-columns:repeat(auto-fill,minmax(16rem,1fr))}
+.note-picker-artwork{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+.note-picker-artwork>div{width:100%}
+.note-picker-artwork+span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;min-height:2.7em;font-size:.875rem;line-height:1.35;margin-top:.5rem;color:var(--text-primary);word-break:keep-all;overflow-wrap:anywhere}
+.note-picker--ego .note-picker-grid{grid-template-columns:repeat(auto-fill,minmax(9rem,1fr))}
+.note-picker--ego .note-picker-artwork,.note-picker--identity .note-picker-artwork,.note-picker--theme .note-picker-artwork,.note-picker--skill .note-picker-artwork{aspect-ratio:auto}
+.note-picker-pages{display:flex;align-items:center;justify-content:space-between;padding-top:.75rem;margin-top:.5rem;flex-shrink:0;font-size:.875rem;color:var(--text-secondary)}
+.note-picker-pages button{min-height:2.5rem;padding:0 1rem;color:var(--gold)}
+.note-picker-pages button:disabled{opacity:.3}
+@media(max-width:40rem){
+  .note-picker-grid--skills{grid-template-columns:1fr}
+}
+.note-picker--keyword .note-picker-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.note-picker--keyword .note-picker-artwork{aspect-ratio:auto}
+.note-picker--keyword .note-picker-artwork img{width:1.25rem;height:1.25rem}
+.note-picker--keyword .note-picker-item>span{display:none}
+.note-picker--keyword .note-asset-art{flex-direction:row;gap:.4rem;font-size:.875rem}
+.note-picker--keyword .note-picker-item{padding:.75rem;text-align:left}
+.note-direct-picker{background:var(--bg-panel);border:1px solid rgba(255,255,255,.08);border-radius:.5rem;min-height:38rem;padding:2rem;max-height:85dvh}
+.note-direct-picker .note-picker-header{border-bottom:1px solid var(--border);padding-bottom:.75rem}
+.note-direct-picker .note-picker-header h2{font-family:var(--font-heading);font-size:1.75rem;color:#e8dcc8}
+.note-direct-layout{display:grid;grid-template-columns:9rem minmax(0,1fr) 17rem;gap:1.5rem;overflow:hidden;min-height:0;flex:1}
+.note-direct-sidebar{overflow:auto;padding:.5rem .75rem .5rem 0;border-right:1px solid rgba(255,255,255,.06)}
+.note-direct-sidebar>button{display:block;width:100%;text-align:left;padding:.625rem;color:var(--text-secondary)}
+.note-direct-sidebar>button[aria-pressed=true]{background:#241c12;color:#e8b030;border-left:2px solid #e8b030}
+.note-direct-picker .planner-keyword-sidebar{max-width:none!important;width:100%}
+.note-direct-picker .planner-keyword-filter{min-height:2.75rem;font-size:.875rem!important}
+.note-direct-picker section{margin-bottom:1.25rem}
+.note-direct-picker section h3{display:flex;gap:.75rem;align-items:center;font-family:var(--font-heading);font-size:1.125rem;padding:.5rem 0;margin-bottom:1rem}
+.note-direct-picker section h3 small{font-family:var(--font-body);font-size:.75rem;color:var(--text-muted)}
+.note-direct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(5.75rem,1fr));gap:1.25rem 1rem;align-items:start}
+.note-direct-item{position:relative;min-width:0;text-align:center;padding:.5rem;align-self:start;cursor:pointer;border:1px solid transparent;border-radius:.3rem}
+.note-direct-item:hover,.note-direct-item:focus-within{background:#1a1510;border-color:var(--gold-dim)}
+.note-direct-item>span{display:block;font-size:.8rem;line-height:1.4;margin-top:.4rem;word-break:keep-all}
+.note-direct-preview{overflow:auto;background:var(--bg-deep);border:0;padding:1.5rem;border-radius:.3rem;font-size:.875rem}
+.note-direct-preview>div:first-child{max-width:10rem;margin:0 auto 1rem}
+.note-direct-preview>h3{font-family:var(--font-heading);font-size:1.25rem;margin-bottom:1rem}
+@media(max-width:64rem){
+  .note-direct-layout{grid-template-columns:8rem minmax(0,1fr)}
+  .note-direct-preview{display:none}
+}
+@media(max-width:40rem){
+  .note-direct-picker{padding:.75rem;min-height:70dvh}
+  .note-direct-layout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .note-direct-sidebar{display:flex;overflow-x:auto;max-height:4rem;flex-shrink:0}
+  .note-direct-sidebar>button{width:auto;white-space:nowrap}
+  .note-direct-picker .planner-keyword-sidebar{flex-direction:row!important;max-width:none!important}
+  .note-direct-picker .planner-keyword-filter{flex-shrink:0}
+  .note-direct-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .note-direct-picker--skill .note-direct-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+.note-direct-picker--skill .note-direct-layout{grid-template-columns:9rem minmax(0,1fr)}
+.note-direct-picker--skill .note-direct-grid{grid-template-columns:repeat(auto-fill,minmax(7rem,1fr));gap:1rem}
+.note-direct-picker--skill .note-direct-item{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1rem .5rem}
+.note-direct-sidebar>button{display:flex;align-items:center;gap:.5rem}
+.note-direct-sidebar>button img{width:1.75rem;height:1.75rem;border-radius:50%;object-fit:cover}
+@media(max-width:40rem){
+  .note-direct-picker--skill .note-direct-layout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .note-direct-picker--skill .note-direct-sidebar{grid-row:1}
+  .note-direct-picker--skill .note-direct-preview{display:none}
+  .note-direct-picker--skill .note-direct-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+.note-picker-hint{margin:-.25rem 0 1.25rem;color:var(--text-muted);font-size:.875rem}
+.note-direct-picker .note-picker-results{padding:.25rem .75rem .75rem .25rem}
+.note-direct-picker .note-picker-controls{margin-bottom:1.5rem}
+@media(max-width:40rem){
+  .note-direct-picker{padding:1rem}
+  .note-direct-layout{gap:1rem}
+  .note-direct-picker .note-picker-results{padding:.25rem}
+  .note-direct-grid{gap:1rem .5rem}
+}
+.note-picker .note-picker-search input{height:1.5rem;min-height:0;margin:0;padding:0!important;border:0;box-shadow:none;line-height:1.5rem}
+.note-picker .note-picker-search{min-height:2.25rem;padding:.35rem .6rem;font-size:.875rem}
+.note-catalog-picker{padding:0;height:82dvh;max-height:50rem}
+.note-catalog-picker>.note-picker-header{margin:0;padding:.75rem 1rem;border-bottom:1px solid var(--border);flex-shrink:0}
+.note-catalog-picker .note-picker-controls{display:flex;flex-direction:column;align-self:stretch;justify-content:flex-start;gap:.75rem;padding:.75rem;margin:0;border-right:1px solid var(--border);background:var(--bg-deep)}
+.note-catalog-picker .note-picker-search{flex:0 0 auto}
+.note-legacy-results-shell{display:flex;flex-direction:column;overflow:hidden;min-height:0;padding:.75rem}
+.note-legacy-results-shell>.note-picker-results{flex:1;min-height:0}
+.note-direct-sidebar .note-picker-controls{display:flex;flex-direction:column;gap:.5rem;margin:0 0 .75rem}
+.note-direct-sidebar .note-picker-search{flex:0 0 auto}
+.note-direct-picker .note-direct-sidebar{min-width:0}
+.note-direct-picker .note-tier-dropdown{width:100%}
+.note-direct-picker .note-tier-dropdown>button{min-height:2.25rem!important}
+@media(max-width:40rem){
+  .note-catalog-picker .note-picker-controls{flex-direction:row;align-items:center;border-right:0;border-bottom:1px solid var(--border);padding:.5rem .75rem}
+  .note-catalog-picker .note-picker-search{flex:1}
+  .note-legacy-results-shell{flex:1}
+  .note-direct-picker .note-direct-sidebar{display:block;max-height:11rem;overflow:auto}
+  .note-direct-sidebar .note-picker-controls{flex-direction:row;margin-bottom:.5rem}
+  .note-direct-sidebar .note-picker-search{flex:1}
+  .note-direct-picker .note-tier-dropdown{width:auto}
+  .note-direct-picker--skill .note-direct-sidebar>button{display:inline-flex}
+}
+/* Card picker: the gift picker frame without the preview column; results are the board cards, picked by the button over each. */
+.note-direct-picker--card .note-direct-layout{grid-template-columns:9rem minmax(0,1fr)}
+.note-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:1rem;align-items:stretch}
+.note-card-option{position:relative;display:flex;flex-direction:column;min-width:0;border-radius:.5rem}
+.note-card-option-card{flex:1;display:flex;flex-direction:column;min-width:0;pointer-events:none}
+.note-card-option-card>:first-child{flex:1;min-width:0}
+.note-picker-search:focus-within{border-color:var(--gold-dim,var(--gold))}
+.note-picker-search input:focus-visible{outline:none}
+.note-card-option>button{position:absolute;inset:0;border-radius:.5rem;outline-offset:2px;transition:box-shadow .15s ease,background-color .15s ease}
+@media (hover:hover){
+  .note-card-option>button:hover{box-shadow:inset 0 0 0 1px var(--gold);background:#c8900a12}
+}
+.note-card-option>button:focus-visible{box-shadow:inset 0 0 0 2px var(--gold)}
+.note-card-option--empty{aspect-ratio:17/16;background:var(--bg-card);border:1px solid var(--border)}
+@media(max-width:40rem){
+  .note-direct-picker--card .note-direct-layout{grid-template-columns:1fr}
+  .note-direct-picker--card .note-direct-sidebar>button{display:inline-flex}
+  .note-card-grid{grid-template-columns:1fr}
+}
+/* Note pickers on phone and tablet (2026-11-13 audit). Kept last: these override the picker rules above. */
+/* The filter column was 9rem: the search placeholder was cut off in it. */
+@media(min-width:40.0625rem){
+  .note-direct-layout,.note-direct-picker--skill .note-direct-layout,.note-direct-picker--card .note-direct-layout{grid-template-columns:11rem minmax(0,1fr)}
+  .note-picker--keyword .note-picker-grid{grid-template-columns:repeat(auto-fill,minmax(10rem,1fr))}
+}
+@media(min-width:64.0625rem){
+  .note-direct-picker--gift .note-direct-layout{grid-template-columns:11rem minmax(0,1fr) 17rem}
+}
+.note-card-grid{grid-template-columns:repeat(auto-fill,minmax(14.5rem,1fr))}
+/* a sinner has four skills: always one row each */
+.note-direct-picker--skill .note-direct-grid{grid-template-columns:repeat(4,minmax(0,1fr));max-width:36rem}
+@media(max-width:40rem){
+  .note-card-grid{grid-template-columns:1fr}
+  /* a sinner has four skills: one row each; the sinners in one row that scrolls sideways */
+  .note-direct-picker--skill .note-direct-grid{gap:.5rem .25rem}
+  .note-direct-picker--skill .note-direct-item{padding:.75rem .125rem}
+  .note-direct-picker--skill .note-direct-sidebar{max-height:none;overflow:auto hidden;white-space:nowrap;scrollbar-width:none}
+  .note-direct-picker--skill .note-direct-sidebar .note-picker-controls{position:sticky;left:0}
+}
