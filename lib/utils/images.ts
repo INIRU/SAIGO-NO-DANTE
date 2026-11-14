@@ -1,4 +1,5 @@
 
+import type { CSSProperties } from 'react'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 import egoArtwork from '@/lib/generated/ego-artwork.json'
 import type { Identity } from '@/lib/types'
@@ -163,6 +164,16 @@ export function getConstraintAssetUrl(layer: string): string {
 export function fixedSizePx(sizes: string | undefined): number | null {
   const match = sizes?.trim().match(/^(\d+(?:\.\d+)?)(px|rem)$/)
   return match ? Number(match[1]) * (match[2] === 'rem' ? 16 : 1) : null
+}
+
+/**
+ * A loaded image's style without the blur placeholder getImageProps puts on it. next/image clears it on load; a plain
+ * <img> keeps it, and behind object-contain art (theme pack posters, gift icons) it shows as a grey frame.
+ */
+export function withoutBlurPlaceholder(style: CSSProperties | undefined): CSSProperties | undefined {
+  if (!style) return style
+  const { backgroundImage: _image, backgroundSize: _size, backgroundPosition: _position, backgroundRepeat: _repeat, ...rest } = style
+  return rest
 }
 
 /**
