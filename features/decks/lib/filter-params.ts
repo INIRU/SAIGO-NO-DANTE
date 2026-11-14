@@ -1,7 +1,6 @@
 import type { DeckFilterIdentity } from '../components/DeckIdentityFilterModal'
 
-/** Query-string writes of the filter screens: replace the history entry, no refetch, keep the scroll position. */
-export const QUERY_OPTIONS = { history: 'replace', shallow: true, scroll: false } as const
+export { QUERY_OPTIONS } from '@/lib/constants/query-options'
 
 /** The identity picker of the deck and plan boards. Without `skill_keyword_list` (a database that lacks the column) the legacy select is used. */
 export const IDENTITY_FILTER_SELECT_WITH_SKILL_KEYWORDS = 'id, sinner_id, name_kr, name_en, name_jp, rarity, release_date, keywords, skill_keyword_list, folder_name, game_id, hp, speed_min, speed_max, def_level, sinner:sinners(id, name_kr, order_num)'
