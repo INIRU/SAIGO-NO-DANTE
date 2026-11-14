@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { authOptions, requireActiveUser } from '@/lib/auth'
+import { authOptions } from '@/lib/auth'
+import { requireAccount } from '@/lib/auth-account'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/request-meta'
@@ -64,20 +65,9 @@ export async function POST(
     }
 
     const { id } = await params
-    const auth = await requireActiveUser()
+    const auth = await requireAccount({ activeOnly: true })
     if (auth.error) return auth.response
-    const { session } = auth
-
-    const admin = createAdminClient()
-    const userId = await findOrCreateSupabaseUser(
-      admin,
-      session.user.email!,
-      session.user.name,
-      session.user.image,
-    )
-    if (!userId) {
-      return NextResponse.json({ error: '사용자를 찾을 수 없습니다.' }, { status: 500 })
-    }
+    const { admin, userId } = auth
 
     const { data: voted, error: voteError } = await admin
       .schema('limbus')

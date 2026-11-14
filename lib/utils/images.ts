@@ -37,6 +37,16 @@ export function getSinnerBadgeRingUrl(rarity: number): string {
   return getGameUiAsset(`rarity/${Math.min(3, Math.max(1, Math.trunc(rarity)))}`)
 }
 
+/** An E.G.O profile sprite. `folder` is the already encoded folder segment of the stored image_url, used as is. */
+export function getEgoProfileUrl(sinnerId: string, folder: string, gameId: string, kind: 'awaken' | 'erosion'): string {
+  return `${STORAGE_BASE}/sinners/${sinnerId}/ego/${folder}/${gameId}_${kind}_profile.webp`
+}
+
+/** The lock sprite drawn before locked uptie text and gift conditions. */
+export function getLockIconUrl(): string {
+  return `${STORAGE_BASE}/icons/ui/lock.webp`
+}
+
 export function getSinnerProfileUrl(sinnerId: string): string {
   const id = LCB_IDS[sinnerId]
   if (!id) return ''

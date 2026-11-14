@@ -10,6 +10,7 @@ import { COIN_IMAGES } from '@/lib/identity/skill-description'
 import { toDamageSkill } from '@/features/tools/lib/skill-source'
 import Dropdown from '@/components/ui/Dropdown'
 import PageHeader from '@/components/ui/PageHeader'
+import { writeJson } from '@/lib/utils/local-storage'
 import DamageModifiers from './DamageModifiers'
 import NumberInput from './NumberInput'
 import SkillLoader from './SkillLoader'
@@ -56,7 +57,7 @@ export default function DamageCalculator() {
   }, [])
   useEffect(() => {
     if (!loaded) return
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(custom)) } catch { /* storage blocked or full: keep them for this visit only */ }
+    writeJson(STORAGE_KEY, custom) // storage blocked or full: keep them for this visit only
   }, [custom, loaded])
 
   const set = (patch: Partial<typeof DEFAULTS>) => setForm(current => ({ ...current, ...patch }))

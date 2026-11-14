@@ -10,6 +10,7 @@ import { authOptions } from '@/lib/auth'
 import { findOrCreateSupabaseUser } from '@/lib/supabase/findOrCreateUser'
 import { normalizePlannerListKeywords, planMatchesDifficulty, storedDifficultiesFor, storedPlanDifficulty, stripPlanForList } from '@/lib/planner/stripPlanForList'
 import { planFormationCount } from '@/features/planner'
+import { parseCsvParam } from '@/features/decks'
 import { normalizeFloorPlanDifficulty, normalizePlanDifficulty } from '@/lib/planner/floor-difficulty'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { checkRequestRateLimit, rateLimitResponse } from '@/lib/rate-limit'
@@ -57,14 +58,6 @@ function getParam(searchParams: URLSearchParams, primary: string, alias?: string
   const value = searchParams.get(primary)
   if (value !== null) return value
   return alias ? searchParams.get(alias) : null
-}
-
-function parseCsvParam(value: string | null) {
-  if (!value) return []
-  return value
-    .split(',')
-    .map(item => item.trim())
-    .filter(Boolean)
 }
 
 function parseModeParam(value: string | null, name: string): { value: FilterMode } | { error: string } {

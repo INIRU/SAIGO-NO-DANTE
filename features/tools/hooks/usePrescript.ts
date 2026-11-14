@@ -5,6 +5,7 @@ import { applyEvent, createPrescriptRun, penance, endPrescriptRun, eventPrescrip
   type PrescriptEvent, type PrescriptRun, type PrescriptScope } from '@/features/tools/lib/prescript'
 import { fusionResultFollows, EVENT_EXIT_SCENES, type OwnedGridRead, type FormationRead, plog } from '@/features/assist'
 import { HISTORY_KEY, readHistory, summarizeRun, withRun } from '@/features/tools/lib/prescript-history'
+import { readJson, writeJson } from '@/lib/utils/local-storage'
 import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition } from '@/features/assist/hooks/useAssistCapture'
 
 /** The last finished run's record in this browser. A run not yet ended is never kept: a reload or a break starts over
@@ -12,10 +13,8 @@ import type { FloorThemeObservation, FusionEvidence, GiftSale, PopupAcquisition 
 const PRESCRIPT_STORAGE_KEY = 'md-prescript-run'
 
 const load = (): PrescriptRun | null => {
-  try {
-    const value = JSON.parse(window.localStorage.getItem(PRESCRIPT_STORAGE_KEY) ?? 'null')
-    return value && Array.isArray(value.prescripts) && value.ended ? value as PrescriptRun : null
-  } catch { return null }
+  const value = readJson(PRESCRIPT_STORAGE_KEY) as { prescripts?: unknown; ended?: unknown } | null
+  return value && Array.isArray(value.prescripts) && value.ended ? value as PrescriptRun : null
 }
 
 /** A new dungeon run begins on these screens: a closed record gives way to a fresh one. */
@@ -69,7 +68,7 @@ export function usePrescript({ enabled, grade = 'proselyte', status, acquisition
   const [run, setRun] = useState<PrescriptRun>(() => load() ?? createPrescriptRun(grade))
   const [offers, setOffers] = useState<PrescriptOffer[]>([])
   useEffect(() => {
-    try { window.localStorage.setItem(PRESCRIPT_STORAGE_KEY, JSON.stringify(run)) } catch { /* kept for this page only */ }
+    writeJson(PRESCRIPT_STORAGE_KEY, run) // kept for this page only when storage refuses
   }, [run])
   // The gifts held, counted from the same evidence (the prescript page keeps no run record of its own): an acquisition
   // adds, a sale takes one away, a fusion takes its dialog's materials

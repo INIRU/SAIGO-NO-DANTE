@@ -1,6 +1,6 @@
 import { notePlainText } from '@/lib/notes/blocks'
 import { resolvePlannerIdentity } from '@/lib/planner/catalog-references'
-import { trimPlanDetailCatalog, slimPlanThemes, OBSERVATION_COLUMNS, observationFrom, type ObservationRow } from '@/features/planner'
+import { trimPlanDetailCatalog, slimPlanThemes, observationFrom } from '@/features/planner'
 import { selectUptieRows } from '@/lib/identity/skill-model'
 import type { Metadata } from 'next'
 import { localeUrl, metaText, pageMetadata } from '@/lib/seo/metadata'
@@ -11,12 +11,13 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { GIFT_COLUMNS, RECIPE_COLUMNS, MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
+import { MD_EVENT_CHOICE_COLUMNS } from '@/lib/db/columns'
 import { withPostAuthors, loadSeriesOfPost } from '@/features/community/server'
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { withoutOtherLocales } from '@/lib/i18n/strip-locales'
 import type { MdEvent, MdEventChoice } from '@/features/mirror-dungeon'
+import { giftsQuery, observationQuery, recipesQuery, themesQuery } from '@/features/mirror-dungeon/server'
 import CoVisitedLane from '@/features/community/components/CoVisitedLane'
 import { RecommendationLaneSkeleton } from '@/features/decks/components/RecommendationSkeleton'
 import type { SupportedLang } from '@/lib/i18n/types'
@@ -71,15 +72,16 @@ async function fetchPlanDetailGameData() {
   'use cache'
   cacheLife('max')
   cacheTag(CACHE_TAGS.gameData, CACHE_TAGS.mirrorDungeon, CACHE_TAGS.themes, CACHE_TAGS.egoGifts, CACHE_TAGS.identities, CACHE_TAGS.sinners, CACHE_TAGS.ego)
-  const db = createAdminClient().schema('limbus')
+  const admin = createAdminClient()
+  const db = admin.schema('limbus')
   const [themes, gifts, recipes, identities, sinners, egos, observation] = await Promise.all([
-    db.from('ego_gift_themes').select('id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, fixed_reward_gift_ids, image_url, difficulty, floor_info, name_color, name_segments'),
-    db.from('ego_gifts').select(GIFT_COLUMNS).order('keyword').order('grade'),
-    db.from('ego_gift_recipes').select(RECIPE_COLUMNS),
+    themesQuery(admin),
+    giftsQuery(admin),
+    recipesQuery(admin),
     db.from('identities').select('id, sinner_id, name_kr, name_en, name_jp, tier, rarity, keywords, skill_keyword_list, affiliation, association_list, game_id, folder_name, hp, base_hp, hp_per_level, speed_min, speed_max, def_level, slash_res, pierce_res, blunt_res').order('rarity', { ascending: false }),
     db.from('sinners').select('id, name_kr, order_num').order('order_num'),
     db.from('ego').select('id, sinner_id, name_kr, name_en, name_jp, grade, sin_affinity, image_url, cost, game_id'),
-    db.from('md_observation').select(OBSERVATION_COLUMNS).order('mirror_dungeon_id', { ascending: false }).limit(1).maybeSingle<ObservationRow>(),
+    observationQuery(admin),
   ])
   for (const [name, result] of Object.entries({ themes, gifts, recipes, identities, sinners, egos, observation })) {
     if (result.error) throw new Error('Failed to fetch ' + name + ': ' + result.error.message)

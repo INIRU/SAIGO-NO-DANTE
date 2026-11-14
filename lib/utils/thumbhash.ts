@@ -3,10 +3,8 @@ import { rgbaToDataURL, thumbHashToRGBA } from 'thumbhash'
 // The map is: { "sinners/yi-sang/identities/...": "base64hash", ... }
 // Keyed by the relative path after the bucket name (i.e. after "limbus-assets/")
 import thumbhashMap from '@/lib/data/thumbhash-map.json'
+import { STORAGE_BASE } from '@/lib/constants/game'
 
-// Keep in sync with lib/constants/game.ts — defined locally to avoid circular deps
-const STORAGE_BASE =
-  'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets'
 
 /**
  * Longest side of the placeholder image. next/image draws the placeholder through a Gaussian blur, so 8 px keeps the

@@ -20,6 +20,7 @@ import ScrollAnimations from './ScrollAnimations'
 import HomeCommunity from './HomeCommunity'
 import styles from './HomeStaticSections.module.css'
 import AdSlot from '@/components/ads/AdSlot'
+import { formatKstDate } from '@/lib/utils/format-date'
 
 type TFn = Awaited<ReturnType<typeof getTranslations>>
 
@@ -34,13 +35,6 @@ function YoutubeIcon({ size = 16 }: { size?: number | string }) {
       <path d="m10 15 5-3-5-3z" />
     </svg>
   )
-}
-
-function formatDate(d: string) {
-  const timestamp = Date.parse(d)
-  if (Number.isNaN(timestamp)) return d
-  const kst = new Date(timestamp + 9 * 60 * 60 * 1000)
-  return `${kst.getUTCFullYear()}.${String(kst.getUTCMonth() + 1).padStart(2, '0')}.${String(kst.getUTCDate()).padStart(2, '0')}`
 }
 
 function Heading({ id, title, href, link, external }: { id: string; title: string; href?: string; link?: string; external?: boolean }) {
@@ -180,7 +174,7 @@ async function Official({ latestVideo, t }: { latestVideo: Promise<YoutubeVideo 
           <div className={styles.videoFrame}><LiteYoutube id={video.videoId} title={video.title} label={t('home.watchVideo')} /></div>
           <div className={styles.videoInfo}>
             <h3>{video.title}</h3>
-            {video.publishedAt && <time dateTime={video.publishedAt}>{formatDate(video.publishedAt)}</time>}
+            {video.publishedAt && <time dateTime={video.publishedAt}>{formatKstDate(video.publishedAt)}</time>}
             {channels}
           </div>
         </div>

@@ -1,3 +1,5 @@
+import { readJson, writeJson } from "@/lib/utils/local-storage";
+
 export type HistoryItem = {
   href: string;
   title: string;
@@ -10,8 +12,8 @@ export function readHistory(): {
   queries: string[];
   enabled: boolean;
 } {
+  const v = (readJson(key) ?? {}) as { items?: unknown; queries?: unknown; enabled?: unknown };
   try {
-    const v = JSON.parse(localStorage.getItem(key) || "{}");
     return {
       items: Array.isArray(v.items)
         ? v.items
@@ -48,9 +50,5 @@ export function remember(item: HistoryItem | string) {
       item,
       ...history.items.filter((x) => x.href !== item.href),
     ].slice(0, 20);
-  try {
-    localStorage.setItem(key, JSON.stringify(history));
-  } catch {
-    /* Browsing works when storage is unavailable. */
-  }
+  writeJson(key, history); // Browsing works when storage is unavailable.
 }

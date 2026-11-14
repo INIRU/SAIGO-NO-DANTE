@@ -8,7 +8,7 @@ import { RotateCcw, RotateCw, Settings2 } from 'lucide-react'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import { GiftWarningMark } from '@/features/mirror-dungeon/components/GiftCard'
 import ThemePackCard from '@/components/ui/ThemePackCard'
-import { getLocalizedName } from '@/lib/i18n/localize'
+import { localizeRowName } from '@/lib/i18n/localize'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { GiftData, IdentitySlot, SkillSummary, ThemeData } from '@/lib/planner/types'
 import type { ThemeGuidance } from '@/features/planner/lib/run-theme-guidance'
@@ -93,7 +93,7 @@ export default function CompanionView({ view, data, actions, width, height, inPi
   const locale = useLocale() as SupportedLang
   const reducedMotion = useReducedMotion()
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, locale)
+  const localized = (item: { name: string; name_en?: string | null; name_jp?: string | null }) => localizeRowName(item, locale)
   const giftsOf = (ids: readonly number[]) => ids.flatMap(id => data.giftMap.get(id) ?? [])
   const density = pipDensity(width, height)
   const availableWidth = Math.max(240, width - (inPip ? 36 : 24))

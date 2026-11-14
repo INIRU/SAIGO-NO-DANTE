@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { Bookmark, Check, ChevronDown, FolderOpen, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { showError, showSuccess } from '@/lib/toast'
+import { formatShortDateTime } from '@/lib/utils/format-date'
 import {
   GUEST_SLOTS, MAX_PRESET_NAME, PRESET_COOKIE, USER_SLOTS,
   decodePresetCookie, dropPreset, encodePresetCookie, pickedFinalKeys, presetLoadEdit, putPreset, type FinalPreset,
@@ -119,10 +120,6 @@ export default function FinalGiftPresets({ inventory, dispatch, giftMap }: {
     if (!preset || !value) return
     if (value === preset.name || await persist(preset.slot, { name: value, giftKeys: preset.giftKeys })) setRenaming(null)
   }
-  const savedAt = (value: string) => {
-    const date = new Date(value)
-    return Number.isNaN(date.getTime()) ? '' : new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date)
-  }
 
   const bySlot = new Map((presets ?? []).map(p => [p.slot, p]))
   const iconButton = 'grid h-9 w-9 shrink-0 place-items-center rounded border border-[#2e2417] text-[#a8894e] hover:text-[var(--gold-light)] focus-visible:outline-2 focus-visible:outline-[var(--gold-light)] disabled:opacity-40'
@@ -174,7 +171,7 @@ export default function FinalGiftPresets({ inventory, dispatch, giftMap }: {
                       {preset && (
                         <span className="flex gap-2 text-[0.8125rem] text-[#8a7d69]">
                           <span className="tabular-nums text-[#a8894e]">{t('giftCount', { count: preset.giftKeys.length })}</span>
-                          <span>{savedAt(preset.updatedAt)}</span>
+                          <span>{formatShortDateTime(locale, preset.updatedAt)}</span>
                         </span>
                       )}
                     </span>

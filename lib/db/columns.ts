@@ -6,6 +6,9 @@
 
 export const GIFT_COLUMNS = 'id, game_id, name, name_en, name_jp, keyword, grade, enhancement, price, buy_disabled, effect_base, effect_base_en, effect_base_jp, effect_plus, effect_plus_en, effect_plus_jp, effect_plusplus, effect_plusplus_en, effect_plusplus_jp, activation_condition, is_synthesis, image_url, difficulty, convert_to' as '*'
 
+/** Theme packs as the planner, the run view, the prescript mode and the PiP preview read them (the name colours are the pack's title colours). */
+export const THEME_COLUMNS = 'id, name, name_en, name_jp, ego_gift_ids, specific_ego_gift_ids, fixed_reward_gift_ids, image_url, difficulty, floor_info, name_color, name_segments' as '*'
+
 export const RECIPE_COLUMNS = 'id, result_name, keyword, ingredients' as '*'
 
 export const MD_EVENT_COLUMNS = 'id, name, name_en, name_jp, desc_text, desc_text_en, desc_text_jp, event_type, source, image_url, theme_ids, gift_ids, variant_of, category, judgment' as '*'

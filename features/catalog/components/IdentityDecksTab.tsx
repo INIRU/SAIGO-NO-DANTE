@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import DeckCard, { DeckSummary } from '@/features/decks/components/DeckCard'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
+import { useAutocompleteKeys } from '@/hooks/useAutocompleteKeys'
 const PAGE_SIZE = 12
 
 type SortKey = 'latest' | 'popular'
@@ -58,34 +59,16 @@ export default function IdentityDecksTab({ identityId }: Props) {
 
   useEffect(() => { setAcIndex(suggestions.length > 0 ? 0 : -1) }, [suggestions.length])
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowDown' && !showSuggestions && suggestions.length > 0) {
-      e.preventDefault()
-      setShowSuggestions(true)
-      return
-    }
-    if (!showSuggestions || suggestions.length === 0) {
-      if (e.key === 'Escape') setShowSuggestions(false)
-      return
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setAcIndex(prev => (prev + 1) % suggestions.length)
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setAcIndex(prev => (prev <= 0 ? suggestions.length - 1 : prev - 1))
-    } else if (e.key === 'Tab' && acIndex >= 0) {
-      e.preventDefault()
+  const handleSearchKeyDown = useAutocompleteKeys({
+    open: showSuggestions, count: suggestions.length, index: acIndex, setOpen: setShowSuggestions, setIndex: setAcIndex,
+    onPick: e => {
       e.currentTarget.blur()
       setSearch(suggestions[acIndex])
       setShowSuggestions(false)
       setAcIndex(-1)
       setTimeout(() => (e.target as HTMLInputElement).focus(), 0)
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false)
-      setAcIndex(-1)
-    }
-  }
+    },
+  })
 
   // 외부 클릭 시 자동완성 닫기
   useEffect(() => {

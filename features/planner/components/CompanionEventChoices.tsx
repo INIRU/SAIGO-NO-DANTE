@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from 'next-intl'
 import type { GiftData } from '@/lib/planner/types'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { getLocalizedName } from '@/lib/i18n/localize'
+import { localizeRowName } from '@/lib/i18n/localize'
 import { groupEventChoices, eventResultCondition, type ChoiceEffect, type MdEvent, type MdEventChoice } from '@/features/mirror-dungeon'
 import { eventTitle } from '@/lib/utils/event-catalog'
 import { getEventOutcomes, type EventOutcomeKind } from '@/lib/utils/event-outcomes'
@@ -112,13 +112,13 @@ function selectionLabel(raw: string | null | undefined, giftMap: Map<number, Gif
   const gift = /^HasNotEgoGift_(\d+)$/.exec(raw)
   if (gift) {
     const item = giftMap.get(Number(gift[1]))
-    if (item) return t('pipEventGiftRequirement', { name: getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, lang) })
+    if (item) return t('pipEventGiftRequirement', { name: localizeRowName(item, lang) })
   }
   const giftList = /^HasNotEgoGiftList_(\d+)_(\d+(?::\d+)*)$/.exec(raw)
   if (giftList) {
     const names = giftList[2].split(':').flatMap(id => {
       const item = giftMap.get(Number(id))
-      return item ? [getLocalizedName({ name_kr: item.name, name_en: item.name_en, name_jp: item.name_jp }, lang)] : []
+      return item ? [localizeRowName(item, lang)] : []
     })
     if (names.length) return t('pipEventGiftListRequirement', { count: giftList[1], names: names.join(' · ') })
   }
@@ -171,7 +171,7 @@ export default function CompanionEventChoices({ eventId, events, choices, giftMa
   const event = eventById.get(eventId)
   const groups = groupEventChoices(choicesById.get(eventId) ?? [])
   if (!event || !groups.length) return null
-  const localized = (gift: GiftData) => getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang)
+  const localized = (gift: GiftData) => localizeRowName(gift, lang)
   const eventName = eventTitle(event, lang) ?? ''
 
   /** One result of a choice: when it happens, then what it does. Follow-up choices nest under a single gold rule. */
