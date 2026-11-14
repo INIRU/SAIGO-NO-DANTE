@@ -58,7 +58,9 @@ describe('the deck detail does not download its first view again', () => {
 
   it('the page asks for the viewer part when it has the first view, and shares the gift list key with note chips', () => {
     const client = readFileSync(join(process.cwd(), 'app/[lang]/decks/[id]/DeckDetailClient.tsx'), 'utf8')
-    expect(client).toMatch(/initialDeck \? `\/api\/decks\/\$\{id\}\?part=viewer` : `\/api\/decks\/\$\{id\}`/)
+    // the deck fetch lives in the hook the page calls
+    const data = readFileSync(join(process.cwd(), 'features/decks/hooks/useDeckDetailData.ts'), 'utf8')
+    expect(data).toMatch(/initialDeck \? `\/api\/decks\/\$\{id\}\?part=viewer` : `\/api\/decks\/\$\{id\}`/)
     expect(client).toMatch(/useSWR\('\/api\/ego-gifts', fetchNoteGifts/)
     expect(client).not.toMatch(/fetch\('\/api\/ego-gifts'\)/)
   })
