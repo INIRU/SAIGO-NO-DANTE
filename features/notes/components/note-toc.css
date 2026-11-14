@@ -1,4 +1,3 @@
-/* The note's table of contents and the heading copy-link button (NoteToc). */
 /* Note table of contents (a rail beside the note where the container is wide, a collapsible bar where it is narrow) and the heading copy-link button. */
 .note-toc-frame{container-type:inline-size}
 /* The note keeps its reading width; with a contents rail the wrapper around it lets the frame use the whole row. */

@@ -1,4 +1,3 @@
-/* The preview card of a mention or a gift name (NotePreviewCard). */
 /* Preview card of a mention or a gift name: hover/focus card on a pointer, modal on touch. */
 .note-preview-host{display:inline}
 .note-preview-popover{position:fixed;z-index:10050;width:min(21rem,calc(100vw - 1rem));padding:.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem;box-shadow:0 .75rem 2rem #000a;color:var(--text-primary);overflow-y: auto; scrollbar-gutter: stable;overscroll-behavior:contain}
