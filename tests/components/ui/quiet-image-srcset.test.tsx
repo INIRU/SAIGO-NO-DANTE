@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import QuietImage from '@/components/ui/QuietImage'
-import { trimFixedSrcSet } from '@/lib/utils/images'
+import { trimFixedSrcSet, withoutBlurPlaceholder } from '@/lib/utils/images'
 
 const widths = (html: string) => (html.match(/srcSet="([^"]*)"/)?.[1] ?? '').split(', ').filter(Boolean).map(entry => Number(entry.split(' ').at(-1)!.replace('w', '')))
 const src = 'https://lpgqcleszdlldneiwgep.supabase.co/storage/v1/object/public/limbus-assets/ego-gifts/a.webp'
@@ -21,5 +21,16 @@ describe('fixed-size images', () => {
     expect(widths(renderToStaticMarkup(<QuietImage src={src} alt="" fill sizes="2rem" />)).length).toBeLessThanOrEqual(3)
     // a size that depends on the screen keeps them all
     expect(widths(renderToStaticMarkup(<QuietImage src={src} alt="" fill sizes="(max-width: 640px) 17vw, 6vw" />)).length).toBeGreaterThan(3)
+  })
+
+  it('REQ-SHARED-096 a fixed-size image starts with the blur and has a style without it for after load', () => {
+    // the blur stayed behind object-contain art: a grey frame around every theme pack poster
+    const blurDataURL = 'data:image/png;base64,iVBORw0KGgo='
+    const html = renderToStaticMarkup(<QuietImage src={src} alt="" fill sizes="150px" placeholder="blur" blurDataURL={blurDataURL} className="object-contain" />)
+    expect(html).toContain('background-image')
+
+    const loaded = withoutBlurPlaceholder({ position: 'absolute', backgroundSize: 'contain', backgroundPosition: '50% 50%', backgroundRepeat: 'no-repeat', backgroundImage: 'url(x)', color: 'transparent' })
+    expect(loaded).toEqual({ position: 'absolute', color: 'transparent' })
+    expect(withoutBlurPlaceholder(undefined)).toBeUndefined()
   })
 })
