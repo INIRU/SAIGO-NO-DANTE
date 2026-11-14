@@ -33,6 +33,7 @@ import {
   markdownToTiptapContent,
   tiptapContentToMarkdown,
 } from "@/features/notes/lib/document";
+import "./note-editor.css";
 /** A toolbar button; a tool that is new carries the gold dot until it has been used once. */
 function ToolButton({ Icon, title, feature, run, disabled }: { Icon: typeof Bold; title: string; feature?: string; run: () => void; disabled: boolean }) {
   const news = useNoteNew(feature ?? "");

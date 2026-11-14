@@ -5,6 +5,7 @@ import GiftArtwork from '@/components/ui/GiftArtwork'
 import IdentityCard from '@/features/catalog/components/IdentityCard'
 import IdentitySkillFrameCard from '@/features/catalog/components/IdentitySkillFrameCard'
 import EgoDisplayCard from '@/components/cards/EgoDisplayCard'
+import './note-blocks.css'
 export function NoteAssetArtwork({asset, compact=false}:{asset:NoteAssetData; compact?:boolean}) {
   const lang=useLocale(), name=assetName(asset,lang)
   if (asset.kind === 'gift') return <GiftArtwork gift={{...asset,keyword:asset.keyword ?? undefined}} displayName={name} sizes="96px" />

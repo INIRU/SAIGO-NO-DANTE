@@ -7,6 +7,7 @@ import { showSuccess } from '@/lib/toast'
 import { basicTemplate, guideTemplate } from '@/features/notes/lib/templates'
 import { useNoteNew } from './NoteNewDot'
 import { tr } from '@/features/notes/lib/tr'
+import './note-editor.css'
 
 
 /** "양식 넣기": a small menu of starting templates; the guide template is the new one and carries the gold dot. */

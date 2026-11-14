@@ -41,7 +41,7 @@ describe('new tool dots', () => {
     expect(newFeatureLabel('취소선', false, 'ko')).toBe('취소선')
   })
   it('the dot is a small gold circle with no text', () => {
-    const css = readFileSync('app/globals.css', 'utf8')
+    const css = readFileSync('features/notes/components/note-new-dot.css', 'utf8')
     const rule = css.match(/\.note-new-dot\{[^}]*\}/)?.[0] ?? ''
     expect(rule).toContain('width:.375rem')
     expect(rule).toContain('background:var(--gold-light)')

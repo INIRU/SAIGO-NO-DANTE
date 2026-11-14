@@ -25,6 +25,7 @@ import { useLocale, useTranslations } from 'next-intl'
 
 import { useSinnerName } from '@/features/decks/hooks/useSinnerName'
 import { SUGGESTED_LIMIT, type PlannerDeckIdentity, type PlannerDeckSinner, type PlannerIdentityBoardSlot } from '@/features/decks/lib/deck-selection'
+import '@/components/ui/character-picker.css'
 
 // 소비처가 한 파일에서 가져오던 이름들. 에고 쪽은 PlannerEgoSelection.tsx, 타입은 lib/deck-selection.ts에 있다.
 export type { PlannerDeckEgo, PlannerDeckIdentity, PlannerDeckSinner, PlannerEgoBoardSlot, PlannerIdentityBoardSlot } from '@/features/decks/lib/deck-selection'

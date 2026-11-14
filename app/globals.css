@@ -21,8 +21,6 @@
   line-gap-override: 0%;
 }
 
-
-
 @theme {
   --font-serif: var(--font-kotra-bold), Georgia, serif;
 }
@@ -230,7 +228,6 @@ textarea:focus-visible {
 @keyframes story-rise { from { opacity: 0; transform: translateY(.5rem) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes story-ticket-in { from { opacity: 0; transform: translateX(-1.5rem); } to { opacity: 1; transform: none; } }
 
-
 .keyword-token img[src*="bladetrail-afterimage"] + span,
 span.inline img[src*="bladetrail-afterimage"] + span {
   color: #ff4f42 !important;
@@ -248,16 +245,6 @@ span.inline img[src*="bladetrail-afterimage"] + span {
   50%       { opacity: 1;   transform: scaleY(1.2); }
 }
 
-/* Shared document body: visible Korean fallback and stable composition layout. */
-.note-document-content { min-height: 14rem; padding: 1.25rem; outline: none; color: var(--text-primary); font-family: var(--font-body), sans-serif; font-size: .875rem; line-height: 1.8; overflow-wrap: anywhere; }
-.note-document-content p { min-height: 1.8em; }
-.note-document-content h1, .note-document-content h2 { margin: 1.3rem 0 .5rem; font-family: var(--font-heading); color: var(--gold); font-size: 1.125rem; }
-.note-document-content ul { list-style: disc; padding-left: 1.5rem; }
-.note-document-content ol { list-style: decimal; padding-left: 1.5rem; }
-.note-document-content blockquote { border-left: 2px solid var(--gold-dim); padding-left: 1rem; }
-.note-document-content .is-empty::before { content: attr(data-placeholder); float: left; height: 0; color: var(--text-muted); pointer-events: none; }
-.note-document-image { display: block; height: auto; max-height: 36rem; max-width: 100%; object-fit: contain; margin: 1rem 0; }
-
 /* Desktop browse is a workspace: the page stays still and only the list scrolls. Phones scroll the page itself,
    because a fixed-height list left an empty band under Safari's collapsing toolbar. */
 @media (min-width: 64rem) {
@@ -269,167 +256,8 @@ html.board-browse body :is(footer, [data-floating-font-control]) { display: none
 /* The filter column scrolls, so it clips what sticks out of it: room on the left for the focus ring (2px + 3px offset), taken from the page margin so the column stays where it was. */
 .board-filters { width: calc(16rem + 0.375rem); margin-left: -0.375rem; padding-left: 0.375rem; }
 
-/* Visual note blocks: shared by the editor and the lightweight document viewer. */
-.note-block-document{font-family:var(--font-body),sans-serif;font-size:1rem;line-height:1.75;color:var(--text-secondary);overflow-wrap:anywhere}
-.note-block-document p{margin:.7rem 0;white-space:pre-wrap}.note-block-document h2,.note-block-document h3{font-family:var(--font-heading);font-size:1.25rem;font-weight:700;color:var(--text-primary);margin:1.2rem 0 .6rem}
-.note-block-document ul{list-style:disc;padding-left:1.5rem}.note-block-document ol{list-style:decimal;padding-left:1.5rem}.note-block-document blockquote{border-left:2px solid var(--gold);padding-left:1rem;margin:1rem 0}.note-block-document a{color:var(--gold-light);text-underline-offset:.2rem}.note-block-document pre{overflow:auto;padding:1rem;background:var(--bg-deep);border-radius:.4rem}
-.note-accordion{margin:1rem 0;background:var(--bg-card);border:1px solid #3a2a1566;border-radius:.5rem;overflow:clip;color:var(--text-primary)}
-.note-accordion-heading{padding:.75rem 1rem;display:flex;align-items:center;gap:.5rem;background:#241c1266;font-weight:600;font-size:1rem}.note-accordion-heading>button{display:grid;place-items:center;flex-shrink:0;width:2rem;height:2rem;color:var(--gold);border-radius:.25rem;cursor:pointer}.note-accordion-heading>button:hover{background:var(--bg-elevated)}.note-accordion-heading svg{transition:transform .22s ease}.note-accordion[data-open=false] .note-accordion-heading svg{transform:rotate(-90deg)}
-.note-accordion-panel{display:grid;grid-template-rows:1fr;opacity:1;transition:grid-template-rows .24s ease,opacity .2s ease}.note-accordion-panel>div{min-height:0;overflow:hidden}.note-accordion[data-open=false] .note-accordion-panel{grid-template-rows:0fr;opacity:0}.note-accordion-body{padding:.5rem 1.25rem 1.25rem}
-.note-accordion-editor{position:relative;overflow:visible}.note-accordion-toggle,.note-accordion-delete{position:absolute;top:.6rem;z-index:2;width:2rem;height:2rem;display:grid;place-items:center;background:transparent;color:var(--text-secondary);border:0;border-radius:.25rem}.note-accordion-toggle{left:.5rem}.note-accordion-delete{right:.4rem}.note-accordion-default{position:absolute;top:.85rem;right:2.7rem;z-index:2;height:1.5rem;padding:0 .5rem;border:1px solid var(--border);border-radius:.25rem;background:transparent;color:var(--text-secondary);font-size:.75rem;line-height:1;white-space:nowrap}.note-accordion-default[aria-pressed=true]{border-color:var(--gold-dim,var(--gold));color:var(--gold)}.note-accordion-editor .note-accordion-content [data-note-title]{padding-right:9rem}.note-accordion-toggle svg{transition:transform .22s ease}.note-accordion-editor[data-collapsed] .note-accordion-toggle svg{transform:rotate(-90deg)}
-.note-accordion-content [data-note-title]{padding:1rem 2.8rem;min-height:3.2rem;font-size:1rem;font-weight:600;background:#241c1266;border-radius:.5rem .5rem 0 0}.note-accordion-content [data-note-body]{padding:.5rem 1.25rem 1.25rem;min-height:5rem}.note-accordion-editor[data-collapsed]>.note-accordion-content>div>[data-note-body]{display:none}
-[data-note-title].is-empty::before,[data-note-body] p.is-empty::before{content:attr(data-placeholder);color:var(--text-muted);pointer-events:none;float:left;height:0;font-weight:400}
-.note-asset-node,.note-asset-view{display:inline-block;vertical-align:top;width:5.5rem;margin:.5rem .7rem .5rem 0;max-width:100%;position:relative}.note-asset-node .note-asset-view{width:100%;margin:0}
-.note-asset-node--theme,.note-asset-view--theme,.note-asset-node--identity,.note-asset-view--identity{width:7rem}.note-asset-node--ego,.note-asset-view--ego{width:9.5rem}.note-asset-node--skill,.note-asset-view--skill{width:min(100%,32rem)}.note-asset-node--sin,.note-asset-view--sin,.note-asset-node--keyword,.note-asset-view--keyword{width:auto;min-width:5rem}
-.note-empty-slot{width:5.5rem;aspect-ratio:1;border:1px dashed #8f6b2c;border-radius:.35rem;background:#241c1266;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.65rem;color:var(--text-secondary);font-size:.75rem;cursor:pointer;transition:background .2s,border-color .2s}
-.note-empty-slot--theme,.note-empty-slot--identity{width:7rem;aspect-ratio:2/3}.note-empty-slot--skill{width:100%;min-height:7rem;aspect-ratio:auto}.note-empty-slot:hover{background:#352819;border-color:var(--gold-light)}
-.note-block-actions{display:flex;justify-content:flex-end;gap:.3rem;height:1.4rem;opacity:0;transition:opacity .15s}.note-block-actions button,.note-block-actions span{display:grid;place-items:center;color:var(--text-secondary);width:1.4rem}.note-asset-node:is(:hover,:focus-within,[data-selected]) .note-block-actions{opacity:1}.note-asset-node[data-selected] .note-empty-slot{outline:2px solid var(--gold)}
-.note-asset-replace{display:block;margin:.35rem auto 0;color:var(--gold);font-size:.75rem;min-height:1.8rem}.note-asset-caption{display:block;text-align:center;margin-top:.4rem;font-size:.8rem;line-height:1.45;color:var(--text-secondary);word-break:keep-all}.note-asset-art{display:flex;align-items:center;flex-direction:column;gap:.4rem;position:relative}.note-asset-art>img{width:100%;height:auto;object-fit:contain;border-radius:.2rem}.note-asset-art--theme>img{aspect-ratio:2/3}.note-asset-art--ego>img{aspect-ratio:1}.note-asset-art--ego .note-ego-grade{width:3.5rem;aspect-ratio:auto}.note-asset-art--sin>img,.note-asset-art--keyword>img{width:2.5rem;height:2.5rem}.note-asset-art--keyword,.note-asset-art--sin{padding:.75rem;background:#241c1266;border-radius:.35rem;font-size:.85rem}
-.note-asset-unavailable{display:grid;place-items:center;min-height:5rem;background:var(--bg-panel);font-size:.8rem;padding:.5rem}
-.note-picker{display:flex;flex-direction:column;max-height:82dvh;overflow:hidden;font-family:var(--font-body);padding:1.25rem}
-.note-picker-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem}.note-picker-header h2{font-size:1.25rem;font-weight:650;color:var(--text-primary)}.note-picker-header button{display:grid;place-items:center;min-width:2.5rem;min-height:2.5rem;border-radius:.4rem;color:var(--text-secondary)}
-.note-picker-controls{display:flex;gap:.6rem;margin-bottom:1rem;flex-shrink:0}.note-tier-dropdown{flex-shrink:0;z-index:2}.note-tier-dropdown [role=menu]{right:0;left:auto}.note-tier-dropdown [role=menuitem]{min-height:2.5rem;font-size:.875rem}.note-picker-search{display:flex;flex:1;min-width:0;align-items:center;gap:.6rem;background:var(--bg-deep);border:1px solid var(--border);border-radius:.4rem;padding:.7rem .8rem}.note-picker-search input{min-width:0;width:100%;background:none;outline:none;font-size:1rem}.note-picker-results{overflow:auto;min-height:12rem;overscroll-behavior:contain;scrollbar-gutter:stable;padding:.25rem}.note-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(6.5rem,1fr));gap:1rem .5rem;align-items:start}.note-picker-grid--skills{grid-template-columns:repeat(auto-fill,minmax(16rem,1fr))}.note-picker-item{text-align:center;align-self:start;padding:.5rem;border-radius:.5rem;min-width:0;transition:background .15s}.note-picker-item:hover,.note-picker-header button:hover{background:var(--bg-elevated)}.note-picker-artwork{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center}.note-picker-artwork>div{width:100%}.note-picker-artwork+span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;min-height:2.7em;font-size:.875rem;line-height:1.35;margin-top:.5rem;color:var(--text-primary);word-break:keep-all;overflow-wrap:anywhere}.note-picker-item small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.75rem;color:var(--text-secondary)}.note-picker--ego .note-picker-grid{grid-template-columns:repeat(auto-fill,minmax(9rem,1fr))}.note-picker--ego .note-picker-artwork,.note-picker--identity .note-picker-artwork,.note-picker--theme .note-picker-artwork,.note-picker--skill .note-picker-artwork{aspect-ratio:auto}.note-picker-pages{display:flex;align-items:center;justify-content:space-between;padding-top:.75rem;margin-top:.5rem;flex-shrink:0;font-size:.875rem;color:var(--text-secondary)}.note-picker-pages button{min-height:2.5rem;padding:0 1rem;color:var(--gold)}.note-picker-pages button:disabled{opacity:.3}
-.note-block-menu{position:relative}.note-insert-button{display:flex;align-items:center;gap:.4rem;min-height:2.25rem;padding:0 .6rem;color:var(--gold-light);font-size:.85rem}.note-command-menu{position:absolute;top:100%;left:0;z-index:80;width:17rem;max-width:80vw;max-height:22rem;overflow:auto;padding:.35rem;background:#1a1510;border:1px solid var(--border);border-radius:.4rem;box-shadow:0 .8rem 2rem #0008}.note-command-menu button{display:flex;align-items:center;gap:.6rem;width:100%;padding:.65rem .75rem;text-align:left;border-radius:.25rem;font-size:.9rem}.note-command-menu button:is(:hover,[data-active]){background:#352819;color:var(--gold-light)}.note-command-menu small{font-size:.75rem;color:var(--text-muted);margin-left:auto}.note-command-menu kbd{font-size:.7rem;padding:.1rem .3rem;border:1px solid var(--border);border-radius:.2rem}
-.note-video,.note-video-editor{position:relative;width:min(100%,42rem);margin:1rem 0;background:var(--bg-card);border-radius:.5rem;overflow:hidden}.note-video>button,.note-video iframe{width:100%;aspect-ratio:16/9;border:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.65rem;background:#211a14;color:var(--text-primary)}.note-video-play{width:3.5rem;height:2.5rem;background:#c83030;border-radius:.65rem;display:grid;place-items:center;color:white}.note-video>a{display:block;padding:.6rem 1rem;font-size:.85rem;color:var(--gold)}.note-video-editor .note-video{margin:0}.note-video-delete{position:absolute;right:.5rem;top:.5rem;z-index:2;padding:.5rem;border-radius:50%;background:var(--bg-deep);color:var(--text-secondary)}.note-video-input{display:flex;flex-wrap:wrap;gap:.75rem;padding:1.5rem}.note-video-input strong{width:100%}.note-video-input input{min-width:0;flex:1;background:var(--bg-deep);padding:.7rem;border:1px solid var(--border);border-radius:.3rem;font-size:.9rem}.note-video-input button{padding:.6rem .9rem;background:var(--gold);color:var(--bg-deep);border-radius:.3rem;font-weight:600}.note-video-input [role=alert]{width:100%;color:#f28d86}.note-upload{padding:1rem;border:1px dashed var(--border);color:var(--gold);margin:1rem 0}
-.note-block-document :focus-visible,.note-picker :focus-visible,.note-block-menu :focus-visible,.note-accordion-editor button:focus-visible,.note-asset-node button:focus-visible{outline:2px solid var(--gold-light);outline-offset:3px}
-@media(max-width:40rem){.note-accordion-body,.note-accordion-content [data-note-body]{padding:.5rem .75rem 1rem}.note-picker-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.note-picker-grid--skills{grid-template-columns:1fr}.note-block-actions{opacity:1}}
-@media(prefers-reduced-motion:reduce){.note-accordion-panel,.note-accordion-heading svg,.note-accordion-toggle svg,.note-empty-slot{transition:none}}
-.note-editor-shell{position:relative;border:1px solid #3a2a1580;overflow:visible}.note-editor-toolbar{background:#1a151066;border-radius:.4rem .4rem 0 0}.note-editor-toolbar>button:disabled{opacity:.4}.note-preview-button{margin-left:auto;display:flex;align-items:center;gap:.5rem;min-height:2.25rem;padding:0 .75rem;color:var(--gold-light);font-size:.9rem}.note-editor-preview{min-height:20rem;padding:1.5rem}.note-editor-shell .note-document-content{padding:1.5rem;min-height:24rem;font-size:1rem}.note-document-content>.node-noteAsset,.note-document-content [data-note-body]>.node-noteAsset{display:inline-block;vertical-align:top}.note-document-content .node-noteAsset{max-width:100%}
-.note-document-content .node-noteAccordion,.note-document-content .node-noteAsset,.note-document-content .node-noteVideo{animation:note-block-enter .22s ease-out}@keyframes note-block-enter{from{opacity:0;transform:translateY(.25rem)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:40rem){.note-editor-shell .note-document-content,.note-editor-preview{padding:1rem}.note-editor-toolbar{gap:.1rem}.note-preview-button{margin-left:0}}
-@media(prefers-reduced-motion:reduce){.note-document-content .react-renderer{animation:none}}
-
-.note-link-form{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;padding:.8rem 1rem;background:var(--bg-card)}.note-link-form input{flex:1;min-width:8rem;background:var(--bg-deep);border:1px solid var(--border);padding:.6rem;border-radius:.3rem}.note-link-form button{min-height:2.5rem;padding:.5rem;color:var(--gold)}.note-link-form [role=alert]{width:100%;color:#e48b7f;font-size:.875rem}
-
-.note-keyword-node,.note-keyword-label{display:inline;vertical-align:baseline;font-size:inherit;line-height:inherit}.note-keyword-label strong{font-weight:600}.note-keyword-insert{display:inline-flex;align-items:center;gap:.2em;padding:.1em .4em;border-radius:.25rem;background:var(--bg-elevated);color:var(--gold);font-size:inherit;vertical-align:baseline}.note-keyword-node.ProseMirror-selectednode{outline:1px solid var(--gold);border-radius:.2em}.note-picker--keyword .note-picker-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.note-picker--keyword .note-picker-artwork{aspect-ratio:auto}.note-picker--keyword .note-picker-artwork img{width:1.25rem;height:1.25rem}.note-picker--keyword .note-picker-item>span{display:none}.note-picker--keyword .note-asset-art{flex-direction:row;gap:.4rem;font-size:.875rem}.note-picker--keyword .note-picker-item{padding:.75rem;text-align:left}
-
-/* Deck authoring: compact controls above the existing tabs. */
-.deck-workspace-formation{min-width:0;padding:.5rem 0}
-.deck-workspace .planner-deck-identity-grid{column-gap:1rem;row-gap:1.5rem}
-@media(min-width:80rem){.deck-workspace>header>div{display:grid;grid-template-columns:1fr;gap:.5rem}.deck-workspace .planner-deck-identity-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
-.note-block-menu{display:flex;flex-wrap:wrap;gap:.25rem}
-.note-direct-picker{background:var(--bg-panel);border:1px solid rgba(255,255,255,.08);border-radius:.5rem;min-height:38rem;padding:2rem;max-height:85dvh}
-.note-direct-picker .note-picker-header{border-bottom:1px solid var(--border);padding-bottom:.75rem}
-.note-direct-picker .note-picker-header h2{font-family:var(--font-heading);font-size:1.75rem;color:#e8dcc8}
-.note-direct-layout{display:grid;grid-template-columns:9rem minmax(0,1fr) 17rem;gap:1.5rem;overflow:hidden;min-height:0;flex:1}
-.note-direct-sidebar{overflow:auto;padding:.5rem .75rem .5rem 0;border-right:1px solid rgba(255,255,255,.06)}
-.note-direct-sidebar>button{display:block;width:100%;text-align:left;padding:.625rem;color:var(--text-secondary)}
-.note-direct-sidebar>button[aria-pressed=true]{background:#241c12;color:#e8b030;border-left:2px solid #e8b030}
-.note-direct-picker .planner-keyword-sidebar{max-width:none!important;width:100%}
-.note-direct-picker .planner-keyword-filter{min-height:2.75rem;font-size:.875rem!important}
-.note-direct-picker section{margin-bottom:1.25rem}
-.note-direct-picker section h3{display:flex;gap:.75rem;align-items:center;font-family:var(--font-heading);font-size:1.125rem;padding:.5rem 0;margin-bottom:1rem}
-.note-direct-picker section h3 small{font-family:var(--font-body);font-size:.75rem;color:var(--text-muted)}
-.note-direct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(5.75rem,1fr));gap:1.25rem 1rem;align-items:start}
-.note-direct-item{position:relative;min-width:0;text-align:center;padding:.5rem;align-self:start;cursor:pointer;border:1px solid transparent;border-radius:.3rem}
-.note-direct-item:hover,.note-direct-item:focus-within{background:#1a1510;border-color:var(--gold-dim)}
-.note-direct-item>span{display:block;font-size:.8rem;line-height:1.4;margin-top:.4rem;word-break:keep-all}
-.note-direct-preview{overflow:auto;background:var(--bg-deep);border:0;padding:1.5rem;border-radius:.3rem;font-size:.875rem}
-.note-direct-preview>div:first-child{max-width:10rem;margin:0 auto 1rem}
-.note-direct-preview>h3{font-family:var(--font-heading);font-size:1.25rem;margin-bottom:1rem}
-@media(max-width:64rem){.note-direct-layout{grid-template-columns:8rem minmax(0,1fr)}.note-direct-preview{display:none}}
-@media(max-width:40rem){.note-direct-picker{padding:.75rem;min-height:70dvh}.note-direct-layout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.note-direct-sidebar{display:flex;overflow-x:auto;max-height:4rem;flex-shrink:0}.note-direct-sidebar>button{width:auto;white-space:nowrap}.note-direct-picker .planner-keyword-sidebar{flex-direction:row!important;max-width:none!important}.note-direct-picker .planner-keyword-filter{flex-shrink:0}.note-direct-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.note-direct-picker--skill .note-direct-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.deck-workspace-header{display:grid;gap:.75rem;align-items:center}
-.deck-workspace-heading{display:contents}
-.deck-workspace-actions{grid-row:3;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.5rem}
-.deck-workspace-code{display:flex;flex:1 1 18rem;min-width:min(100%,18rem);flex-wrap:wrap;gap:.25rem .5rem}
-.deck-workspace-code-error{flex-basis:100%;color:var(--error);font-size:.75rem}
-.deck-workspace-actions>button{min-height:2.5rem;justify-content:center;white-space:nowrap}
-.note-picker-empty{padding:3rem 1rem;text-align:center;color:var(--text-muted);font-size:.875rem;line-height:1.6}
-.deck-workspace-fields{display:grid;gap:.75rem}
-.deck-workspace-formation>.min-w-0{margin-top:1rem;border-top:1px solid var(--border);padding-top:.75rem}
-.note-direct-picker--skill .note-direct-layout{grid-template-columns:9rem minmax(0,1fr)}
-.note-direct-picker--skill .note-direct-grid{grid-template-columns:repeat(auto-fill,minmax(7rem,1fr));gap:1rem}.note-direct-picker--skill .note-direct-item{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1rem .5rem}
-.note-direct-sidebar>button{display:flex;align-items:center;gap:.5rem}
-.note-direct-sidebar>button img{width:1.75rem;height:1.75rem;border-radius:50%;object-fit:cover}
-@media(min-width:80rem){.deck-workspace>header>.deck-workspace-header{grid-template-columns:6rem minmax(0,1fr);gap:1rem}.deck-workspace-fields{grid-column:2;grid-row:1;grid-template-columns:minmax(12rem,1fr) 12rem;align-items:end}.deck-workspace-actions{grid-column:2;grid-row:2;width:100%}.deck-workspace-header .min-h-10,.deck-workspace-header .sm\:min-h-11{min-height:2.25rem}.deck-workspace-fields button{font-size:.8125rem!important;padding-inline:.625rem}.deck-workspace-header a{font-size:.75rem!important;min-height:1.75rem}}
-@media(max-width:40rem){.note-direct-picker--skill .note-direct-layout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.note-direct-picker--skill .note-direct-sidebar{grid-row:1}.note-direct-picker--skill .note-direct-preview{display:none}.note-direct-picker--skill .note-direct-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-
-.note-picker-hint{margin:-.25rem 0 1.25rem;color:var(--text-muted);font-size:.875rem}
-.note-direct-picker .note-picker-results{padding:.25rem .75rem .75rem .25rem}
-.note-direct-picker .note-picker-controls{margin-bottom:1.5rem}
-@media(max-width:40rem){.note-direct-picker{padding:1rem}.note-direct-layout{gap:1rem}.note-direct-picker .note-picker-results{padding:.25rem}.note-direct-grid{gap:1rem .5rem}}
-
-/* Character catalog pickers: compact tools beside an independent artwork shelf. */
-.character-picker-filters{padding:.75rem 1rem;border-bottom:1px solid var(--border);background:var(--bg-deep);flex-shrink:0}
-.character-picker-search{display:flex;align-items:center;gap:.5rem;padding:.45rem .65rem;border:1px solid var(--border);border-radius:.35rem;color:var(--text-secondary);background:var(--bg-card)}
-.character-picker-search:focus-within{border-color:var(--gold)}
-.character-picker-search input{width:100%;min-width:0;background:none;outline:none;color:var(--text-primary);font-size:.875rem;min-height:1.5rem}
-.character-picker-grades{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.6rem}
-.character-picker-sinners{display:grid;gap:.2rem;margin-top:.75rem}
-.character-picker-sinners button,.character-picker-grades button{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;min-height:2.25rem;padding:.3rem .55rem;border:1px solid transparent;border-radius:.3rem;font-size:.8125rem;color:var(--text-secondary);background:transparent}
-.character-picker-sinners button{justify-content:flex-start}
-.character-picker-sinners img{width:1.35rem;height:1.35rem;object-fit:contain}
-.character-picker-grades img{height:1.25rem;width:auto;object-fit:contain}
-.character-picker-grades .character-picker-ego-grade{width:2.5rem;height:1.15rem}
-.character-picker-sinners button[aria-pressed=true],.character-picker-grades button[aria-pressed=true]{color:var(--gold-light);border-color:var(--border);background:rgba(200,144,10,.12)}
-.character-picker-result-count{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:.5rem;font-size:.75rem;color:var(--text-secondary)}
-.character-picker-result-count button{display:flex;gap:.3rem;align-items:center;min-height:2rem;color:var(--gold-light)}
-.character-picker-result-count button:disabled{opacity:.35}
-.character-picker-filters button:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
-.character-picker-filter-toggle{display:none}
-.note-character-picker{padding:0;height:82dvh;max-height:50rem;background:var(--bg-deep)}
-.note-character-picker .note-picker-header{padding:.75rem 1rem;margin:0;border-bottom:1px solid var(--border);flex-shrink:0}
-.note-character-picker .note-picker-header h2{font-family:var(--font-heading);font-size:1.25rem}
-.character-picker-layout{display:grid;overflow:hidden;grid-template-columns:11rem minmax(0,1fr);min-height:0;flex:1}
-.character-picker-layout>.character-picker-filters{padding:.75rem;border-right:1px solid var(--border);border-bottom:0;overflow-y: auto; scrollbar-gutter: stable}
-.note-character-picker .note-picker-results{padding:1rem;min-height:0}
-.note-character-picker section+section{margin-top:1.5rem}
-.note-character-picker section h3{display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;font-family:var(--font-heading);font-size:1rem;color:var(--text-primary)}
-.note-character-picker section h3 img{width:1.5rem;height:1.5rem;object-fit:contain}
-.note-character-picker section h3 small{font-family:var(--font-body);font-size:.75rem;color:var(--text-secondary)}
-.note-character-picker .note-picker-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem;align-items:stretch}
-.note-character-picker .note-picker-item{padding:0;text-align:left;overflow:hidden;border:1px solid var(--border);border-radius:.35rem;background:var(--bg-card);align-self:stretch}
-.note-character-picker .note-picker-item:hover{border-color:var(--gold)}
-/* Identities show in the game formation card (IdentityFrameCard), E.G.O in the game E.G.O card: no box around either. */
-.note-character-picker--identity .note-picker-grid{grid-template-columns:repeat(auto-fill,minmax(7.25rem,1fr))}
-.note-character-picker--identity .note-picker-item,.note-character-picker--ego .note-picker-item{border:0;background:transparent;overflow:visible;border-radius:0}
-
-@media(max-width:48rem){.note-character-picker--ego .note-picker-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:40rem){
-  .character-picker-filters{padding:.5rem .75rem}
-  .character-picker-search input{font-size:1rem}
-  .character-picker-filter-toggle{display:inline-flex;align-items:center;gap:.4rem;min-height:2rem;font-size:.75rem;color:var(--text-secondary)}
-  .character-picker-sinners{display:none;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:.3rem}
-  .character-picker-sinners[data-expanded=true]{display:grid}
-  .character-picker-sinners button{padding:.2rem;min-height:2.5rem;font-size:.7rem;gap:.2rem}
-  .character-picker-sinners img{width:1.15rem;height:1.15rem}
-  .character-picker-grades button{min-height:2.5rem}
-  .character-picker-result-count{display:inline-flex;margin-top:0;margin-left:.5rem}
-  .character-picker-layout{display:flex;flex-direction:column}
-  .character-picker-layout>.character-picker-filters{border-right:0;border-bottom:1px solid var(--border);padding:.5rem .75rem;max-height:45dvh}
-  .note-character-picker .note-picker-results{padding:.75rem;flex:1}
-  .note-character-picker--identity .note-picker-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem .5rem}
-}
-
-.character-picker-ego-card{transition:transform .16s ease,filter .16s ease}
-.character-picker-ego-card:focus-visible{outline:2px solid var(--gold-light);outline-offset:.2rem}
-@media(hover:hover) and (pointer:fine){.character-picker-ego-card:hover{transform:translateY(-.125rem) scale(1.02);filter:drop-shadow(0 .15rem .4rem rgba(200,144,10,.25)) brightness(1.07)}}
-@media(prefers-reduced-motion:reduce){.character-picker-ego-card{transition:none}.character-picker-ego-card:hover{transform:none}}
-
-.character-picker-search input,.note-picker .note-picker-search input{height:1.5rem;min-height:0;margin:0;padding:0!important;border:0;box-shadow:none;line-height:1.5rem}
-.character-picker-search,.note-picker .note-picker-search{min-height:2.25rem;padding:.35rem .6rem;font-size:.875rem}
-.note-catalog-picker{padding:0;height:82dvh;max-height:50rem}
-.note-catalog-picker>.note-picker-header{margin:0;padding:.75rem 1rem;border-bottom:1px solid var(--border);flex-shrink:0}
-.note-catalog-picker .note-picker-controls{display:flex;flex-direction:column;align-self:stretch;justify-content:flex-start;gap:.75rem;padding:.75rem;margin:0;border-right:1px solid var(--border);background:var(--bg-deep)}
-.note-catalog-picker .note-picker-search{flex:0 0 auto}
-.note-legacy-results-shell{display:flex;flex-direction:column;overflow:hidden;min-height:0;padding:.75rem}
-.note-legacy-results-shell>.note-picker-results{flex:1;min-height:0}
-.note-direct-sidebar .note-picker-controls{display:flex;flex-direction:column;gap:.5rem;margin:0 0 .75rem}
-.note-direct-sidebar .note-picker-search{flex:0 0 auto}
-.note-direct-picker .note-direct-sidebar{min-width:0}
-.note-direct-picker .note-tier-dropdown{width:100%}
-.note-direct-picker .note-tier-dropdown>button{min-height:2.25rem!important}
-@media(max-width:40rem){
-  .note-catalog-picker .note-picker-controls{flex-direction:row;align-items:center;border-right:0;border-bottom:1px solid var(--border);padding:.5rem .75rem}
-  .note-catalog-picker .note-picker-search{flex:1}
-  .note-legacy-results-shell{flex:1}
-  .note-direct-picker .note-direct-sidebar{display:block;max-height:11rem;overflow:auto}
-  .note-direct-sidebar .note-picker-controls{flex-direction:row;margin-bottom:.5rem}
-  .note-direct-sidebar .note-picker-search{flex:1}
-  .note-direct-picker .note-tier-dropdown{width:auto}
-  .note-direct-picker--skill .note-direct-sidebar>button{display:inline-flex}
-}
+/* The planner's note editors (FloorMemoEditor, PlanIntroEditor) draw this frame as their loading placeholder, before note-editor.css arrives. */
+.note-editor-shell{position:relative;border:1px solid #3a2a1580;overflow:visible}
 
 /* Every page keeps the scrollbar's space, so the page and the fixed navbar do not shift sideways when a modal locks
    scrolling. Under Radix's lock the page scrollbar itself stays (wheel and touch outside the dialog are still blocked):
@@ -453,12 +281,10 @@ html body[data-scroll-locked] { overflow-y: scroll !important; margin-right: 0 !
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 16%, transparent);
 }
 
-
 /* deck & plan board cards */
 .board-card{background:#17120c;border:1px solid #2e2417;border-radius:0.5rem;transition:border-color .2s ease}
 .board-card:hover{border-color:#6b4c12}
 .board-card:focus-within{border-color:#c8900a}
-.plan-intro .note-document-content{min-height:7rem}
 
 /* Navbar boot hints (lib/constants/nav-boot.ts): pick the shortcut label and the pending auth slot before hydration. */
 html[data-mac] .nav-kbd-other,html:not([data-mac]) .nav-kbd-mac{display:none}
@@ -478,35 +304,11 @@ html[data-nav-hidden] :is(.sticky-under-nav,.nav-slide)[data-stuck]{transform:tr
 /* Print: page content only, on white. */
 @media print{.site-navigation,.site-footer{display:none!important}html,body{background:#fff!important}}
 /* Inline gift in a sentence (like keywords): art at text height, name in the gift keyword's colour. */
-.note-gift-inline-node{display:inline}
 .note-gift-label{display:inline-flex;align-items:baseline;gap:.2em;padding:0 .15em;border-radius:.2em;font:inherit;line-height:inherit;vertical-align:baseline;color:var(--gift-color,#c8b898);background:none}
 .note-gift-label img{align-self:center;width:1.35em;height:1.35em;object-fit:contain;flex-shrink:0}
 .note-gift-label strong{font-weight:600}
 button.note-gift-label{cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:.2em;transition:text-decoration-color .15s}
 button.note-gift-label:hover{text-decoration-color:currentColor}
-.note-gift-inline-node.ProseMirror-selectednode{outline:1px solid var(--gold);border-radius:.2em}
-/* Block controls: move back, move forward, delete (drag only where a mouse can). Delete sits apart from the moves. */
-.note-block-actions{justify-content:flex-start}.note-block-actions .note-block-delete{margin-left:auto}
-/* Touch: tap a card to select it; its controls float above it as a small bar with finger-sized buttons. */
-@media(pointer:coarse){
-  .note-block-drag{display:none!important}
-  .note-block-actions{position:absolute;z-index:6;bottom:calc(100% - .25rem);left:50%;height:auto;gap:.125rem;padding:.1875rem;border:1px solid var(--border);border-radius:.375rem;background:#17120c;box-shadow:0 .375rem 1rem rgba(0,0,0,.55);transform:translate(-50%,.25rem);opacity:0;pointer-events:none;transition:opacity .15s,transform .15s}
-  .note-asset-node:is([data-selected],:focus-within) .note-block-actions{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
-  .note-block-actions button{width:2.25rem;height:2.25rem;border-radius:.25rem;color:var(--text-primary)}
-  .note-block-actions button:active{background:#2e2417}
-  .note-block-actions .note-block-delete{margin-left:.25rem;color:#ef8a7a}
-}
-/* Phones: four cards (three E.G.O, drawn at 70%) to a row, so a row of picks reads as one row instead of wrapping like a new line. */
-@media(max-width:40rem){
-  /* Viewer: the card sits in the text. Editor: each card is wrapped by its node view, so the wrapper takes the width. */
-  .note-block-document .note-asset-view--identity,.note-block-document .note-asset-view--theme,.note-block-document .note-asset-view--gift,
-  .note-document-content .node-noteAsset[data-kind='identity'],.note-document-content .node-noteAsset[data-kind='theme'],.note-document-content .node-noteAsset[data-kind='gift']{width:calc((100% - 2rem)/4 - 1px);margin-right:.5rem}
-  .note-block-document .note-asset-view--ego,.note-document-content .node-noteAsset[data-kind='ego']{width:calc((100% - 1.5rem)/3 - 1px);margin-right:.5rem}
-  .note-document-content .node-noteAsset[data-kind] > .note-asset-node{width:100%;margin-right:0}
-  .note-empty-slot,.note-empty-slot--theme,.note-empty-slot--identity{width:100%}
-  .note-asset-caption{font-size:.6875rem}
-  .note-asset-replace{min-height:1.5rem;margin-top:.125rem;font-size:.6875rem}
-}
 
 /* Small text links and slots: a transparent margin around the element makes the touch target at least about 28px without moving the layout. */
 .hit-target{position:relative}.hit-target::after{content:"";position:absolute;inset:-.375rem -.25rem}
@@ -516,141 +318,6 @@ button.note-gift-label:hover{text-decoration-color:currentColor}
 [data-static-query-fallback] { display: none; }
 html[data-query-pending] [data-static-query] { display: none; }
 html[data-query-pending] [data-static-query-fallback] { display: contents; }
-
-/* Note links: accent colour and underline so they read as links in the viewer and the editor. */
-.note-block-document a[href]:not(.note-card a),.note-document-content a:not(.note-card a){color:var(--gold-light);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--gold-light) 45%,transparent);text-underline-offset:.2rem;transition:text-decoration-color .15s ease}
-.note-block-document a[href]:not(.note-card a):hover,.note-document-content a:not(.note-card a):hover{text-decoration-color:var(--gold-light)}
-
-/* Note blocks: callout, table, divider, deck/plan card. Shared by the editor and the viewer. */
-/* Callout: a head row (kind name; in the editor the kind switch and delete) above the text, so buttons never sit on it. */
-.note-callout{--callout:var(--gold);--callout-bg:color-mix(in srgb,var(--gold) 7%,var(--bg-card));margin:1rem 0;border:1px solid var(--border);border-left:3px solid var(--callout);border-radius:.4rem;background:var(--callout-bg);overflow:hidden}
-.note-callout[data-variant=warning]{--callout:#c0453a;--callout-bg:color-mix(in srgb,#9b2c23 12%,var(--bg-card))}
-.note-callout-head{display:flex;align-items:center;gap:.5rem;min-height:2.25rem;padding:.35rem .5rem .35rem .9rem;border-bottom:1px solid color-mix(in srgb,var(--callout) 22%,transparent);user-select:none}
-.note-callout-head>strong{font-family:var(--font-heading);font-size:.875rem;color:var(--callout)}
-.note-callout-body{padding:.6rem .9rem .7rem}
-.note-callout-body>p:first-child{margin-top:0}.note-callout-body>p:last-child{margin-bottom:0}
-.note-callout-kinds{display:flex;gap:.25rem}
-.note-callout-kinds button{min-height:1.75rem;padding:0 .7rem;border-radius:.25rem;font-family:var(--font-heading);font-size:.8125rem;color:var(--text-muted);transition:background-color .15s ease,color .15s ease}
-.note-callout-kinds button[aria-pressed=true]{background:color-mix(in srgb,var(--callout) 18%,transparent);color:var(--callout)}
-@media (hover:hover){.note-callout-kinds button:not([aria-pressed=true]):hover{color:var(--text-secondary)}}
-.note-callout-delete{display:grid;place-items:center;width:1.75rem;height:1.75rem;margin-left:auto;border-radius:.25rem;color:var(--text-muted);transition:color .15s ease,background-color .15s ease}
-@media (hover:hover){.note-callout-delete:hover{color:#e06a5f;background:#9b2c2326}}
-.note-block-document table,.note-document-content table{width:100%;margin:1rem 0;border-collapse:collapse;table-layout:fixed;font-size:.9rem}
-.note-block-document :is(th,td),.note-document-content :is(th,td){position:relative;padding:.45rem .65rem;border:1px solid var(--border);vertical-align:top;text-align:left}
-.note-block-document th,.note-document-content th{background:var(--bg-elevated);color:var(--text-primary);font-weight:600}
-.note-block-document :is(td,th)>p,.note-document-content :is(td,th)>p{margin:0;min-height:0}
-.note-document-content .selectedCell::after{content:"";position:absolute;inset:0;background:#c8900a33;pointer-events:none}
-.note-document-content .tableWrapper,.note-block-table{overflow-x:auto}
-.note-block-document hr,.note-document-content hr{margin:1.25rem 0;border:0;border-top:1px solid var(--border)}
-.note-card,.note-card-node.note-asset-node{position:relative;display:block;width:24rem;max-width:100%;margin:1rem 0}.note-card-node .note-card{width:100%;margin:0}
-.note-card-unavailable{padding:1rem;border:1px dashed var(--border);color:var(--text-muted);font-size:.85rem}
-/* Card picker: the gift picker frame without the preview column; results are the board cards, picked by the button over each. */
-.note-direct-picker--card .note-direct-layout{grid-template-columns:9rem minmax(0,1fr)}
-.note-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:1rem;align-items:stretch}
-.note-card-option{position:relative;display:flex;flex-direction:column;min-width:0;border-radius:.5rem}
-.note-card-option-card{flex:1;display:flex;flex-direction:column;min-width:0;pointer-events:none}.note-card-option-card>:first-child{flex:1;min-width:0}
-.note-picker-search:focus-within{border-color:var(--gold-dim,var(--gold))}.note-picker-search input:focus-visible{outline:none}
-.note-card-option>button{position:absolute;inset:0;border-radius:.5rem;outline-offset:2px;transition:box-shadow .15s ease,background-color .15s ease}
-@media (hover:hover){.note-card-option>button:hover{box-shadow:inset 0 0 0 1px var(--gold);background:#c8900a12}}
-.note-card-option>button:focus-visible{box-shadow:inset 0 0 0 2px var(--gold)}
-.note-card-option--empty{aspect-ratio:17/16;background:var(--bg-card);border:1px solid var(--border)}
-@media(max-width:40rem){.note-direct-picker--card .note-direct-layout{grid-template-columns:1fr}.note-direct-picker--card .note-direct-sidebar>button{display:inline-flex}.note-card-grid{grid-template-columns:1fr}}
-/* Note text marks: a sin colour is the game's sin colour mixed into the text colour; inside a highlight the mix is lighter so both stay at 4.5:1 (lib/notes/text-style.ts, tests/features/notes/lib/note-marks.test.ts). */
-.note-sin-color{--note-sin-text:color-mix(in srgb,var(--note-sin) var(--note-sin-mix,70%),var(--text-primary));color:var(--note-sin-text)}
-.note-highlight{--note-sin-mix:35%;background:color-mix(in srgb,var(--gold-light) 20%,transparent);color:inherit;border-radius:.2em;padding:.05em .2em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
-.note-editor-toolbar [data-active=true]{background:var(--bg-elevated);color:var(--gold-light)}
-.note-mark-tool{position:relative;display:inline-flex}
-.note-color-popover{position:absolute;z-index:80;top:calc(100% + .25rem);display:flex;flex-direction:column;gap:.375rem;padding:.5rem;background:var(--bg-card);border:1px solid var(--border);border-radius:.4rem;box-shadow:0 .8rem 2rem #0008}
-.note-color-swatches{display:flex;gap:.25rem}
-.note-color-swatch{display:grid;place-items:center;width:2.25rem;height:2.25rem;border-radius:.3rem;transition:background-color .15s ease,transform .15s ease}
-.note-color-swatch img{width:1.5rem;height:1.5rem;object-fit:contain}
-.note-color-swatch[aria-pressed=true]{background:color-mix(in srgb,var(--gold) 28%,var(--bg-card))}
-.note-color-clear{display:flex;align-items:center;gap:.375rem;min-height:2rem;padding:0 .5rem;border-radius:.3rem;color:var(--text-secondary);font-size:.8125rem;transition:background-color .15s ease,color .15s ease}
-@media (hover:hover){.note-color-swatch:hover{background:var(--bg-elevated);transform:translateY(-1px)}.note-color-clear:hover{background:var(--bg-elevated);color:var(--text-primary)}}
-@media (prefers-reduced-motion:no-preference){.note-color-popover{animation:note-popover-in .15s ease-out}@keyframes note-popover-in{from{opacity:0;transform:translateY(-.25rem)}}}
-@media (prefers-reduced-motion:reduce){.note-color-swatch{transition:none}.note-color-swatch:hover{transform:none}}
-/* @ mention: an inline label like the gift label (icon at text height, then the name); no box. A link in the viewer, plain in the editor. */
-.note-mention{display:inline-flex;align-items:baseline;gap:.2em;margin:0 .1em;font:inherit;line-height:inherit;vertical-align:baseline;color:var(--gift-color,#c8b898);background:none}
-.note-mention>img{align-self:center;width:1.35em;height:1.35em;object-fit:cover;object-position:top;flex-shrink:0}
-.note-mention strong{font-weight:600}
-a.note-mention{text-decoration:underline;text-decoration-color:transparent;text-underline-offset:.2em;transition:text-decoration-color .15s}
-.note-block-document a[href].note-mention:not(.note-card a){color:var(--gift-color,#c8b898);text-decoration:underline;text-decoration-color:transparent}
-a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-mention:not(.note-card a):is(:hover,:focus-visible){text-decoration-color:currentColor}
-.note-mention-node{display:inline}
-.note-mention-node.ProseMirror-selectednode{outline:1px solid var(--gold);border-radius:.2em}
-/* Character count under the note editor: muted digits, gold from 90% of the limit, the error colour at it. */
-.note-editor-footer{display:flex;justify-content:flex-end;padding:.375rem .75rem;border-top:1px solid color-mix(in srgb,var(--border) 60%,transparent)}
-.note-count{font-family:var(--font-title);font-size:.875rem;letter-spacing:.04em;color:var(--text-muted);font-variant-numeric:tabular-nums;transition:color .15s ease}
-.note-count[data-state=near]{color:var(--gold-light)}
-.note-count[data-state=limit]{color:var(--error)}
-/* Note table of contents (a rail beside the note where the container is wide, a collapsible bar where it is narrow) and the heading copy-link button. */
-.note-toc-frame{container-type:inline-size}
-/* The note keeps its reading width; with a contents rail the wrapper around it lets the frame use the whole row. */
-:is(.planner-detail-note,[data-note-wrap]):has(.note-toc-frame){max-width:none!important}
-.note-toc-layout{display:flex;flex-direction:column;gap:.75rem}
-.note-toc-body{min-width:0;max-width:52rem}
-.note-toc nav{display:grid;grid-template-rows:0fr;transition:grid-template-rows .22s ease}
-.note-toc nav>ol{min-height:0;overflow:hidden;margin:0;padding:0;list-style:none}
-.note-toc[data-open] nav{grid-template-rows:1fr}
-.note-toc-toggle{display:flex;width:100%;align-items:center;justify-content:space-between;min-height:2.75rem;padding:0 .875rem;border:1px solid var(--border);border-radius:.4rem;background:var(--bg-card);color:var(--text-primary);font-family:var(--font-heading);font-size:.9375rem}
-.note-toc-toggle svg{color:var(--gold);transition:transform .22s ease}
-.note-toc[data-open] .note-toc-toggle svg{transform:rotate(180deg)}
-.note-toc-title{display:none}
-.note-toc li{margin:0}
-.note-toc a{position:relative;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;padding:.375rem .75rem .375rem .875rem;color:var(--text-secondary);font-size:.875rem;line-height:1.45;text-decoration:none;overflow-wrap:anywhere;transition:color .15s ease}
-.note-toc li[data-level="2"] a{padding-left:1.625rem;font-size:.8125rem}
-.note-toc a[aria-current=location]{color:var(--gold-light)}
-.note-toc a::before{content:"";position:absolute;left:-1px;top:.375rem;bottom:.375rem;width:.125rem;border-radius:.0625rem;background:var(--gold);transform:scaleY(0);transition:transform .2s ease}
-.note-toc a[aria-current=location]::before{transform:scaleY(1)}
-@media (hover:hover){.note-toc a:hover{color:var(--text-primary)}}
-.note-toc a:focus-visible,.note-toc-toggle:focus-visible,.note-heading-link:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
-/* Wide: the rail stands at the right edge of the row, below the site bar and the page's section tabs (3rem + hairline). */
-@container (min-width:72rem){
-  .note-toc-layout{display:grid;grid-template-columns:minmax(0,52rem) 15rem;justify-content:space-between;align-items:start;gap:3rem}
-  .note-toc{order:2;position:sticky;top:calc(var(--nav-height) + 4.5rem);max-height:calc(100dvh - var(--nav-offset) - 6rem);overflow:auto;overscroll-behavior:contain}
-  .note-toc-toggle{display:none}
-  .note-toc-title{display:block;margin:0 0 .5rem;color:var(--text-muted);font-family:var(--font-heading);font-size:.8125rem}
-  .note-toc nav{display:block}
-  .note-toc nav>ol{overflow:visible;border-left:1px solid var(--border)}
-}
-.note-heading{scroll-margin-top:calc(var(--nav-offset) + 4.5rem)}
-.note-heading-link{display:inline-grid;place-items:center;width:1.5rem;height:1.5rem;margin-left:.375rem;vertical-align:middle;border-radius:.25rem;color:var(--text-muted);opacity:0;transition:opacity .15s ease,color .15s ease}
-.note-heading:is(:hover,:focus-within) .note-heading-link,.note-heading-link:focus-visible{opacity:1}
-@media (hover:hover){.note-heading-link:hover{color:var(--gold-light)}}
-@media (hover:none){.note-heading-link{opacity:.7}}
-@media (prefers-reduced-motion:reduce){.note-toc,.note-toc nav,.note-toc-toggle svg,.note-toc a,.note-toc a::before,.note-heading-link{transition:none}}
-/* Note image lightbox: the picture fits the screen on the deep background; a button wraps the small picture in the reading view. */
-.note-image-button{display:block;max-width:100%;padding:0;border:0;background:none;cursor:zoom-in}
-.note-image-button:focus-visible{outline:2px solid var(--gold-light);outline-offset:3px}
-.popup-surface.note-lightbox>:first-child{background:transparent!important;border:0!important;box-shadow:none!important}
-.note-lightbox-frame{position:relative;display:grid;place-items:center;max-height:calc(100dvh - 1.5rem)}
-.note-lightbox-image{display:block;max-width:calc(96vw - 1.5rem);max-height:calc(100dvh - 1.5rem);width:auto;height:auto;object-fit:contain;cursor:zoom-out}
-.note-lightbox-close{position:absolute;top:.25rem;right:.25rem;z-index:1;display:grid;place-items:center;width:2.5rem;height:2.5rem;border-radius:50%;background:var(--bg-card);color:var(--text-primary);transition:background-color .15s ease,color .15s ease}
-@media (hover:hover){.note-lightbox-close:hover{background:var(--bg-elevated);color:var(--gold-light)}}
-/* "Expand all / collapse all": a plain text button, right-aligned above the first accordion. */
-.note-accordion-all{display:block;margin:1rem 0 -.5rem auto;padding:.25rem 0;color:var(--text-secondary);font-size:.8125rem;transition:color .15s ease}
-.note-accordion-all:focus-visible{outline:2px solid var(--gold-light);outline-offset:2px}
-@media (hover:hover){.note-accordion-all:hover{color:var(--gold-light)}}
-/* Preview card of a mention or a gift name: hover/focus card on a pointer, modal on touch. */
-.note-preview-host{display:inline}
-.note-preview-popover{position:fixed;z-index:10050;width:min(21rem,calc(100vw - 1rem));padding:.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem;box-shadow:0 .75rem 2rem #000a;color:var(--text-primary);overflow-y: auto; scrollbar-gutter: stable;overscroll-behavior:contain}
-.note-preview-popover[data-above]{translate:0 -100%}
-.note-preview-card{display:flex;gap:.875rem;align-items:flex-start;font-size:.875rem;line-height:1.5}
-.note-preview-art{flex:0 0 5.5rem;width:5.5rem}
-.note-preview-card[data-kind=identity] .note-preview-art{flex-basis:6.5rem;width:6.5rem}
-.note-preview-card[data-kind=ego] .note-preview-art{flex-basis:6.5rem;width:6.5rem}
-.note-preview-text{display:flex;min-width:0;flex:1;flex-direction:column;gap:.25rem}
-.note-preview-text>strong{font-family:var(--font-heading);font-size:1rem;font-weight:400;color:var(--text-primary);overflow-wrap:anywhere}
-.note-preview-text>small{color:var(--text-secondary);font-size:.8125rem}
-.note-preview-keyword{display:flex;align-items:center;gap:.25rem;font-family:var(--font-heading)}.note-preview-keyword>img{width:1rem;height:1rem;object-fit:contain}
-.note-preview-card[data-kind=gift] .note-preview-text>div{margin-top:.25rem;padding-top:.5rem;border-top:1px solid var(--border);font-family:var(--font-game-text)}
-.note-preview-modal{display:flex;flex-direction:column;gap:1rem;padding:1.25rem}
-.note-preview-more{align-self:flex-end;padding:.5rem .875rem;border-radius:.4rem;background:var(--bg-elevated);color:var(--gold-light);font-size:.875rem;text-decoration:none;transition:background-color .15s ease}
-/* The card appears where it sits, 0.25rem toward the name; `translate` (its place above) is not animated. */
-@media (prefers-reduced-motion:no-preference){.note-preview-popover{animation:note-preview-in .16s cubic-bezier(.23,1,.32,1)}.note-preview-popover[data-above]{animation-name:note-preview-in-above}@keyframes note-preview-in{from{opacity:0;transform:translateY(-.25rem)}}@keyframes note-preview-in-above{from{opacity:0;transform:translateY(.25rem)}}}
-/* The gold dot of a new editor tool: no text, gone after the tool is first used. */
-.note-new-dot{position:absolute;top:.3125rem;right:.3125rem;width:.375rem;height:.375rem;border-radius:50%;background:var(--gold-light);pointer-events:none}
-.note-new-dot--row{top:50%;right:.75rem;transform:translateY(-50%)}
 
 @layer base {
   input::placeholder, textarea::placeholder { color: var(--text-muted); }
@@ -679,7 +346,7 @@ a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-menti
 
 /* Things that appear on a click (nav menus, dropdowns, popovers, the phone menu): a short rise instead of popping in. */
 @media (prefers-reduced-motion: no-preference) {
-  .nav-pop, .pop-in, .note-command-menu { transform-origin: top; animation: pop-in var(--dur-quick) var(--ease-out); }
+  .nav-pop, .pop-in { transform-origin: top; animation: pop-in var(--dur-quick) var(--ease-out); }
   .pop-in-up { transform-origin: bottom; animation: pop-in-up var(--dur-quick) var(--ease-out); }
   .mobile-nav-sheet { animation: sheet-in var(--dur-base) var(--ease-drawer); }
   @keyframes pop-in { from { opacity: 0; transform: translateY(-.375rem) scale(.98); } }
@@ -689,23 +356,4 @@ a.note-mention:is(:hover,:focus-visible),.note-block-document a[href].note-menti
 @media (prefers-reduced-motion: reduce) {
   .press { transition: color var(--dur-quick) ease, background-color var(--dur-quick) ease, border-color var(--dur-quick) ease; }
   .press:active { transform: none; }
-}
-
-/* Note pickers on phone and tablet (2026-11-13 audit). Kept last: these override the picker rules above. */
-/* The filter column was 9rem: the search placeholder was cut off in it. */
-@media(min-width:40.0625rem){
-  .note-direct-layout,.note-direct-picker--skill .note-direct-layout,.note-direct-picker--card .note-direct-layout{grid-template-columns:11rem minmax(0,1fr)}
-  .note-picker--keyword .note-picker-grid{grid-template-columns:repeat(auto-fill,minmax(10rem,1fr))}
-}
-@media(min-width:64.0625rem){.note-direct-picker--gift .note-direct-layout{grid-template-columns:11rem minmax(0,1fr) 17rem}}
-.note-card-grid{grid-template-columns:repeat(auto-fill,minmax(14.5rem,1fr))}
-/* a sinner has four skills: always one row each */
-.note-direct-picker--skill .note-direct-grid{grid-template-columns:repeat(4,minmax(0,1fr));max-width:36rem}
-@media(max-width:40rem){
-  .note-card-grid{grid-template-columns:1fr}
-  /* a sinner has four skills: one row each; the sinners in one row that scrolls sideways */
-  .note-direct-picker--skill .note-direct-grid{gap:.5rem .25rem}
-  .note-direct-picker--skill .note-direct-item{padding:.75rem .125rem}
-  .note-direct-picker--skill .note-direct-sidebar{max-height:none;overflow:auto hidden;white-space:nowrap;scrollbar-width:none}
-  .note-direct-picker--skill .note-direct-sidebar .note-picker-controls{position:sticky;left:0}
 }

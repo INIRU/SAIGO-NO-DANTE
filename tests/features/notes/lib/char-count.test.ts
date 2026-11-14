@@ -26,7 +26,7 @@ describe('note character count', () => {
     expect(formatNoteCount(0, 'ko')).toBe('0 / 5,000')
   })
   it('is drawn muted in the digit font, gold near the limit and in the error colour at it', () => {
-    const css = readFileSync('app/globals.css', 'utf8')
+    const css = readFileSync('features/notes/components/note-editor.css', 'utf8')
     const rule = (selector: string) => css.match(new RegExp(selector.replace(/[[\]]/g, '\\$&') + '\\{[^}]*\\}'))?.[0] ?? ''
     expect(rule('.note-count')).toContain('font-family:var(--font-title)')
     expect(rule('.note-count')).toContain('color:var(--text-muted)')

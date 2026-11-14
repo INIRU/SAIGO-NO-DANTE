@@ -1,0 +1,3 @@
+/* The gold dot of a new editor tool: no text, gone after the tool is first used. */
+.note-new-dot{position:absolute;top:.3125rem;right:.3125rem;width:.375rem;height:.375rem;border-radius:50%;background:var(--gold-light);pointer-events:none}
+.note-new-dot--row{top:50%;right:.75rem;transform:translateY(-50%)}

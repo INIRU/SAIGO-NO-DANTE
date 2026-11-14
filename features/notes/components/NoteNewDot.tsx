@@ -2,6 +2,7 @@
 import { useCallback, useSyncExternalStore } from 'react'
 import { useLocale } from 'next-intl'
 import { markNoteFeatureUsed, newFeatureLabel, noteFeatureIsNew, subscribeNoteFeatures } from '@/features/notes/lib/new-feature'
+import './note-new-dot.css'
 
 /**
  * The gold dot of a new editor tool. Server and first client render show no dot (storage is not readable there), so

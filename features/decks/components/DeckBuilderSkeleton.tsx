@@ -1,5 +1,6 @@
 import Skeleton, { SkeletonLine, SkeletonPage } from '@/components/ui/Skeleton'
 import { DeckInsightsSkeleton, FormationBoardSkeleton } from '@/components/ui/DetailPageSkeleton'
+import './deck-workspace.css'
 
 const field = 'h-[2.53rem] sm:h-[2.24rem]'
 
