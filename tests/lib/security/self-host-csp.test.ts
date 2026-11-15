@@ -17,10 +17,15 @@ async function csp(env: Record<string, string | undefined>) {
 
 afterEach(() => vi.unstubAllEnvs())
 
-it('HTTPS deployments (Vercel or the self-hosted server) upgrade insecure requests, local http does not', async () => {
-  expect(await csp({ VERCEL: '1', SELF_HOSTED: undefined })).toContain('upgrade-insecure-requests')
-  expect(await csp({ VERCEL: undefined, SELF_HOSTED: '1' })).toContain('upgrade-insecure-requests')
-  expect(await csp({ VERCEL: undefined, SELF_HOSTED: undefined })).not.toContain('upgrade-insecure-requests')
+it('the self-hosted server upgrades insecure requests, local http does not', async () => {
+  expect(await csp({ SELF_HOSTED: '1' })).toContain('upgrade-insecure-requests')
+  expect(await csp({ SELF_HOSTED: undefined })).not.toContain('upgrade-insecure-requests')
+  // The old host's flag no longer counts.
+  expect(await csp({ VERCEL: '1', SELF_HOSTED: undefined })).not.toContain('upgrade-insecure-requests')
+})
+
+it('no Vercel Analytics host is allowed', async () => {
+  expect((await csp({})).join('; ')).not.toContain('vercel')
 })
 
 it('the Cloudflare Web Analytics beacon may load and report', async () => {

@@ -8,13 +8,12 @@ import { routing } from './lib/i18n/routing'
 import { isAllowedRequestOrigin } from './lib/request-origin'
 import { PRIMARY_LOCALE } from './lib/seo/metadata'
 import { canonicalRedirectUrl } from './lib/seo/canonical-host'
-import { isMaintenanceOpen, maintenanceEdgeReadUrl, type MaintenanceEntry } from './lib/maintenance'
+import { isMaintenanceOpen, type MaintenanceEntry } from './lib/maintenance'
 
 const intlMiddleware = createMiddleware(routing)
 
 const ALLOWED_ORIGINS = [
   'https://saigo-no-dante.com',
-  'https://saigo-no-dante.vercel.app',
   'http://localhost:3000',
   'http://localhost:3001',
 ]
@@ -87,18 +86,11 @@ function matchesMaintenancePath(routePathname: string, maintenancePath: string):
 }
 
 // 점검 목록은 요청마다 묻지 않고 인스턴스에서 잠시 재사용한다(모든 페이지 이동·미리 불러오기가 여기를 지난다).
-// Edge Config가 연결되어 있으면 거기서 읽고(관리자 저장 즉시 갱신), 아니면 Supabase를 읽는다.
 // 켜고 끈 점검은 인스턴스마다 최대 60초 늦게 반영된다. 읽기 요금과 맞바꾼 값이다.
 const MAINTENANCE_TTL_MS = 60_000
-const MAINTENANCE_EDGE_URL = maintenanceEdgeReadUrl()
 let maintenanceCache: { at: number; entries: MaintenanceEntry[] } | null = null
 
 async function fetchMaintenance(): Promise<MaintenanceEntry[] | null> {
-  if (MAINTENANCE_EDGE_URL) {
-    const res = await fetch(MAINTENANCE_EDGE_URL)
-    if (res.ok) return await res.json()
-    // 항목이 아직 없거나 Edge Config 장애: Supabase로 넘어간다
-  }
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/site_maintenance?is_active=eq.true&select=path,message,reason,starts_at,ends_at`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Accept-Profile': 'limbus' } },

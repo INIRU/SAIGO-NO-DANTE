@@ -5,8 +5,8 @@ import { HTML_LIMITED_BOTS } from './lib/seo/html-limited-bots';
 import { MEDIA_ORIGIN } from './lib/seo/media-origin';
 
 const withNextIntl = createNextIntlPlugin('./lib/i18n/request.ts');
-// Vercel and the self-hosted server (behind Cloudflare) are HTTPS-only; local `next start` stays on http.
-const isHttpsDeployment = process.env.VERCEL === '1' || process.env.SELF_HOSTED === '1';
+// The self-hosted server (behind Cloudflare) is HTTPS-only; local `next start` stays on http.
+const isHttpsDeployment = process.env.SELF_HOSTED === '1';
 const isProduction = process.env.NODE_ENV === 'production';
 
 // The AdSense code (adsbygoogle.js) and what it loads: ad scripts, ad frames, the consent message (Funding Choices) and
@@ -16,14 +16,14 @@ const isProduction = process.env.NODE_ENV === 'production';
 const ADSENSE_HOSTS = 'https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://*.googleadservices.com https://*.adtrafficquality.google https://fundingchoicesmessages.google.com'
 const contentSecurityPolicyDirectives = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? " 'wasm-unsafe-eval'" : " 'unsafe-eval'"} https://va.vercel-scripts.com https://static.cloudflareinsights.com ${ADSENSE_HOSTS}`,
+  `script-src 'self' 'unsafe-inline'${isProduction ? " 'wasm-unsafe-eval'" : " 'unsafe-eval'"} https://static.cloudflareinsights.com ${ADSENSE_HOSTS}`,
   "style-src 'self' 'unsafe-inline'",
   // Any https picture: the ads' pictures come from the advertisers' hosts (and https: covers storage, avatars and news images).
   "img-src 'self' data: blob: https:",
   "font-src 'self'",
   // assets.saigo-no-dante.com: the skill motion videos and their layer data on R2, read by the motion player.
   // data: PixiJS tests image formats by fetching a tiny data: picture (the story map effects).
-  `connect-src 'self' data: https://lpgqcleszdlldneiwgep.supabase.co https://va.vercel-scripts.com https://cloudflareinsights.com https://assets.saigo-no-dante.com ${ADSENSE_HOSTS} https://*.google.com`,
+  `connect-src 'self' data: https://lpgqcleszdlldneiwgep.supabase.co https://cloudflareinsights.com https://assets.saigo-no-dante.com ${ADSENSE_HOSTS} https://*.google.com`,
   "worker-src 'self' blob:",
   `frame-src https://www.youtube.com https://www.youtube-nocookie.com ${ADSENSE_HOSTS} https://www.google.com`,
   "media-src 'self' https://assets.saigo-no-dante.com",
@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
   // and froze the site (2026-10-22). Its deploy script sets SKIP_BUILD_TYPECHECK=1: CI's TypeCheck job checks every PR.
   typescript: { ignoreBuildErrors: process.env.SKIP_BUILD_TYPECHECK === '1' },
   // The self-hosted server runs the standalone output (built on GitHub): only the files the app needs, node_modules included,
-  // so the server neither builds nor installs packages. Vercel ignores this.
+  // so the server neither builds nor installs packages.
   output: process.env.SELF_HOSTED === '1' ? 'standalone' : undefined,
   // The tunnel host is for looking at the dev server from another machine (cloudflared quick tunnel).
   allowedDevOrigins: ['127.0.0.1', '*.trycloudflare.com'],
@@ -56,7 +56,7 @@ const nextConfig: NextConfig = {
   // "FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed -
   // JavaScript heap out of memory" during the TypeScript type-check phase
   // (V8 hits the 4GB default ceiling). Keep disabled until we either:
-  //   (a) raise NODE_OPTIONS=--max-old-space-size in Vercel build env, and/or
+  //   (a) raise NODE_OPTIONS=--max-old-space-size in the build env, and/or
   //   (b) split the monorepo/TSC passes.
   // babel-plugin-react-compiler devDep is kept installed for a future retry.
   // reactCompiler: true,

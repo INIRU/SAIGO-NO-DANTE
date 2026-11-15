@@ -5,7 +5,7 @@ export const ASSIST_MODEL_VERSION = '2d323aece3c0'
 
 /**
  * Where the assist workers read their recognition models. A deployed site reads the Storage copy (the files are kept
- * out of the deployment by .vercelignore); a local dev server reads public/models, so a retrained model can be tried
+ * out of the deployment by .github/workflows/deploy-build.yml); a local dev server reads public/models, so a retrained model can be tried
  * before it is uploaded.
  */
 export function assistModelRoot(hostname: string) {
@@ -25,7 +25,7 @@ export const ASSIST_RUNTIME_ROOT = '/models'
 
 /**
  * Where the workers fetch runtime data that is not a script (ONNX .wasm, Tesseract language data): the Storage copy on a
- * deployed site (kept out of the deployment by .vercelignore), public/models on a local dev server. fetch is governed by
+ * deployed site (kept out of the deployment by .github/workflows/deploy-build.yml), public/models on a local dev server. fetch is governed by
  * CSP connect-src, which allows Storage; script-src must not be widened, so every .js/.mjs stays on ASSIST_RUNTIME_ROOT.
  */
 export function assistRuntimeDataRoot(hostname: string) {
