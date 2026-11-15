@@ -244,12 +244,12 @@ export function useAssistCapture({ giftReferences = [], eventReferences = [], oc
     const { prediction, mode, detection, inference, ocrEngine, floor } = sampleState.current
     return { scene: prediction && { label: prediction.label.slice(0, 40), confidence: prediction.confidence }, mode, detection, inference,
       ocr: ocrEngine && { engine: ocrEngine.engine, adapter: ocrEngine.adapter.slice(0, 80) }, dpr: window.devicePixelRatio,
-      userAgent: navigator.userAgent.slice(0, 400), build: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? null, floor,
+      userAgent: navigator.userAgent.slice(0, 400), build: process.env.NEXT_PUBLIC_BUILD_SHA ?? null, floor,
       session: reportTally.current?.session, language }
   }
   const readReportContext = () => {
     const size = stream.current?.getVideoTracks()[0]?.getSettings()
-    return { build: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? null, mode: sampleState.current.mode,
+    return { build: process.env.NEXT_PUBLIC_BUILD_SHA ?? null, mode: sampleState.current.mode,
       ocr: sampleState.current.ocrEngine?.engine.slice(0, 20) ?? null, width: size?.width ?? null, height: size?.height ?? null, language }
   }
   /** An action Assist finished reading: counted for the report, and its sample group kept (failure) or discarded. */

@@ -34,7 +34,7 @@ Cache Components는 next.config.ts에서 켜져 있다. cacheLife의 page-1m/5m/
 
 ## 정적 셸과 요청 시 렌더링
 
-빌드 후 `.next/server/app/<경로>.meta`에 `postponed`가 있으면 그 페이지는 조회마다 함수를 부른다(`4:null…`은 RSC만, `숫자:[…]`는 HTML 구멍까지). Vercel은 이때 postponed state(프리렌더가 읽은 `'use cache'` 값 포함)를 함수에 POST하고 함수가 나머지를 스트리밍한다. 둘 다 Fast Origin Transfer로 과금된다. `postponed`가 없으면 CDN이 HTML과 RSC를 바로 준다.
+빌드 후 `.next/server/app/<경로>.meta`에 `postponed`가 있으면 그 페이지는 조회마다 함수를 부른다(`4:null…`은 RSC만, `숫자:[…]`는 HTML 구멍까지). `postponed`가 없으면 빌드에서 만든 HTML과 RSC를 바로 준다.
 
 - 루트 `app/not-found.tsx`는 모든 페이지의 RSC에 들어간다. 서버 컴포넌트에서 next-intl의 `NextIntlClientProvider`를 쓰면 빠진 now/timeZone/formats를 요청 설정에서 채우며 `headers()`를 읽어 전 페이지가 요청 시 렌더링된다. 클라이언트 모듈인 `components/providers/IntlClientProvider`를 쓴다.
 - 페이지는 레이아웃과 병렬로 렌더링된다. 페이지에서 locale 없이 부른 `getLocale()`·`getTranslations('ns')`는 레이아웃의 `setRequestLocale`보다 먼저 실행되면 `headers()`를 읽으므로 `params`의 lang을 넘긴다. 두 규칙은 `tests/app/intl-static-rendering.test.tsx`가 검사한다.

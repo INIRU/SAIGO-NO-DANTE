@@ -1,6 +1,5 @@
 import '@/styles/globals/workspaces.css'
 import type { CSSProperties } from 'react'
-import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import MotionProvider from '@/components/ui/MotionProvider'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
@@ -41,7 +40,6 @@ import { ROOT_OMITTED_MESSAGES, omitMessages } from '@/lib/i18n/client-messages'
 import { NAV_BOOT_SCRIPT } from '@/lib/constants/nav-boot'
 import { MEDIA_ORIGIN } from '@/lib/seo/media-origin'
 
-const shouldRenderAnalytics = process.env.VERCEL === '1'
 const toastPositionStyle = {
   '--toast-close-button-start': 'unset',
   '--toast-close-button-end': '0',
@@ -216,7 +214,6 @@ export default async function LangLayout({
           }}
         />
         <ScrollbarHover />
-        {shouldRenderAnalytics ? <Analytics /> : null}
         {process.env.SELF_HOSTED === '1' ? (
           <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token: CLOUDFLARE_WEB_ANALYTICS_TOKEN })} />
         ) : null}

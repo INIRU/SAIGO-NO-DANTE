@@ -71,7 +71,7 @@ function fromCloudFront(headers: Headers): boolean {
 /**
  * The visitor address from the header the host overwrites: on the self-hosted server the CloudFront function's
  * x-viewer-ip when CloudFront sent the request (Cloudflare then sees CloudFront), otherwise Cloudflare's (a client can
- * prefix X-Forwarded-For there); X-Forwarded-For on Vercel (where anyone can send CF-Connecting-IP).
+ * prefix X-Forwarded-For there); X-Forwarded-For elsewhere (local servers, where anyone can send CF-Connecting-IP).
  */
 export function getClientIp(headers: Headers): string | null {
   if (process.env.SELF_HOSTED === '1') {
@@ -93,7 +93,6 @@ export function getRequestMetadata(request: NextRequest | Request): RequestMetad
     ipMasked: maskIp(normalizedIp),
     userAgentHash: keyedHash(userAgent),
     country:
-      getCountryHeaderValue(headers.get('x-vercel-ip-country')) ??
       getCountryHeaderValue(headers.get('cf-ipcountry')) ??
       getCountryHeaderValue(headers.get('x-country-code')),
   }

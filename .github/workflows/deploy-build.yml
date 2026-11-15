@@ -31,7 +31,7 @@ jobs:
         env:
           SELF_HOSTED: '1'
           NEXT_TELEMETRY_DISABLED: '1'
-          NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
+          NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
@@ -41,7 +41,7 @@ jobs:
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
       # The standalone output plus the files Next leaves out of it. The deployed site reads the recognition model data
-      # from Storage (same list as .vercelignore), so it is not shipped.
+      # from Storage (features/assist/lib/model-assets.ts), so it is not shipped. Scripts (.js, .mjs) stay: script-src is 'self'.
       - name: Package the standalone app
         run: |
           S=.next/standalone

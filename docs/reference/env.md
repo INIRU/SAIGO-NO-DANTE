@@ -51,7 +51,7 @@
 
 | 이름 | 용도 | 노출 | 쓰는 곳 |
 |---|---|---|---|
-| `SELF_HOSTED` | `1`이면 자체 서버용 설정을 켠다(HTTPS 전용 헤더, 독립 실행 빌드, 이미지 주소, 방문자 주소를 프록시 헤더에서 읽기). Vercel은 `VERCEL=1`을 스스로 넣는다 | 서버 전용 | `next.config.ts`, `app/[lang]/layout.tsx`, `lib/request-meta.ts` |
+| `SELF_HOSTED` | `1`이면 자체 서버용 설정을 켠다(HTTPS 전용 헤더, 독립 실행 빌드, 이미지 주소, 방문자 주소를 프록시 헤더에서 읽기) | 서버 전용 | `next.config.ts`, `app/[lang]/layout.tsx`, `lib/request-meta.ts` |
 | `ORIGIN_VERIFY_SECRET` | CloudFront가 보내는 `X-Origin-Verify` 값. 이 값이 맞을 때만 `x-viewer-ip`를 방문자 주소로 믿는다 | 서버 전용 | `lib/request-meta.ts` |
 
 ## 브라우저 알림(web-push)
@@ -63,16 +63,6 @@
 | `VAPID_PUBLIC_KEY` | 알림 구독 확인용 공개 키 | 서버 전용(알림 구독 때 `/api/push/subscribe` 응답으로 브라우저에 전달) | `lib/push/send.ts` |
 | `VAPID_PRIVATE_KEY` | 알림에 서명하는 비밀 키 | 서버 전용 | `lib/push/send.ts` |
 | `VAPID_SUBJECT` | 알림 보내는 쪽의 연락처(`mailto:` 주소) | 서버 전용 | `lib/push/send.ts` |
-
-## 점검 목록(Vercel Edge Config)
-
-둘 다 있어야 쓴다. 없으면 점검 목록을 Supabase에서 읽는다(현재 자체 서버가 이 경우).
-
-| 이름 | 용도 | 노출 | 쓰는 곳 |
-|---|---|---|---|
-| `EDGE_CONFIG` | Edge Config 연결 문자열 | 서버 전용 | `lib/maintenance.ts`, `features/admin/server/maintenance-edge.ts` |
-| `VERCEL_API_TOKEN` | 점검 목록을 Edge Config에 올릴 Vercel 접근 토큰 | 서버 전용 | `features/admin/server/maintenance-edge.ts`, `app/api/admin/maintenance/route.ts` |
-| `VERCEL_TEAM_ID` | 위 토큰의 Vercel 팀 번호 | 서버 전용 | `features/admin/server/maintenance-edge.ts` |
 
 ## 오류 추적(Sentry, 선택)
 
@@ -98,10 +88,8 @@
 |---|---|---|---|
 | `NEXT_PUBLIC_AD_PREVIEW` | `1`이면 개발 중이 아닌 빌드에서도 광고 자리를 미리 그린다 | 공개 | `components/ads/AdSlot.tsx` |
 | `NEXT_PUBLIC_PRESCRIPT_MODE` | `1`이면 보류 중인 지침서 모드를 운영에서도 연다(개발에서는 항상 열림) | 공개 | `lib/fun/prescript-flag.ts` |
-| `NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA` | 어시스트 오류 보고에 담는 빌드 커밋 | 공개 | `features/assist/hooks/useAssistCapture.ts` |
+| `NEXT_PUBLIC_BUILD_SHA` | 어시스트 오류 보고에 담는 빌드 커밋. Deploy build와 서버 배포 스크립트가 넣는다 | 공개 | `features/assist/hooks/useAssistCapture.ts` |
 | `SKIP_BUILD_TYPECHECK` | `1`이면 빌드 중 타입 검사를 건너뛴다. 서버 배포 스크립트가 넣고, 타입 검사는 CI가 맡는다 | 서버 전용(빌드) | `next.config.ts` |
-| `VERCEL` | Vercel이 스스로 넣는 값. `1`이면 Vercel 분석과 HTTPS 설정을 켠다 | 서버 전용 | `next.config.ts`, `app/[lang]/layout.tsx` |
-
 ## 새 변수를 더할 때
 
 1. 코드에서 읽는다. 브라우저가 읽어야 하면 `NEXT_PUBLIC_` 이름을, 비밀이면 접두사 없는 이름을 쓴다.
