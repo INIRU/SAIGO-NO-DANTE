@@ -1,8 +1,0 @@
-# Assist recognition models: a deployed site reads them from Supabase Storage (features/assist/lib/model-assets.ts,
-# `npm run upload:assist-models`); a local dev server reads these copies.
-public/models/**/*.onnx
-public/models/**/*.json
-# Runtime data fetched (not run as a script) by the workers: also in Storage, under runtime/<ASSIST_RUNTIME_VERSION>/.
-# Scripts (.js, .mjs) stay in the deployment: script-src allows only this origin.
-public/models/**/*.wasm
-public/models/**/*.traineddata.gz

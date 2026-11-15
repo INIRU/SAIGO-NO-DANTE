@@ -25,7 +25,6 @@ export default function AdminMaintenance() {
   const t = useTranslations('adminShell')
   const L = (ko: string, ja: string, en: string) => (locale === 'ko' ? ko : locale === 'ja' ? ja : en)
   const [items, setItems] = useState<MaintenanceRow[]>([])
-  const [edge, setEdge] = useState(false)
   const [error, setError] = useState('')
   const [selected, setSelected] = useState<MaintenanceRow | 'new' | null>(null)
   const [draft, setDraft] = useState<Draft>(EMPTY)
@@ -40,7 +39,6 @@ export default function AdminMaintenance() {
       if (!r.ok) throw Error()
       const body = await r.json()
       setItems(body.items)
-      setEdge(body.edge)
       setError('')
     } catch {
       setError(failure)
@@ -65,11 +63,6 @@ export default function AdminMaintenance() {
     set({ ends: toLocalInput(new Date(base.getTime() + minutes * 60_000).toISOString()) })
   }
 
-  function reportEdge(result: string) {
-    if (result === 'failed') showError(L('저장했지만 Edge Config에 반영하지 못했습니다. 다시 저장해 주세요.', '保存しましたがEdge Configへの反映に失敗しました。', 'Saved, but Edge Config was not updated. Save again.'))
-    else showSuccess(result === 'synced' ? L('저장했습니다. 바로 반영됩니다.', '保存しました。すぐに反映されます。', 'Saved. Applies right away.') : L('저장했습니다. 15초 안에 반영됩니다.', '保存しました。15秒以内に反映されます。', 'Saved. Applies within 15 seconds.'))
-  }
-
   async function save() {
     if (!selected) return
     setBusy(true)
@@ -85,7 +78,8 @@ export default function AdminMaintenance() {
       })
       const row = await r.json()
       if (!r.ok) throw Error(row.error)
-      reportEdge(row.edge)
+      // The proxy reuses the list for MAINTENANCE_TTL_MS (60s) per instance.
+      showSuccess(L('저장했습니다. 1분 안에 반영됩니다.', '保存しました。1分以内に反映されます。', 'Saved. Applies within a minute.'))
       open(row)
       await load()
     } catch (e) {
@@ -131,9 +125,7 @@ export default function AdminMaintenance() {
         <div>
           <h1>{L('점검 관리', 'メンテナンス管理', 'Maintenance')}</h1>
           <p>
-            {edge
-              ? L('Edge Config로 저장 즉시 반영됩니다. 관리자는 점검 중에도 사이트를 볼 수 있습니다.', 'Edge Configで即時反映。管理者はメンテナンス中も閲覧できます。', 'Applied instantly through Edge Config. Admins can still browse.')
-              : L('저장 후 15초 안에 반영됩니다. 관리자는 점검 중에도 사이트를 볼 수 있습니다.', '保存後15秒以内に反映。管理者はメンテナンス中も閲覧できます。', 'Applies within 15 seconds. Admins can still browse.')}
+            {L('저장 후 1분 안에 반영됩니다. 관리자는 점검 중에도 사이트를 볼 수 있습니다.', '保存後1分以内に反映。管理者はメンテナンス中も閲覧できます。', 'Applies within a minute. Admins can still browse.')}
           </p>
         </div>
         <div className="admin-topbar-actions">

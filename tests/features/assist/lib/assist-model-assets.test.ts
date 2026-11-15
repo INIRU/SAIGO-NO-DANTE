@@ -37,12 +37,9 @@ describe('runtimes are served by the site itself', () => {
     expect(scripts['build:assist-worker']).toMatch(/ort-wasm-simd-threaded\.asyncify\.mjs .*ort-wasm-simd-threaded\.asyncify\.wasm public\/models\/assist-scene\//)
     expect(scripts['build:assist-ocr']).toMatch(/tesseract\.js-core\/\*-lstm\.wasm\.js public\/models\/assist-ocr\/core\//)
     expect(scripts['build:assist-ocr']).toMatch(/kor\.traineddata\.gz .*public\/models\/assist-ocr\/lang\//)
-    const ignored = text('.vercelignore')
-    expect(ignored).toContain('public/models/**/*.onnx')
-    expect(ignored).toContain('public/models/**/*.json')
-    expect(ignored).toContain('public/models/**/*.wasm')
-    expect(ignored).toContain('public/models/**/*.traineddata.gz')
-    expect(ignored.split('\n').filter(row => !row.startsWith('#')).join('\n')).not.toMatch(/\.mjs|\.js\b/)
+    const removed = text('.github/workflows/deploy-build.yml').split('\n').find(row => row.includes('find "$S/public/models"'))!
+    for (const pattern of ["'*.onnx'", "'*.json'", "'*.wasm'", "'*.traineddata.gz'"]) expect(removed).toContain(pattern)
+    expect(removed).not.toMatch(/\.mjs|\.js'/)
   })
 
   it('the CSP adds no CDN for scripts', () => {
@@ -79,7 +76,7 @@ describe('runtime data files come from Storage, runtime scripts stay on this ori
   it('script-src gains no external host besides the visitor analytics beacons and the AdSense code', () => {
     const config = text('next.config.ts')
     const line = config.split('\n').find(row => row.includes('script-src'))!
-    expect(line.match(/https?:\/\/[^\s`"']+/g)).toEqual(['https://va.vercel-scripts.com', 'https://static.cloudflareinsights.com'])
+    expect(line.match(/https?:\/\/[^\s`"']+/g)).toEqual(['https://static.cloudflareinsights.com'])
     // The only other source is ADSENSE_HOSTS, and it names nothing but Google's ad hosts.
     expect(line.replace(/https?:\/\/[^\s`"']+/g, '')).toMatch(/\$\{ADSENSE_HOSTS\}`,$/)
     const adsense = config.match(/ADSENSE_HOSTS = '([^']+)'/)![1].split(' ')

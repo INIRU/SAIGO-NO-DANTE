@@ -14,7 +14,7 @@ else
   cd "$SRC"; npm ci --no-audit --no-fund --loglevel=error
   # Type checking is the job of CI. Here TypeScript 7 ran its own tsc (~1.75GB) next to the build and the live app, ran
   # the box out of memory and froze the site (2026-10-22). nice keeps the live site responsive.
-  if ! SKIP_BUILD_TYPECHECK=1 NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA="$SHA" NODE_OPTIONS=--max-old-space-size=3072 NEXT_TELEMETRY_DISABLED=1 nice -n 10 npm run build > ~/saigo/build.log 2>&1; then
+  if ! SKIP_BUILD_TYPECHECK=1 NEXT_PUBLIC_BUILD_SHA="$SHA" NODE_OPTIONS=--max-old-space-size=3072 NEXT_TELEMETRY_DISABLED=1 nice -n 10 npm run build > ~/saigo/build.log 2>&1; then
     tail -30 ~/saigo/build.log; echo "build failed, live app untouched"; exit 1
   fi
   cp -R .next/standalone/. "$NEW/"; cp -R .next/static "$NEW/.next/static"; cp -R public/. "$NEW/public/"

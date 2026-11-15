@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { maintenanceSchema, syncMaintenanceToEdge } from '@/features/admin/server'
+import { maintenanceSchema } from '@/features/admin/server'
 
 export async function GET() {
   const auth = await requireAdmin()
@@ -13,8 +13,7 @@ export async function GET() {
     .order('created_at', { ascending: false })
     .limit(100)
   if (error) return NextResponse.json({ error: '점검 목록을 불러오지 못했습니다.' }, { status: 500 })
-  const edge = Boolean(process.env.EDGE_CONFIG && process.env.VERCEL_API_TOKEN)
-  return NextResponse.json({ items: data, edge }, { headers: { 'Cache-Control': 'private, no-store' } })
+  return NextResponse.json({ items: data }, { headers: { 'Cache-Control': 'private, no-store' } })
 }
 
 export async function POST(request: Request) {
@@ -29,5 +28,5 @@ export async function POST(request: Request) {
     .select()
     .single()
   if (error) return NextResponse.json({ error: '점검을 저장하지 못했습니다.' }, { status: 500 })
-  return NextResponse.json({ ...data, edge: await syncMaintenanceToEdge() }, { status: 201 })
+  return NextResponse.json(data, { status: 201 })
 }
