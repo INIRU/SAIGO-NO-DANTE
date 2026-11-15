@@ -17,6 +17,7 @@ import { getGiftKeywordIconUrl, getGiftKeywordSlug } from '@/lib/constants/gift'
 import { GIFT_KEYWORD_ORDER } from '@/features/mirror-dungeon/lib/gift-check'
 import { PINNED_GROUP, countGiftGroups, filterAndSortGifts, groupGifts } from '@/features/mirror-dungeon/lib/gift-catalog-sort'
 import SuggestionRibbon from '@/components/ui/SuggestionRibbon'
+import GiftGrade from '@/components/ui/GiftGrade'
 
 const PAGE_SIZE = 40
 
@@ -82,7 +83,7 @@ export function GiftGradeChip({ grade, ariaLabel, active, count, onClick }: {
         background: active ? 'rgba(200,144,10,0.14)' : 'transparent',
       }}
     >
-      {GRADE_LABELS[grade] ?? grade}
+      <GiftGrade grade={grade} style={{ fontSize: '1.125rem', opacity: active ? 1 : 0.55 }} />
       {count !== undefined && <span className="tabular-nums" style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', letterSpacing: 0, color: active ? '#b9aa98' : 'var(--text-muted)' }}>{count}</span>}
     </button>
   )
@@ -691,7 +692,7 @@ export default function GiftCatalog({
                       </>
                     ) : (
                       <>
-                        <span style={{ color: 'var(--gold-light)', fontFamily: 'var(--font-title)', fontSize: '1.5rem', lineHeight: 1 }}>{group.key}</span>
+                        <GiftGrade grade={group.key} style={{ fontSize: '1.5rem' }} />
                         <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>{t('mirrorDungeon.filter.grade')}</span>
                       </>
                     )}
