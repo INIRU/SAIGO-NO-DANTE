@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { isMaintenanceOpen, maintenanceEdgeReadUrl, maintenanceStatus } from '@/lib/maintenance'
+import * as maintenance from '@/lib/maintenance'
+
+const { isMaintenanceOpen, maintenanceStatus } = maintenance
 
 const now = new Date('2026-09-28T03:00:00Z')
 
@@ -18,9 +20,8 @@ describe('maintenance windows', () => {
     expect(maintenanceStatus({ is_active: true, starts_at: null, ends_at: null }, now)).toBe('live')
   })
 
-  it('reads Edge Config only when the admin API can also write it', () => {
-    const EDGE_CONFIG = 'https://edge-config.vercel.com/ecfg_abc?token=t1'
-    expect(maintenanceEdgeReadUrl({ EDGE_CONFIG })).toBeNull()
-    expect(maintenanceEdgeReadUrl({ EDGE_CONFIG, VERCEL_API_TOKEN: 'x' })).toBe('https://edge-config.vercel.com/ecfg_abc/item/maintenance?token=t1')
+  it('the proxy reads only Supabase: no Edge Config path is left', () => {
+    expect(Object.keys(maintenance)).not.toContain('maintenanceEdgeReadUrl')
+    expect(Object.keys(maintenance)).not.toContain('MAINTENANCE_EDGE_KEY')
   })
 })

@@ -18,7 +18,7 @@
 - 인식 모델(`public/models`의 `.onnx`·`.json`)
   - 배포된 사이트는 Supabase Storage `limbus-assets/models/<버전>/`에서 받는다.
   - 로컬 개발 서버(localhost)는 `public/models`를 읽는다.
-  - 자체 서버에는 저장소의 모델 파일도 함께 올라가지만, 접속 주소가 localhost가 아니면 쓰지 않는다(`.vercelignore`는 예전 Vercel 배포용이다). 화면·OCR 원문을 서버로 보내거나 기록하지 않는다.
+  - 배포 빌드(`.github/workflows/deploy-build.yml`)는 모델 파일을 빼고 올리고, 접속 주소가 localhost가 아니면 Storage에서 읽는다. 화면·OCR 원문을 서버로 보내거나 기록하지 않는다.
 
 읽은 글자는 기프트 이름, 이벤트 지문과 선택지 문구의 후보를 찾는 데만 사용한다. 짧은 일반 문구와 다른 이벤트가 공유하는 선택지는 보수적으로 제외한다. OCR 후보는 6초 후 만료되며 이미지 후보와 합치되 두 점수를 직접 비교하지 않는다. 획득과 선택 기록은 자동으로 변경하지 않는다. OCR 초기화에 실패해도 기존 이미지 인식은 계속된다.
 

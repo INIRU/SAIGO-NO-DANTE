@@ -16,8 +16,7 @@
     "perf:sizes": "node scripts/perf/route-sizes.mjs",
     "perf:lighthouse": "node scripts/perf/lighthouse.mjs",
     "perf:budget": "node scripts/perf/route-sizes.mjs --budget perf-budget.json",
-    "audit:data": "tsx scripts/audit/data-integrity.ts",
-    "env:pull": "vercel env pull .env.local"
+    "audit:data": "tsx scripts/audit/data-integrity.ts"
   },
   "dependencies": {
     "@chenglou/pretext": "^1.0.0",
@@ -32,7 +31,6 @@
     "@tiptap/extension-table": "3.32.0",
     "@tiptap/react": "^3.32.0",
     "@tiptap/starter-kit": "^3.32.0",
-    "@vercel/analytics": "^2.0.1",
     "gifenc": "^1.0.3",
     "html2canvas": "^1.4.1",
     "lucide-react": "^1.61.0",

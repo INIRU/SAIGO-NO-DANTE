@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { maintenanceSchema, syncMaintenanceToEdge } from '@/features/admin/server'
+import { maintenanceSchema } from '@/features/admin/server'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -26,7 +26,7 @@ export async function PATCH(request: Request, { params }: Params) {
     .maybeSingle()
   if (error) return NextResponse.json({ error: '점검을 저장하지 못했습니다.' }, { status: 500 })
   if (!data) return NextResponse.json({ error: '점검을 찾지 못했습니다.' }, { status: 404 })
-  return NextResponse.json({ ...data, edge: await syncMaintenanceToEdge() })
+  return NextResponse.json(data)
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
@@ -36,5 +36,5 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (!id) return NextResponse.json({ error: '잘못된 점검입니다.' }, { status: 400 })
   const { error } = await createAdminClient().schema('limbus').from('site_maintenance').delete().eq('id', id)
   if (error) return NextResponse.json({ error: '점검을 삭제하지 못했습니다.' }, { status: 500 })
-  return NextResponse.json({ ok: true, edge: await syncMaintenanceToEdge() })
+  return NextResponse.json({ ok: true })
 }
