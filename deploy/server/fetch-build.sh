@@ -3,9 +3,10 @@
 # Downloads the site.tgz the "Deploy build" workflow made for <sha> (.github/workflows/deploy-build.yml).
 # Exit 0: downloaded to <out.tgz>. 10: the GitHub build is not finished (try later). 20: no usable build (build here).
 # 30: the GitHub build failed (do not deploy this commit). A run GitHub never started (billing) counts as 20.
-# Needs ~/saigo/github-token: a fine-grained token with read access to this repository's Actions.
+# Needs ~/saigo/github-token: a fine-grained token with read access to this repository's Actions. Its resource owner must
+# be the SAIGO-NO-DANTE organization: a token made for a personal account gets 403 here (the repo moved, 2026-11-15).
 set -uo pipefail
-SHA="$1"; OUT="$2"; REPO=INIRU/SAIGO-NO-DANTE; TOKEN_FILE=~/saigo/github-token
+SHA="$1"; OUT="$2"; REPO=SAIGO-NO-DANTE/SAIGO-NO-DANTE; TOKEN_FILE=~/saigo/github-token
 [ -s "$TOKEN_FILE" ] || exit 20
 AUTH="Authorization: Bearer $(cat "$TOKEN_FILE")"
 api() { curl -sSf -H "$AUTH" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$REPO/$1"; }
