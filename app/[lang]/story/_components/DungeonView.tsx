@@ -241,7 +241,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
     // StoryDungeonNodeClearState_Default.GetLineState: DEFAULT (0) when either end is blocked, else CLEARED (2) (every
     // room is cleared); a picked room only gets the Outline and the moving token (MoveCamAndExecuteEncounterWithMovingIcon)
     const lineColor = (l: VLine): RGBA => (blocked(l.a) || blocked(l.b) ? lineSet?.['0'] : lineSet?.['2']) ?? [0.6275, 0.7922, 0.2471, 1]
-    // Cleared lines in the game's material (LineUIManager.mat_clearedLine, the dissolve with its noise). VIEWER (USER
+    // Cleared lines in the game's material (the dissolve with its noise). VIEWER (USER
     // 2026-11-08): the board lagged with the bloom pass on, so there is no bloom; a soft halo line under each line (wider,
     // faint orange) stands in for the glow the bloom gave
     const fx = !!ui.lineCleared
@@ -421,7 +421,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
       // MapFloor._mapFog over a floor the party is not on (SetMapFogActive)
       if (f.fi !== floor && f.fog) push(f.fog.over ? 1e6 : 1, { k: 'img', tex: '', color: f.fog.color, rect: f.fog.rect }, f.fog.lift)
     }
-    // PlayerToken (MapManager._tokenManager): its pivot on the current room's centre, tilted to face the camera
+    // PlayerToken: its pivot on the current room's centre, tilted to face the camera
     const tf = floors.find(f => f.nodes.some(m => m.id === here)), tn = tf?.nodes.find(m => m.id === here)
     fy = floorY(tf?.fi ?? 0)
     if (tn) push(3, { k: 'token', tex: sp(ui.token.sprite), at: [tn.rect[0], tn.rect[1]], size: ui.token.size, pivot: ui.token.pivot, tilt: ui.token.tilt, preserveAspect: ui.token.preserveAspect })

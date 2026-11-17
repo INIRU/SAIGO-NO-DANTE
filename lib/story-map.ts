@@ -217,7 +217,7 @@ export interface StoryDungeonUI {
   }>
   /** follow: the camera's move to a room (MoveCamAndExecuteEncounter): _CAM_FOLLOWING_DURATION and _moveAnimCurve keys [time, value, inSlope, outSlope] */
   camera: { fov: number; pitch: number; offset: [number, number, number]; zoomSpeed: number; moveSensitivity: number; follow?: { duration: number; curve: [number, number, number, number][] } }
-  /** MapManager._tokenManager: the PlayerToken RectTransform (map units) and its Image */
+  /** The PlayerToken RectTransform (map units) and its Image */
   token: { size: [number, number]; pivot: [number, number]; tilt: number; sprite: string; preserveAspect: boolean }
   /** [Script]MapCanvas: its size and its world z (the map's y 0 sits there) */
   canvas?: { size: [number, number]; z: number }
@@ -226,7 +226,7 @@ export interface StoryDungeonUI {
   /** NodeUI: [Image]selectBG and Outline (sliced) on the selected room, their sizes the room's plus `grow` */
   select?: { bg: { grow: [number, number]; color: RGBA }; outline: { grow: [number, number]; sprite: string; color: RGBA; slice: DungeonSlice | null } }
   clearMark?: { sprite: string; size: [number, number]; color: RGBA }
-  /** LineUIManager.mat_clearedLine (FX_Grp_0_Master_Dissolve): its properties and textures (ui/fx/), drawn at sorting order `order` */
+  /** The cleared-line material (FX_Grp_0_Master_Dissolve): its properties and textures (ui/fx/), drawn at sorting order `order` */
   lineCleared?: { material: string; shader: string | null; floats: Record<string, number>; colors: Record<string, number[]>; textures: Record<string, { file: string; wrap: [number, number] }>; order: number }
   /** The dungeon camera's URP post-processing (only Bloom is set) */
   post?: { bloom: { threshold: number; intensity: number; scatter: number; clamp: number; tint: number[]; highQuality: boolean; downscale: string; maxIterations: number; skipIterations: number } }
