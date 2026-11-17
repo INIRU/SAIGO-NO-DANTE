@@ -1,4 +1,4 @@
-/** What the developer tools tell a key holder about /api/v1: endpoints, fields, examples and errors. The API itself is described in docs/reference/partner-api.md. */
+/** What the developer tools tell a key holder about /api/v1: endpoints, fields, examples and errors. */
 export type Text = { ko: string; en: string; ja: string };
 export type Field = { name: string; type: string; required?: boolean; text: Text };
 export type Scope = "catalog:read" | "news:write";

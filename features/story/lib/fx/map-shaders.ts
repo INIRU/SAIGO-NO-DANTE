@@ -1,5 +1,4 @@
-// The stage map effects' Shader Graphs, translated from their DX11 disassembly (Limbus Assets
-// out/_story_map/fx/<subchapter>_<stage>/shaders/*.fp.asm, pipeline/story_map_fx.py). The vertex inputs are those of
+// The stage map effects' shaders, rewritten for the browser. The vertex inputs are those of
 // shaders.ts: TEXCOORD0.xy = vUV; with the renderer's custom streams [.., UV, StableRandomXY] TEXCOORD0.zw = vRand;
 // [.., UV, Custom1XY, StableRandomXY] TEXCOORD0.zw = vC1.xy and TEXCOORD1.xy = vRand; COLOR = vColor. Each graph runs
 // its colours through a linear → sRGB node (srgb() here) and blends SrcAlpha / OneMinusSrcAlpha: output premultiplied.

@@ -10,7 +10,7 @@ export interface FxView { size: { w: number; h: number }; cam: { x: number; y: n
   sync?: () => void }
 
 // The stage map drawn on the GPU (PixiJS, WebGPU where the browser has it, else WebGL): the map tiles, and over them the
-// chapter's effect (MainUI.StageMapBackgroundManager: the prefab StageMapEffect_<subchapter>_<stage>,
+// chapter's effect (the prefab StageMapEffect_<subchapter>_<stage>,
 // pipeline/story_map_fx.py) played by the game's particle runtime (features/story/lib/fx). The prefab's positions are map pixels
 // from the map centre (DATA: the 4-54 portal at node 10454 minus the centre, off by 1 px in x and 12 in y). GUESS: the
 // viewer shows a map whose stages are all cleared, so the highest stage's prefab.
@@ -21,7 +21,7 @@ const STRIDE = 2028, TILE = 2048
 export default function StoryFx({ effectId, base, rows, cols, tiles, mapId, view, at, onGround }: {
   effectId: number; base: string; rows: number; cols: number; tiles: [number, number][]; mapId: number
   view: React.RefObject<FxView | null>
-  /** StageMapBackgroundManager.CreateMapEffect: the effect's anchor in map pixels from the bottom left when the chapter
+  /** The effect's anchor in map pixels from the bottom left when the chapter
    * sets one (main-stage-map-setting effectPosition), else the map's centre */
   at?: [number, number]
   /** The canvas draws the tiles from now on (true), or could not start (false): StoryMap drops or keeps its <img>s */

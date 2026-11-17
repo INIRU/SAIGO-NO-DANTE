@@ -1,4 +1,4 @@
-// The stage map camera as the game moves it: StageMapScrollRect.SetContentAnchoredPosition (11-05 build 0x18143ba60).
+// The stage map camera as the game moves it.
 // [ScrollView]StageMap is the 3000 x 1350 panel; its Content is anchored at the viewport's top-left with pivot (0, 0),
 // so the content's anchored position is minus the viewport's top-left corner in map pixels (y from the bottom). The
 // camera centre used here is the viewport's centre. Map tiles are 2048 px drawn every 2028 px (map cols*2028+20 wide).

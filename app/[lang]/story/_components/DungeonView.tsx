@@ -47,7 +47,7 @@ function evalCurve(keys: [number, number, number, number][], x: number, post?: n
 }
 // DungeonNodeUIButton.StartScaleIcon: rect_iconFrame to _maxScaleSize 1.2 in _scaleDuration 0.25 s along _scaleCurve
 const HOVER_SCALE = 1.2, HOVER_TIME = 0.25
-// MapSpawnManager.InstantiateMapFloor: floor i moved by (0, 0, i * 5) in the map canvas's space, 5 i below the first
+// Floor i is moved by (0, 0, i * 5) in the map canvas's space, 5 i below the first
 const FLOOR_STEP = 5
 const floorY = (fi: number) => -FLOOR_STEP * fi
 
@@ -127,7 +127,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
     return () => window.removeEventListener('keydown', esc)
   }, [onClose, onRoom, room])
 
-  // Every floor: the game spawns them all on one map canvas (MapSpawnManager.InstantiateAllFloors), one below the
+  // Every floor: the game spawns them all on one map canvas, one below the
   // other along the map's y; the floors the party is not on are under their MapFloor._mapFog (SetMapFogActive)
   const floors = useMemo((): FView[] => (d?.floors ?? []).map((fl, fi) => {
     const byId = new Map(fl.nodes.map(n => [n.id, n]))
@@ -174,7 +174,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
     const dx = reset ? 15 * 0.7 * Math.tan((fov * Math.PI) / 360) * aspect : 0
     return { x: r[0] + dx, h: off[1] + (camData?.addY ?? 0) + floorY(fi), zc: r[1] + off[2] }
   }
-  // DungeonCameraManager.GetDefaultZoomFOV: defaultZoomFOV when it is not 0, else minZoomFOV (1~8장: 30)
+  // Default zoom: defaultZoomFOV when it is not 0, else minZoomFOV (1~8장: 30)
   const baseFov = camData ? camData.fov || camData.minFov : ui?.camera.fov ?? 30
   const startOf = (f: FView | null | undefined) => f?.nodes.find(n => n.enc === 0) ?? f?.nodes[0]
   const startNode = startOf(view)
@@ -216,7 +216,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
   // [Image]selectBG, Outline, IconFrame with Icon and StartTypo, ClearMark).
   // VIEWER (USER 2026-11-08: every room shown): the map as the game draws a run with every room cleared (save pnids:
   // the state in which the game shows every room, checked in the running game): ClearMark on every room, every line
-  // CLEARED (LineUIManager.mat_clearedLine), a BOSS room in its abnormality's icon and sin colour (NodeUI.UpdateData);
+  // CLEARED (the cleared-line material), a BOSS room in its abnormality's icon and sin colour;
   // the party stands on the floor's START.
   const hover = useRef<{ id: number | null; k: Map<number, number> }>({ id: null, k: new Map() })
   // when the map was shown: the area names' sparkle starts there (OnEnable)
@@ -293,7 +293,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
         const tex = p.illust && (f.bg || cleared) ? `${base}/dungeon/${id}/${isTouch() ? 'h/' : ''}${cleared ? `map_${cleared}` : f.fi}.webp` : p.sprite ? sp(p.sprite) : null
         if (tex) push(p.order ?? 1, { k: 'img', tex, color: p.color, rect: p.rect, clip: p.clip, slice: p.slice, fit: p.fit }, p.lift)
       }
-      // NodeUIManager.UpdataNodeUIDatas: a hidden room the save has not unlocked (the open list holds only the room just
+      // A hidden room the save has not unlocked (the open list holds only the room just
       // left, so a finished dungeon entered again has none) is closed with the lines filed under it (CloseLine(room))
       const shut = (l: VLine) => l.from != null && hiddenIds.has(l.from)
       for (const l of f.lines) if (l.pts.length > 1 && l.width > 0 && !shut(l)) {
@@ -303,7 +303,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
       }
       // the lines' door caps (Lines/line_<a>_<b>/Door), before the rooms
       for (const l of f.lines) if (!shut(l)) for (const dr of l.doors) door(dr, 1)
-      // Image lines (StoryDungeonLineImageUI.SetColor: the LINE_STATE colour on each Image)
+      // Image lines (the LINE_STATE colour on each Image)
       for (const l of f.lines) if (!shut(l)) for (const im of l.imgs ?? []) {
         const c = lineColor(l)
         // FX_M_UI_DungeonLine1 (Fx_Grp_Trail_Simple_Shader, no sprite): rgb = colour x _White_Intensity + _Black_Intensity, opaque
@@ -312,7 +312,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
       }
       for (const n of f.nodes) {
         const e = encSet?.[String(n.enc)]
-        // a cleared BOSS room: its first enemy's sin colour (UIColorManager.GetAttributeTypeColor; NONE:
+        // a cleared BOSS room: its first enemy's sin colour (NONE:
         // _uiTextDarkColor) on panel, frame and icon, and the prefab's own Icon sprite (no SetNodeIconByEncounter)
         const boss = n.enc === 6 && n.bossAttr && ui.sinColors ? ui.sinColors[n.bossAttr] ?? ui.sinColors.NONE : null
         const nodeColor = boss ?? e?.node ?? ui.nodeDefault ?? WHITE
@@ -328,7 +328,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
         const mset = mirror ? (n.enc === 2 || n.enc === 14 ? mirror.sets.hard : n.enc === 6 ? mirror.sets.boss : mirror.sets.normal) : null
         const mstate = mset ? (here === n.id ? mset.currentCleared : mset.passed) : null
         if (n.parts) {
-          // 7장-style rooms, part by part in hierarchy order (NodeUI / StoryDungeonIllustNodeUI.UpdateData, a cleared
+          // 7장-style rooms, part by part in hierarchy order (a cleared
           // room: StoryDungeonNodeGrayscale on: its grey on the colour targets, UI/Grayscale on the material targets)
           const g = n.gray
           const draw = (parts: DungeonPart[], mask?: { tex: string; rect: DungeonRect; fit?: boolean }) => {
@@ -385,7 +385,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
         const k = hv.k.get(n.id) ?? 0, sc = 1 + (HOVER_SCALE - 1) * k * k * (3 - 2 * k)
         push(1, { k: 'img', tex: sp('MainUI_MainDungeon_icon_frame'), color: nodeColor, rect: [r[0], r[1], n.frame[0] * sc, n.frame[1] * sc], fit: n.frameFit })
         if (glyph) push(1, { k: 'img', tex: sp(glyph), color: iconColor, rect: [r[0], r[1], n.icon[0] * sc, n.icon[1] * sc], fit: n.iconFit })
-        // StartTypo (shown for START: NodeUI.UpdateData): stretched over IconFrame less (0.2, 0.9)
+        // StartTypo (shown for START): stretched over IconFrame less (0.2, 0.9)
         if (n.enc === 0 && ui.startTypo?.file) {
           push(1, { k: 'text', text: ui.startTypo.text, font: `${base}/${ui.startTypo.file}`, size: ui.startTypo.size, color: ui.startTypo.color,
             rect: [r[0], r[1], n.frame[0] - 0.2, n.frame[1] - 0.9], scale: sc })
@@ -396,7 +396,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
         }
       }
       // MapTexts (after Nodes in the floor): the area names in the language's font, their alpha sparkling
-      // (StoryDungeonAreaTextManager.SparkleEffect, every name on the same beat from the floor's start)
+      // (every name on the same beat from the floor's start)
       // each label's font for the language (TextMeshProLanguageSetter, exported from the game), else the old default
       const faceOf = (t: { fonts?: Partial<Record<'ko' | 'en' | 'ja', string>> }) => {
         const ff = ui.fontFaces?.[t.fonts?.[lang] ?? '']
@@ -490,7 +490,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
     return null
   }
 
-  // DungeonCameraManager.MoveCamera while the button is held: x = GetAxis("Mouse X") * deltaTime * _camMovingSensitivity,
+  // Dragging while the button is held: x = GetAxis("Mouse X") * deltaTime * _camMovingSensitivity,
   // y likewise with "Mouse Y" (InputManager: 0.1 per pixel); Transform.Translate((-x, 0, -y), Space.World): a flat
   // pan, the height kept; a move that would leave CameraMovingArea (world x, world z) is dropped. deltaTime: one frame
   // at Application.targetFrameRate 60 (vSyncCount 0).
@@ -556,7 +556,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
     drag.current = null
     if (g && !g.moved) { const nid = roomAt(...local(e.clientX, e.clientY)); if (nid != null) pick(nid) }
   }
-  // DungeonCameraManager.Zoom: fov -= deltaTime * _zoomSpeed * mouseScrollDelta.y, clamped to [min, max]. One wheel
+  // Wheel zoom: fov -= deltaTime * _zoomSpeed * mouseScrollDelta.y, clamped to [min, max]. One wheel
   // notch is a scroll delta of 1 (the browser's deltaY 100, or 3 lines); deltaTime: one 60 fps frame.
   const onWheel = (e: React.WheelEvent) => {
     if (!camData || !ui) return

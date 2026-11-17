@@ -17,7 +17,7 @@ const ARROW_GAP = 70
 const TRAIN_W = 104
 const TRAIN_H = 179
 
-// MainUI.StageMapUIPanel (11-05 build): StartZoomMap scales by _zoomCurve over 1 s; StartMoveMap moves the map every
+// Zooming scales by _zoomCurve over 1 s; moving goes every
 // frame by pos += (target - pos) * elapsed until elapsed reaches 1 s. _zoomCurve keys from the [UIPanel]StageMapUIPanel
 // prefab (sharedassets2): [time, value, inSlope, outSlope].
 const ZOOM_CURVE: [number, number, number, number][] = [[0, 0, 0, 0], [0.3319, 0.5802, 1.499, 1.499], [1, 1, 0, 0]]
@@ -60,7 +60,7 @@ function zoomAnchor(node: StoryNode, pivot: [number, number, number]) {
     : { x: 0.25 * pivot[0] / 0.35, y: 0.67 * pivot[1] / 0.55 }
 }
 
-/** StageMapUIPanel.StartFocus: the content goes to (-x + ratio.x * viewport w, -y - ratio.y * viewport h), so the stage
+/** Focusing a stage: the content goes to (-x + ratio.x * viewport w, -y - ratio.y * viewport h), so the stage
  * stands at that point of the 3000 x 1350 viewport: _upperNodeViewportPositionRatio (0.35, 0.55) for a stage whose card
  * is above it, _lowerNodeViewportPositionRatio (0.35, 0.4) otherwise (the chapter setting's pivot carries the same
  * values). In camera-centre terms: x + (0.5 - 0.35) * 3000, y + (ratio y - 0.5) * 1350 (checked on chapter 0 in the
@@ -202,7 +202,7 @@ export default function StoryMap({ sub, base, lang, selected, zoomed, spoiler, o
     return () => ro.disconnect()
   }, [])
 
-  /** The game's clamp (StageMapScrollRect.SetContentAnchoredPosition) at zoom 1, from a camera inside it. */
+  /** The game's clamp at zoom 1, from a camera inside it. */
   const clamp = (to: Cam, from: Cam | null) => (size ? clampCamera(to, from ?? to, map, sub.camera) : to)
   /** The camera on a picked stage at zoomInScale, the stage at its anchor on screen. */
   const stageCam = (node: StoryNode): Cam | null => {

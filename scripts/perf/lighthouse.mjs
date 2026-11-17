@@ -6,7 +6,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-// Fixed ids from the production lists so numbers stay comparable between runs (see docs/reference/performance.md).
+// Fixed ids from the production lists so numbers stay comparable between runs.
 export const DECK_ID = '32fdf886-8dac-4bf2-a817-d53a78fe6425'
 export const IDENTITY_ID = '4be6011c-a549-4b29-b434-5f5eaaa43db7'
 export const SCREENS = [

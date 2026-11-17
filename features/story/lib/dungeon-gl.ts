@@ -9,7 +9,7 @@ import type { DungeonRect, RGBA } from '@/lib/story-map'
 
 export type Cam = { x: number; h: number; zc: number }
 export interface Slice { border: [number, number, number, number]; uv: [number, number, number, number]; fill: boolean }
-/** Every item may carry `y`, its world height: MapSpawnManager.InstantiateMapFloor moves floor i by (0, 0, 5 i) in
+/** Every item may carry `y`, its world height: floor i moves by (0, 0, 5 i) in
  * the map canvas's space, 5 i below the first floor. */
 export type Item = (
   /** An Image on the map canvas: rect in map units, rotated about its centre (degrees, counter-clockwise), Sliced

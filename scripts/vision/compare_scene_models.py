@@ -6,7 +6,7 @@
 
 Frames labelled by their text are the measure: correct, and correct with at least 0.5 (what the app acts on), by window
 shape and screen. Frames labelled by the earlier model show what a new model changes on the other screens. A new model
-replaces the shipped one only when the first improves and the second does not change (docs/assist.md).
+replaces the shipped one only when the first improves and the second does not change.
 """
 import argparse, json
 from collections import Counter, defaultdict

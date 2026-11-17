@@ -42,7 +42,7 @@ export function activations(fx: any, segs: { name: string; start: number; end: n
   // effectActiveInfo.isDisable 1: the clip switches the effect off (DATA 10315 S3 coin 3 "Fx_Nail" isDisable at 0.87 s as
   // the nail is hammered in; skipped, the coin-1 nail stayed over it for its 20 s — USER "못이 박혔는데 위에 남아있는게")
   const offs: { effect: any; T: number }[] = [];
-  // docs/game-code.md "Effect objects": the clip holds the effect's disable timer at 0 while it is active, then the timer
+  // The clip holds the effect's disable timer at 0 while it is active, then the timer
   // runs disabletime (real time) — on for the clip + disabletime; a clip that is not isOnceEffect is on for its window only;
   // isNotDisable never times out. The coin hand-over switches nothing off: the next coin's timeline start destroys the old
   // graph and every effect of the coin still on goes off then (isNotDisable ones stay). Off = SetActive(false): no tail.
@@ -104,7 +104,7 @@ export function instantiate(fx: any, a: Activation, units: (t: number) => Units,
     const facing = u.self.dir;
     const cy = comp.data?._isCharacterCenterPoint ? centerY * 0.5 : 0;
     if (v2 && (ptype === 2 || ptype === 3)) {
-      // CharacterAttackEffectV2.SetPosition (docs/game-code.md "Placement"): ENEMY follows the target (its centre point
+      // Placement: ENEMY follows the target (its centre point
       // with _isCharacterCenterPoint) — _isPosUpdate 1: LateUpdate copies its position every frame, height included;
       // _isPosUpdate 0: placed once, y 0 when _followYPos. ZERO: the world origin (the stage centre, ASSUMED where the map
       // is put: origin)

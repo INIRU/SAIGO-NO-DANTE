@@ -164,7 +164,7 @@ interface DungeonFloorMap {
   /** 1~3장 area names (MapTexts: TextMeshProUGUI + StoryDungeonAreaTextLoader); text from Localize DungeonArea[key] */
   texts?: { key: string; at: [number, number]; size: [number, number]; pivot: [number, number]; tilt: number; q?: [number, number, number, number]; z: number; fonts?: Partial<Record<'ko' | 'en' | 'ja', string>>; margin?: [number, number, number, number]; color: RGBA; fontSize: number
     autoSize: boolean; sizeRange: [number, number]; style: number; align: [number, number]; spacing: [number, number, number]; wrap: number; text?: Texts }[]
-  /** StoryDungeonAreaTextManager.SparkleEffect: alpha = lerp(from, to, clamp01(curve(t))), t looping over duration */
+  /** Area name sparkle: alpha = lerp(from, to, clamp01(curve(t))), t looping over duration */
   sparkle?: { duration: number; from: number; to: number; curve: [number, number, number, number][]; pre?: number; post?: number }
 }
 /** A story dungeon event result: by its condition (Prob_x, ChooseUnit_…), the next event and the effects, worded with the
@@ -230,7 +230,7 @@ export interface StoryDungeonUI {
   lineCleared?: { material: string; shader: string | null; floats: Record<string, number>; colors: Record<string, number[]>; textures: Record<string, { file: string; wrap: [number, number] }>; order: number }
   /** The dungeon camera's URP post-processing (only Bloom is set) */
   post?: { bloom: { threshold: number; intensity: number; scatter: number; clamp: number; tint: number[]; highQuality: boolean; downscale: string; maxIterations: number; skipIterations: number } }
-  /** UIColorManager.GetAttributeTypeColor by ATTRIBUTE_TYPE (NONE: _uiTextDarkColor) */
+  /** Sin colour by ATTRIBUTE_TYPE (NONE: _uiTextDarkColor) */
   sinColors?: Record<string, RGBA>
   /** TextMeshProLanguageSetter's font per language (the site's /fonts/<font>.woff2) and its TMP FaceInfo per em */
   areaFonts?: Record<'ko' | 'en' | 'ja', { font: string; lineHeight: number; ascent: number; descent: number }>
