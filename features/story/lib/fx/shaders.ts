@@ -1,4 +1,4 @@
-// The game's FX shaders, rewritten for the browser. Vertex inputs follow the particle renderer's custom vertex streams:
+// The FX shaders, rewritten for the browser. Vertex inputs follow the particle renderer's custom vertex streams:
 // UV (TEXCOORD0.xy), Custom1.xyzw (TEXCOORD1), Custom2.xyzw (TEXCOORD2), StableRandom.xy (TEXCOORD3.xy), COLOR.
 // Output is premultiplied for PixiJS' "normal" blend (the materials use SrcAlpha / OneMinusSrcAlpha).
 

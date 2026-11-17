@@ -1,15 +1,15 @@
 # 기여 방법
 
-코드나 문서를 고칠 때의 순서다. 코드 구조 규칙은 [구조](docs/reference/architecture.md)와 [새 기능 만들기](docs/guides/new-feature.md), 디자인은 [DESIGN.md](DESIGN.md), 문서 목차는 [docs/README.md](docs/README.md)에 있다.
+코드나 문서를 고칠 때의 순서다. 디자인은 [DESIGN.md](DESIGN.md)에 있다.
 
 ## 시작하기
 
-설치와 실행, 명령 목록은 [README.md](README.md)의 "빠르게 시작하기"에 있다. 환경 변수는 [이름과 용도](docs/reference/env.md)를 본다.
+설치와 실행, 명령 목록은 [README.md](README.md)의 "빠르게 시작하기"에 있다. 환경 변수는 `.env.example`을 본다.
 
 ## 작업 순서
 
 1. **준비**: `git fetch` 후 최신 `origin/main`에서 브랜치를 만든다. `gh pr list --state open`으로 남은 PR을 본다. main에는 직접 커밋하지 않는다.
-2. **계획**: 여러 파일에 걸치거나 동작이 바뀌는 작업은 무엇을 왜 바꾸는지, 어떤 파일을 고치는지, 어떻게 확인할지를 먼저 정하고 고친다. 새 기능이면 [새 기능 만들기](docs/guides/new-feature.md)를 따른다. 한 줄 수정이나 문구 수정은 계획 없이 바로 고친다.
+2. **계획**: 여러 파일에 걸치거나 동작이 바뀌는 작업은 무엇을 왜 바꾸는지, 어떤 파일을 고치는지, 어떻게 확인할지를 먼저 정하고 고친다. 한 줄 수정이나 문구 수정은 계획 없이 바로 고친다.
 3. **테스트 먼저**: 동작이 바뀌는 변경은 실패하는 테스트를 먼저 쓰고, 실제로 실패하는 것을 실행해서 확인한 뒤 구현한다. 버그 수정에는 같은 버그가 다시 생기면 잡히는 테스트를 더한다.
 4. **구현**: 화면을 고치면 [DESIGN.md](DESIGN.md)를 먼저 읽는다.
 5. **검증**: `npm test`, `npm run typecheck`, `npm run build` 중 변경에 맞는 것을 실행한다. 실행하지 않은 검증은 성공했다고 적지 않는다.
