@@ -70,7 +70,7 @@ void main() {
   gl_Position = c;
   vUv = aUv; vCol = aCol; vMuv = aMuv; vGray = aGray;
 }`
-// UI/Default (and Default-Line): texture × vertex colour. UI/Grayscale (the game's DX11 code): the same colour's
+// UI/Default (and Default-Line): texture × vertex colour. UI/Grayscale: the same colour's
 // luminance 0.262 r + 0.678 g + 0.059 b. A Unity Mask (stencil written where the mask Image's alpha passes the UI alpha
 // clip, 0.001): the fragment is dropped outside it.
 const FS = `#version 300 es
@@ -84,8 +84,8 @@ void main() {
   if (vGray > 0.5) o.rgb = vec3(dot(o.rgb, vec3(0.262, 0.678, 0.059)));
   if (uHasMask > 0.5 && texture(uMask, vMuv).a <= 0.001) discard;
 }`
-// Shader Graphs/FX_Grp_0_Master_Dissolve, as features/story/lib/fx/map-shaders.ts MASTER_DISSOLVE translates it from the
-// game's DX11 code; a LineRenderer has no custom vertex streams (Custom1XY, StableRandomXY: 0). URP's transparent
+// Shader Graphs/FX_Grp_0_Master_Dissolve, as features/story/lib/fx/map-shaders.ts MASTER_DISSOLVE rewrites it;
+// a LineRenderer has no custom vertex streams (Custom1XY, StableRandomXY: 0). URP's transparent
 // Unlit output clamps alpha to 0..1 (OutputAlpha); blended SrcAlpha / OneMinusSrcAlpha.
 const FS_DISSOLVE = `#version 300 es
 precision highp float;

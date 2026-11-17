@@ -228,7 +228,7 @@ export default function DungeonView({ id, base, lang, title, floor: floorProp, r
     // each item at its floor's height
     let fy = 0
     // lift: a RectTransform's local z over its floor (the map canvas's z is world down), e.g. a floor's fog
-    // hidden rooms no cleared room unlocks (NodeMetaData._onClearUnlockNodeIdList; every room is cleared here): their
+    // hidden rooms no cleared room unlocks (every room is cleared here): their
     // lines stay closed
     const unlocked = new Set(floors.flatMap(f => f.nodes.flatMap(n => n.unlocks ?? [])))
     const hiddenIds = new Set(floors.flatMap(f => f.nodes.filter(n => n.hidden && !unlocked.has(n.id)).map(n => n.id)))
