@@ -1943,12 +1943,8 @@
       }
     },
     "viewer": {
-      "save": "Save",
-      "video": "Video",
       "play": "Play",
-      "pause": "Pause",
-      "saved": "Saved",
-      "saveFailed": "Could not save"
+      "pause": "Pause"
     }
   },
   "ego": {

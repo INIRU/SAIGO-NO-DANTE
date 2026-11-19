@@ -1,12 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import dynamic from 'next/dynamic'
 import { Pause, Play, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import StageSaveButtons from '@/features/catalog/components/StageSaveButtons'
-import type { SpineStageHandle } from '@/features/catalog/components/SpineStage'
 import type { IdentitySpine } from '@/features/catalog/lib/spine-pack'
 import segment from '@/styles/components/SinnerDetail.module.css'
 
@@ -15,11 +13,11 @@ const SpineStage = dynamic(() => import('@/features/catalog/components/SpineStag
 
 interface Props {
   onClose: () => void
-  /** The identity's name: the picture's label and the saved file's name. */
+  /** The identity's name: the picture's label. */
   name: string
   /** The still illustration. It also stands in while the skeleton loads. */
   src: string
-  /** The illustration as a skeleton: it plays over the still, and can be saved as a GIF or a video. */
+  /** The illustration as a skeleton: it plays over the still. */
   illust?: IdentitySpine | null
   /** The still could not be loaded. */
   onImageError: () => void
@@ -31,7 +29,6 @@ interface Props {
 export default function IllustViewer({ onClose, name, src, illust, onImageError, onStageError }: Props) {
   const t = useTranslations()
   const [playing, setPlaying] = useState(true)
-  const handle = useRef<SpineStageHandle | null>(null)
 
   // The page behind does not scroll, and Escape closes.
   useEffect(() => {
@@ -60,7 +57,7 @@ export default function IllustViewer({ onClose, name, src, illust, onImageError,
         <div className="relative aspect-video" style={{ width: 'min(100vw, calc((100dvh - 8rem) * 16 / 9))' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img key={src} src={src} alt="" className="absolute inset-0 h-full w-full object-contain" />
-          <SpineStage pack={illust} form={illust.forms[0]} paused={!playing} handle={handle} label={name} className="absolute inset-0 block h-full w-full" onError={onStageError} />
+          <SpineStage pack={illust} form={illust.forms[0]} paused={!playing} label={name} className="absolute inset-0 block h-full w-full" onError={onStageError} />
         </div>
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
@@ -83,7 +80,6 @@ export default function IllustViewer({ onClose, name, src, illust, onImageError,
             </button>
           </div>
         )}
-        <StageSaveButtons handle={illust ? handle : undefined} image={src} name={name} colour="#000000" videoSide={1920} />
       </div>
     </div>,
     document.body,

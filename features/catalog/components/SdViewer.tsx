@@ -5,8 +5,6 @@ import dynamic from 'next/dynamic'
 import { Pause, Play, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import BaseModal from '@/components/ui/BaseModal'
-import StageSaveButtons from '@/features/catalog/components/StageSaveButtons'
-import type { SpineStageHandle } from '@/features/catalog/components/SpineStage'
 import type { IdentitySpine, SpineForm } from '@/features/catalog/lib/spine-pack'
 import segment from '@/styles/components/SinnerDetail.module.css'
 import styles from '@/styles/components/SdViewer.module.css'
@@ -16,7 +14,7 @@ const SpineStage = dynamic(() => import('@/features/catalog/components/SpineStag
 interface Props {
   open: boolean
   onClose: () => void
-  /** The identity's name: the title and the saved file's name. */
+  /** The identity's name: the title. */
   name: string
   sd: IdentitySpine
   form: SpineForm
@@ -30,9 +28,9 @@ interface Props {
   children?: ReactNode
 }
 
-// What stands behind the figure, on screen and in the saved picture. `clear` saves a transparent picture.
-const BACKDROPS = { dark: '#120e09', black: '#000000', white: '#ffffff', clear: null } as const
-type Backdrop = keyof typeof BACKDROPS
+// What stands behind the figure. The colours are in the stylesheet, by data-backdrop.
+const BACKDROPS = ['dark', 'black', 'white', 'clear'] as const
+type Backdrop = (typeof BACKDROPS)[number]
 
 const FIT = { zoom: 1, x: 0, y: 0 }
 const MIN_ZOOM = 0.5
@@ -45,14 +43,13 @@ function zoomed(view: typeof FIT, factor: number, at = { x: 0, y: 0 }) {
   return { zoom, x: at.x - (at.x - view.x) * by, y: at.y - (at.y - view.y) * by }
 }
 
-/** The SD figure at full size: zoom and drag, pause, pick what stands behind it, and save a PNG, a looping GIF or a video. */
+/** The SD figure at full size: zoom and drag, pause, and pick what stands behind it. */
 export default function SdViewer({ open, onClose, name, sd, form, formKey, skins, animation, still, children }: Props) {
   const t = useTranslations()
   const [view, setView] = useState(FIT)
   const [playing, setPlaying] = useState(!still)
   const [backdrop, setBackdrop] = useState<Backdrop>('dark')
   const [stageEl, setStageEl] = useState<HTMLDivElement | null>(null)
-  const handle = useRef<SpineStageHandle | null>(null)
   const fingers = useRef(new Map<number, { x: number; y: number }>())
   const label = t('identity.sd.label', { name })
 
@@ -113,7 +110,7 @@ export default function SdViewer({ open, onClose, name, sd, form, formKey, skins
           onPointerCancel={onPointerUp}
           onDoubleClick={() => setView(FIT)}
         >
-          <SpineStage key={formKey} pack={sd} form={form} skins={skins} animation={animation} paused={!playing} view={view} anchor="center" handle={handle}
+          <SpineStage key={formKey} pack={sd} form={form} skins={skins} animation={animation} paused={!playing} view={view} anchor="center"
             label={label} className="block h-full w-full" onError={onClose} />
         </div>
 
@@ -136,18 +133,12 @@ export default function SdViewer({ open, onClose, name, sd, form, formKey, skins
           <div className={styles.group}>
             <span className={styles.groupTitle}>{t('identity.sd.backdrop')}</span>
             <div className={segment.segment} role="group" aria-label={t('identity.sd.backdrop')}>
-              {(Object.keys(BACKDROPS) as Backdrop[]).map(key => (
+              {BACKDROPS.map(key => (
                 <button key={key} type="button" aria-pressed={backdrop === key} aria-label={t(`identity.sd.backdrops.${key}`)} onClick={() => setBackdrop(key)}>
                   <span className={styles.swatch} data-backdrop={key} />
                 </button>
               ))}
             </div>
-          </div>
-
-
-          <div className={styles.group}>
-            <span className={styles.groupTitle}>{t('identity.viewer.save')}</span>
-            <StageSaveButtons handle={handle} name={name} colour={BACKDROPS[backdrop]} videoSide={1080} />
           </div>
         </div>
       </div>

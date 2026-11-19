@@ -4,22 +4,10 @@
 // The drawing rules come from the extractor's preview (limbus-asset-extractor, scripts/spine); each one fixes a defect
 // that was found by eye there, so keep them when editing.
 // The skeletons are Spine 4.0.64: the runtime must stay on 4.0 (4.1 and later do not read them).
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as spine from '@esotericsoftware/spine-webgl'
 import { STORAGE_BASE } from '@/lib/constants/game'
 import { skinSetsOf, type IdentitySpine, type ImageLayer, type SpineForm, type SpineLayer } from '@/features/catalog/lib/spine-pack'
-
-/** Draws single frames on request, for saving pictures of the figure. */
-export interface SpineStageHandle {
-  /** Seconds one loop of the playing animation takes. */
-  duration(): number
-  /**
-   * Draws the frame `time` seconds into the loop (the frame on screen when unset) and stops playing until `release`.
-   * The canvas only holds the frame until the browser paints again: copy it before awaiting anything.
-   */
-  draw(time?: number): HTMLCanvasElement
-  release(): void
-}
 
 interface Props {
   pack: Pick<IdentitySpine, 'base' | 'skeletons'>
@@ -35,7 +23,6 @@ interface Props {
   view?: { zoom: number; x: number; y: number }
   /** Where a figure sits in its box: feet on the bottom edge (on a page) or in the middle (in a viewer). */
   anchor?: 'bottom' | 'center'
-  handle?: RefObject<SpineStageHandle | null>
   label?: string
   className?: string
   /** WebGL is missing or a file did not load: nothing will be drawn. */
@@ -125,7 +112,7 @@ function measure(rig: Rig) {
   return isFinite(x0) ? { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } : null
 }
 
-export default function SpineStage({ pack, form, skins, animation, paused = false, view, anchor = 'bottom', handle, label, className, onError }: Props) {
+export default function SpineStage({ pack, form, skins, animation, paused = false, view, anchor = 'bottom', label, className, onError }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const live = useRef({ skins, animation, paused, view, anchor, onError })
   useEffect(() => { live.current = { skins, animation, paused, view, anchor, onError } })
@@ -283,7 +270,6 @@ export default function SpineStage({ pack, form, skins, animation, paused = fals
       }
 
       let last = 0
-      let frozen = false // a single frame was asked for through the handle
       let held = '' // what the paused frame was drawn as
       let chosen = '' // the skins prop last put on
       let playing = main.state.getCurrent(0)?.animation?.name
@@ -305,30 +291,12 @@ export default function SpineStage({ pack, form, skins, animation, paused = fals
         return changed
       }
 
-      if (handle) {
-        handle.current = {
-          duration: () => main.state.getCurrent(0)?.animation?.duration ?? 0,
-          draw: time => {
-            frozen = true
-            follow()
-            if (time !== undefined) {
-              for (const rig of rigs) {
-                const track = rig.state.getCurrent(0)
-                if (track) track.trackTime = time
-              }
-            }
-            paint(0)
-            return canvas
-          },
-          release: () => { frozen = false; last = 0; held = '' },
-        }
-      }
       setReady(true)
 
       const frame = (now: number) => {
         if (stopped) return
         raf = requestAnimationFrame(frame)
-        if (frozen || !visible || document.hidden) { last = 0; return }
+        if (!visible || document.hidden) { last = 0; return }
         if (last && now - last < 1000 / FPS - 2) return
         const dt = last ? Math.min((now - last) / 1000, 0.1) : 0
         last = now
@@ -348,11 +316,10 @@ export default function SpineStage({ pack, form, skins, animation, paused = fals
       cancelAnimationFrame(raf)
       clearTimeout(timer)
       observer.disconnect()
-      if (handle) handle.current = null
       for (const loader of loaders) loader.dispose()
       renderer.dispose()
     }
-  }, [pack, form, handle])
+  }, [pack, form])
 
   return (
     <canvas
