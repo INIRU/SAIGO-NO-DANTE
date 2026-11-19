@@ -132,7 +132,6 @@
 | 스켈레톤 | `components/ui/Skeleton.tsx`, `DetailPageSkeleton.tsx` |
 | Spine 재생(SD, 풀 일러스트) | `features/catalog/components/SpineStage.tsx` |
 | SD 뷰어, 풀 일러스트 창 | `features/catalog/components/SdViewer.tsx`, `IllustViewer.tsx` |
-| PNG·GIF·동영상 저장 버튼 | `features/catalog/components/StageSaveButtons.tsx` |
 
 기프트 목록의 키워드 순서는 공통 → 키워드(화상·출혈·진동·파열·침잠·호흡·충전) → 참격·관통·타격이다. 거울 던전 기프트 탭은 사용자가 키워드 순서 창에서 바꾼 순서(브라우저 저장)를 따른다.
 
