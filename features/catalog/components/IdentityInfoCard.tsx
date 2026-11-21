@@ -61,9 +61,9 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
         {representativeKeywords.length > 0 && (
           <div className="py-5">
             <dt className="mb-3 text-xs font-medium tracking-wide text-[var(--text-secondary)]">{t('identity.info.combatKeywords')}</dt>
-            <dd className="flex flex-wrap gap-2">
+            <dd className="flex flex-wrap gap-x-6 gap-y-3">
               {[...new Set(representativeKeywords)].map(kw => (
-                <div key={kw} className="rounded-md border border-white/10 bg-white/[0.035] px-3 py-2 text-base transition-colors hover:border-[var(--gold)]/40 hover:bg-white/[0.06] [&_.keyword-token>img]:mr-2 [&_.keyword-token>img]:h-6 [&_.keyword-token>img]:w-6">
+                <div key={kw} className="text-base [&_.keyword-token>img]:mr-2 [&_.keyword-token>img]:h-6 [&_.keyword-token>img]:w-6">
                   <KeywordWithTooltip keyword={kw}>
                     <span className="font-medium">{getLocalizedKeywordName(kw, kwAll[kw], locale as SupportedLang)}</span>
                   </KeywordWithTooltip>
@@ -100,13 +100,13 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
             const info = identity.acquisition_info
             if (!info) return null
 
-            const TYPE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-              default:    { label: t('identity.info.type.default'),    color: '#9c8b73', bg: 'rgba(156,139,115,0.12)' },
-              standard:   { label: t('identity.info.type.standard'),   color: '#e8dcc8', bg: 'rgba(232,220,200,0.12)' },
-              limited:    { label: t('identity.info.type.limited'),    color: '#e8b030', bg: 'rgba(232,176,48,0.12)' },
-              event:      { label: t('identity.info.type.event'),      color: '#e8b030', bg: 'rgba(232,176,48,0.12)' },
-              walpurgis:  { label: t('identity.info.type.walpurgis'),  color: '#d9826b', bg: 'rgba(217,130,107,0.12)' },
-              attendance: { label: t('identity.info.type.attendance'), color: '#b8a684', bg: 'rgba(184,166,132,0.12)' },
+            const TYPE_LABELS: Record<string, { label: string; color: string }> = {
+              default:    { label: t('identity.info.type.default'),    color: '#9c8b73' },
+              standard:   { label: t('identity.info.type.standard'),   color: '#e8dcc8' },
+              limited:    { label: t('identity.info.type.limited'),    color: '#e8b030' },
+              event:      { label: t('identity.info.type.event'),      color: '#e8b030' },
+              walpurgis:  { label: t('identity.info.type.walpurgis'),  color: '#d9826b' },
+              attendance: { label: t('identity.info.type.attendance'), color: '#b8a684' },
             }
             const GACHA_LABELS: Record<string, { label: string; color: string }> = {
               always:   { label: t('identity.info.gacha.always'),    color: '#e8dcc8' },
@@ -125,15 +125,12 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
                 {/* 타입 + 시즌 배지 */}
                 <div className="flex items-center gap-2">
                   <span style={{ color: '#9c8b73', fontSize: '0.75rem', minWidth: '52px' }}>{t('identity.info.acquisition')}</span>
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     {/* 타입 배지 */}
                     <span
                       style={{
                         fontSize: '0.75rem', fontWeight: 600,
-                        padding: '2px 8px', borderRadius: '3px',
                         color: typeInfo.color,
-                        background: typeInfo.bg,
-                        border: `1px solid ${typeInfo.color}30`,
                       }}
                     >
                       {typeInfo.label}
@@ -144,10 +141,7 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
                       <span
                         style={{
                           fontSize: '0.75rem', fontWeight: 500,
-                          padding: '2px 8px', borderRadius: '3px',
                           color: 'var(--gold)',
-                          background: 'rgba(200,144,10,0.1)',
-                          border: '1px solid rgba(200,144,10,0.2)',
                         }}
                       >
                         S{info.release_season}
@@ -159,10 +153,7 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
                       <span
                         style={{
                           fontSize: '0.75rem', fontWeight: 500,
-                          padding: '2px 8px', borderRadius: '3px',
                           color: '#d9826b',
-                          background: 'rgba(217,130,107,0.08)',
-                          border: '1px solid rgba(217,130,107,0.2)',
                         }}
                       >
                         {info.walpurgis_edition}{t('identity.info.walpurgisEdition')}
@@ -174,10 +165,7 @@ export default function IdentityInfoCard({ identity, currentSeason = 7 }: Identi
                       <span
                         style={{
                           fontSize: '0.75rem', fontWeight: 500,
-                          padding: '2px 8px', borderRadius: '3px',
                           color: 'var(--gold-light)',
-                          background: 'rgba(232,176,48,0.08)',
-                          border: '1px solid rgba(232,176,48,0.2)',
                         }}
                       >
                         {info.event_name}

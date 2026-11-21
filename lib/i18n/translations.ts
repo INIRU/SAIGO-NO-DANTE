@@ -203,7 +203,7 @@ export const translations = {
   'ego.sinResistance': { ko: '죄악 내성', en: 'Sin Resistance', ja: '罪悪耐性' },
 
   // Identity Info Card
-  'identity.info.traits': { ko: '인격 키워드 · 소속', en: 'Trait keywords · Affiliation', ja: '人格キーワード・所属' },
+  'identity.info.traits': { ko: '소속', en: 'Affiliation', ja: '所属' },
   'identity.info.releaseDate': { ko: '출시시기', en: 'Release Date', ja: 'リリース時期' },
   'identity.info.acquisition': { ko: '획득 방법', en: 'Acquisition', ja: '獲得方法' },
   'identity.info.extraction': { ko: '추출', en: 'Extraction', ja: '抽出' },
