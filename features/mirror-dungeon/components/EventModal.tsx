@@ -26,6 +26,7 @@ import { getLocalizedName } from '@/lib/i18n/localize'
 import { Link } from '@/lib/i18n/navigation'
 
 import { groupEventChoices, eventResultCondition } from '@/features/mirror-dungeon/lib/event-flow'
+import { eventStory } from '@/features/mirror-dungeon/lib/event-story'
 interface EventModalProps {
   lang: SupportedLang
   event: MdEvent
@@ -193,7 +194,6 @@ function Judgment({ event, lang }: { event: MdEvent; lang: SupportedLang }) {
 function ChoiceList({ choices, path, ...props }: FlowProps & { choices: MdEventChoice[]; path: number[] }) {
   return <div className={styles.sourceChoices}>{groupEventChoices(choices).map((group, index) => <details className={styles.choice} key={group[0].id}>
     <summary className={styles.choiceHeader}>
-      <span className={styles.choiceNumber}>{String(index + 1).padStart(2, '0')}</span>
       <span className={styles.choiceHeading}>
         <span className={styles.choiceTitle}>{colorizeEventText(group[0].message, props.lang)}</span>
         {group[0].message_desc && <span className={styles.choiceDescription}>{colorizeEventText(group[0].message_desc, props.lang)}</span>}
@@ -211,20 +211,18 @@ function EventChoices({ event, ...props }: FlowProps & { event: MdEvent }) {
   if (!group) return <p className={styles.empty}>{tEvent('mirrorDungeon.event.noChoices', props.lang)}</p>
   return <div data-event-node={event.id}>
     <div className={styles.sectionHeading}>
-      <h3>{tEvent('mirrorDungeon.event.choicesLabel', props.lang)}</h3><span>{String(groups.length).padStart(2, '0')}</span>
+      <h3>{tEvent('mirrorDungeon.event.choicesLabel', props.lang)}</h3>
     </div>
     <div className={styles.choiceNav} aria-label={tEvent('mirrorDungeon.event.choicesLabel', props.lang)}>
       {groups.map(([item], index) => <button key={item.id} type="button" className={styles.choiceOption}
         aria-pressed={index === active} aria-controls="event-choice-result" onClick={() => setActive(index)} data-choice-option={item.id}>
-        <span className={styles.optionNumber}>{String(index + 1).padStart(2, '0')}</span>
         <span className={styles.optionText}><strong>{colorizeEventText(item.message, props.lang)}</strong>
           {item.message_desc && <span>{colorizeEventText(item.message_desc, props.lang)}</span>}</span>
         <ArrowRight size={17} aria-hidden />
       </button>)}
     </div>
     <section id="event-choice-result" className={styles.resultPanel} key={group[0].id} aria-label={tEvent('mirrorDungeon.event.choiceResult', props.lang)}>
-      <div className={styles.sectionHeading}><h3>{tEvent('mirrorDungeon.event.choiceResult', props.lang)}</h3>
-        <span>{String(active + 1).padStart(2, '0')} / {String(groups.length).padStart(2, '0')}</span></div>
+      <div className={styles.sectionHeading}><h3>{tEvent('mirrorDungeon.event.choiceResult', props.lang)}</h3></div>
       {group.map(choice => <ChoiceResult {...props} key={choice.id} choice={choice} path={[event.id]} />)}
       {props.onRecordChoice && props.recordLabels && <button type="button" className={styles.recordChoice} aria-pressed={props.isChoiceRecorded?.(event.id, active) ?? false} onClick={() => props.onRecordChoice?.(event.id, active)}>{props.isChoiceRecorded?.(event.id, active) ? props.recordLabels.recorded : props.recordLabels.record}</button>}
     </section>
@@ -234,7 +232,7 @@ function EventChoices({ event, ...props }: FlowProps & { event: MdEvent }) {
 export default function EventModal({ lang, event, eventById, choicesByEventId, giftByGameId, themes, onClose, onSelectGift, onRecordChoice, isChoiceRecorded, recordLabels, pageLink }: EventModalProps) {
   const contentRef = useRef<HTMLDivElement>(null)
   const eventTitle = getEventTitle(event, lang)
-  const eventDesc = getEventDesc(event, lang)
+  const story = eventStory(getEventDesc(event, lang), getEventName(event, lang))
   const evThemes = (event.theme_ids ?? []).flatMap(id => themes.find(t => t.id === id) ?? [])
   const evGifts = (event.gift_ids ?? []).flatMap(id => giftByGameId.get(id) ?? [])
   const handleSelectGift = (gift: EgoGift) => { onClose(); onSelectGift(gift) }
@@ -244,7 +242,6 @@ export default function EventModal({ lang, event, eventById, choicesByEventId, g
       <div className={styles.modal}>
         <header className={styles.toolbar}>
           <span>{tEvent('mirrorDungeon.event.modalTitle', lang)}</span>
-          <span className={styles.recordId}>#{event.id}</span>
           <button type="button" className={styles.jumpToChoices} onClick={() => {
             contentRef.current?.scrollIntoView({ block: 'start' })
             contentRef.current?.focus({ preventScroll: true })
@@ -263,7 +260,7 @@ export default function EventModal({ lang, event, eventById, choicesByEventId, g
             )}
             <div className={styles.sceneText}>
               <h2>{eventTitle}</h2>
-              {eventDesc && <div className={styles.story}>{<p>{colorizeEventText(eventDesc, lang)}</p>}</div>}
+              {story && <div className={styles.story}><p>{colorizeEventText(story, lang)}</p></div>}
               {evGifts.length > 0 && <section className={styles.related}>
                 <h3>{tEvent('mirrorDungeon.event.availableGifts', lang)}</h3>
                 <div className={styles.gifts}>{evGifts.map(gift => <EventGift key={gift.id} gift={gift} lang={lang} onSelect={handleSelectGift} />)}</div>

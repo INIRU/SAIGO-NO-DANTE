@@ -45,7 +45,7 @@ for (const width of [1440, 390]) {
       await page.mouse.move(0, 0)
       await expect(page.locator('.ev-card').first()).not.toContainText('지옥나비의 꿈')
       const previewBackground = await expectGiftBackground(page.locator('.ev-card').first())
-      await expect(page.locator('.ev-card').first()).toHaveCSS('background-color', 'rgb(26, 21, 16)')
+      await expect(page.locator('.ev-card').first()).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
       await page.locator('.ev-card').first().click()
       const modal = page.getByRole('dialog')
       expect(await expectGiftBackground(modal)).toBe(previewBackground)
@@ -59,7 +59,7 @@ for (const width of [1440, 390]) {
         await expect(firstOption).toBeInViewport()
       }
       await expect(firstOption).toHaveAttribute('aria-pressed', 'true')
-      await expect(firstOption).toHaveCSS('border-top-color', 'rgb(200, 144, 10)')
+      await expect(firstOption).toHaveCSS('background-color', 'rgb(36, 28, 18)')
       await expect(firstOption).toHaveCSS('color', 'rgb(232, 176, 48)')
       await secondOption.focus()
       await page.keyboard.press('Enter')
