@@ -1,13 +1,15 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Search, X, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import ThemePackCard from '@/features/mirror-dungeon/components/ThemePackCard'
+import SearchBox, { SuggestRow, nameMarks, type SuggestGroup } from '@/components/ui/SearchBox'
 import type { EgoGift, EgoGiftTheme } from '@/features/mirror-dungeon/types'
+import { givenGiftEntries, packEntries, packSuggestions } from '@/features/mirror-dungeon/lib/search-suggestions'
+import { search as findHits } from '@/lib/search/engine'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
-import { getLocalizedName } from '@/lib/i18n/localize'
 
 const FLOOR_OFFSET: Record<string, number> = { '노말': 0, '하드': 0, '평행중첩': 5, '익스트림': 10 }
 const FLOOR_RANGE: Record<string, [number, number]> = {
@@ -62,7 +64,6 @@ function groupByFloor(themes: EgoGiftTheme[], floorKeys: string[]): FloorRow[] {
 interface ThemeTabProps {
   lang: SupportedLang
   themes: EgoGiftTheme[]
-  gifts: EgoGift[]
   giftByGameId: Map<number, EgoGift>
   themeSearch: string
   themeDiffFilter: string
@@ -74,7 +75,6 @@ interface ThemeTabProps {
 export default function ThemeTab({
   lang,
   themes,
-  gifts,
   giftByGameId,
   themeSearch,
   themeDiffFilter,
@@ -82,7 +82,6 @@ export default function ThemeTab({
   setThemeDiffFilter,
   onThemeClick,
 }: ThemeTabProps) {
-  const [searchFocused, setSearchFocused] = useState(false)
   const [showHidden, setShowHidden] = useState(false)
   const tp = useTranslations('mirrorDungeonPage')
 
@@ -102,96 +101,45 @@ export default function ThemeTab({
     [themes]
   )
 
-  const { themeSearchRows, giftThemeCountByGameId } = useMemo(() => {
-    const themeRows: Array<{ theme: EgoGiftTheme; displayName: string; themeText: string; filterText: string }> = []
-    const giftCounts = new Map<number, number>()
+  const packIndex = useMemo(() => packEntries(normalThemes, giftByGameId, lang), [normalThemes, giftByGameId, lang])
+  // Gifts some pack gives, with how many packs give each: picking one searches for the packs that hold it.
+  const giftIndex = useMemo(() => givenGiftEntries(normalThemes.map(th => th.ego_gift_ids), giftByGameId, lang), [normalThemes, giftByGameId, lang])
+  const themeById = useMemo(() => new Map(normalThemes.map(th => [String(th.id), th])), [normalThemes])
 
-    for (const th of normalThemes) {
-      const displayName = getLocalizedName({ name_kr: th.name, name_en: th.name_en, name_jp: th.name_jp }, lang)
-      const searchParts = [displayName, th.name]
-      const countedGiftIds = new Set<number>()
-
-      for (const gid of th.ego_gift_ids) {
-        if (!countedGiftIds.has(gid)) {
-          countedGiftIds.add(gid)
-          giftCounts.set(gid, (giftCounts.get(gid) ?? 0) + 1)
-        }
-        const gift = giftByGameId.get(gid)
-        if (!gift) continue
-        searchParts.push(
-          getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang),
-          gift.name
-        )
-      }
-
-      themeRows.push({
-        theme: th,
-        displayName,
-        themeText: `${displayName}\n${th.name}`.toLowerCase(),
-        filterText: searchParts.join('\n').toLowerCase(),
-      })
-    }
-
-    return { themeSearchRows: themeRows, giftThemeCountByGameId: giftCounts }
-  }, [normalThemes, giftByGameId, lang])
-
-  const themeSearchTextById = useMemo(() => {
-    const map = new Map<number, string>()
-    for (const row of themeSearchRows) map.set(row.theme.id, row.filterText)
-    return map
-  }, [themeSearchRows])
-
-  const giftSearchRows = useMemo(() => {
-    return gifts.map(g => {
-      const displayName = getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang)
-      return {
-        displayName,
-        searchText: `${displayName}\n${g.name}`.toLowerCase(),
-        themeCount: g.game_id ? giftThemeCountByGameId.get(g.game_id) ?? 0 : 0,
-      }
-    })
-  }, [gifts, giftThemeCountByGameId, lang])
-
-  const themeSearchSuggestions = useMemo(() => {
-    if (!themeSearch.trim() || themeSearch.trim().length < 1) return []
-    const q = themeSearch.trim().toLowerCase()
-    const suggestions: Array<{ type: 'theme' | 'gift'; label: string; sub?: string }> = []
-    for (const { theme, displayName, themeText } of themeSearchRows) {
-      if (themeText.includes(q)) {
-        const diff =
-          theme.difficulty === 'hard'
-            ? ` [${t('mirrorDungeon.tier.hard')}]`
-            : theme.difficulty === 'extreme'
-            ? ` [${t('mirrorDungeon.tier.extreme')}]`
-            : ''
-        suggestions.push({ type: 'theme', label: displayName, sub: diff })
-      }
-      if (suggestions.length >= 8) break
-    }
-    if (suggestions.length < 8) {
-      const seen = new Set<string>()
-      for (const { displayName, searchText, themeCount } of giftSearchRows) {
-        if (searchText.includes(q) && !seen.has(displayName)) {
-          seen.add(displayName)
-          if (themeCount > 0) {
-            const countLabel = lang === 'ko'
-              ? `${themeCount}개 ${t('mirrorDungeon.theme.autocompleteTheme')}`
-              : `${themeCount} ${t('mirrorDungeon.theme.autocompleteTheme')}`
-            suggestions.push({ type: 'gift', label: displayName, sub: countLabel })
+  const suggestGroups = useMemo<SuggestGroup[]>(() => {
+    const found = packSuggestions(packIndex, giftIndex, themeSearch)
+    return [
+      {
+        title: t('mirrorDungeon.tab.themes'),
+        rows: found.packs.map(hit => {
+          const theme = themeById.get(hit.entry.href)!
+          const hard = theme.difficulty === 'hard' || theme.difficulty === 'extreme'
+          return {
+            key: `p${theme.id}`,
+            onPick: () => onThemeClick(theme.id),
+            body: <SuggestRow poster image={hit.entry.icon} name={hit.entry.label} marks={nameMarks(hit)}
+              right={hard ? t(`mirrorDungeon.tier.${theme.difficulty}`) : undefined} rightColor="var(--error-text)" />,
           }
-          if (suggestions.length >= 8) break
-        }
-      }
-    }
-    return suggestions
-  }, [themeSearch, themeSearchRows, giftSearchRows, lang])
+        }),
+      },
+      {
+        title: t('mirrorDungeon.tab.gifts'),
+        rows: found.gifts.map(hit => ({
+          key: `g${hit.entry.href}`,
+          onPick: () => setThemeSearch(hit.entry.label),
+          body: <SuggestRow image={hit.entry.icon} name={hit.entry.label} marks={nameMarks(hit)} right={tp('packCount', { count: Number(hit.entry.sublabel) })} />,
+        })),
+      },
+    ].filter(group => group.rows.length > 0)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packIndex, giftIndex, themeById, themeSearch, lang, onThemeClick, setThemeSearch])
 
   // 난이도 필터는 보여줄 구역을 고른다. 검색은 모든 구역에 적용.
   const searchedThemes = useMemo(() => {
-    const q = themeSearch.trim().toLowerCase()
+    const q = themeSearch.trim()
     if (!q) return normalThemes
-    return normalThemes.filter(th => themeSearchTextById.get(th.id)?.includes(q) ?? false)
-  }, [normalThemes, themeSearch, themeSearchTextById])
+    return findHits(packIndex, q).map(hit => themeById.get(hit.entry.href)!)
+  }, [normalThemes, themeSearch, packIndex, themeById])
 
   const sections = useMemo(() => {
     const visible = SECTIONS.filter(sec => themeDiffFilter === '전체' || sec.diff === themeDiffFilter)
@@ -233,54 +181,14 @@ export default function ThemeTab({
         className="sticky-under-nav z-30 -mx-4 mb-6 flex flex-wrap items-center gap-2 px-4 py-2.5 md:-mx-6 md:px-6"
         style={{ background: 'var(--bg-deep)', borderBottom: '1px solid #2e2417' }}
       >
-        <div className="relative w-full min-w-0 sm:w-auto sm:flex-1 sm:max-w-[20rem]">
-          <Search size={14} aria-hidden style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#9c8b73', pointerEvents: 'none' }} />
-          <input
-            type="search"
-            aria-label={t('mirrorDungeon.theme.search')}
-            placeholder={t('mirrorDungeon.theme.search')}
-            value={themeSearch}
-            onChange={e => setThemeSearch(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-            className="min-h-[2.25rem] w-full py-1.5 pl-8 pr-8 text-[0.8125rem] outline-none placeholder:text-[var(--text-muted)] focus-visible:border-[var(--gold)]"
-            style={{ background: '#17120c', border: '1px solid #2e2417', borderRadius: '0.25rem', color: 'var(--text-primary)' }}
-          />
-          {themeSearch && (
-            <button
-              type="button"
-              aria-label={t('mirrorDungeon.filter.reset')}
-              onClick={() => setThemeSearch('')}
-              className={`absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center ${focusRing}`}
-              style={{ color: '#9c8b73', cursor: 'pointer' }}
-            >
-              <X size={12} />
-            </button>
-          )}
-          {/* 자동완성 */}
-          {searchFocused && themeSearchSuggestions.length > 0 && (
-            <div
-              className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden"
-              style={{ background: '#17120c', border: '1px solid #2e2417', borderRadius: '0.25rem' }}
-            >
-              {themeSearchSuggestions.map((s, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-white/5"
-                  style={{ cursor: 'pointer', borderBottom: '1px solid #2e2417' }}
-                  onMouseDown={() => setThemeSearch(s.label)}
-                >
-                  <span style={{ color: s.type === 'theme' ? 'var(--gold)' : '#9c8b73', fontSize: '0.6875rem', fontFamily: 'var(--font-heading)', minWidth: '2.5rem' }}>
-                    {s.type === 'theme' ? t('mirrorDungeon.theme.autocompleteTheme') : t('mirrorDungeon.theme.autocompleteGift')}
-                  </span>
-                  <span style={{ color: 'var(--text-primary)', fontSize: '0.8125rem' }}>{s.label}</span>
-                  {s.sub && <span style={{ color: '#9c8b73', fontSize: '0.6875rem', marginLeft: 'auto' }}>{s.sub}</span>}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <SearchBox
+          value={themeSearch}
+          onChange={setThemeSearch}
+          label={t('mirrorDungeon.theme.search')}
+          clearLabel={t('mirrorDungeon.filter.reset')}
+          groups={suggestGroups}
+          className="w-full min-w-0 sm:w-auto sm:flex-1 sm:max-w-[20rem]"
+        />
 
         <div role="group" aria-label={t('mirrorDungeon.theme.difficulty')} className="flex items-stretch" style={{ border: '1px solid #2e2417', borderRadius: '0.25rem' }}>
           {(['전체', '노말', '하드', '익스트림'] as const).map((d, i) => {

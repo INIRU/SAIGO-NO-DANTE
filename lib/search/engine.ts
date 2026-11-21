@@ -144,8 +144,12 @@ const codes = (s: string) => Uint16Array.from({ length: s.length }, (_, i) => s.
 let rows = [new Float64Array(128), new Float64Array(128)]
 let from = [new Int32Array(128), new Int32Array(128)]
 
-/** Cheapest edit cost of q against any stretch of text, with where that stretch starts and ends; null above max. */
-function nearest(q: Uint16Array, text: Uint16Array, max: number): { cost: number; start: number; end: number } | null {
+/**
+ * Cheapest edit cost of q against any stretch of text, with where that stretch starts and ends; null above max.
+ * owner[j] is the character letter j belongs to: the stretch ends where a character does, since half a syllable
+ * ("호수" inside "호선") is another word, not a typo.
+ */
+function nearest(q: Uint16Array, text: Uint16Array, max: number, owner: number[]): { cost: number; start: number; end: number } | null {
   if (text.length >= rows[0].length) {
     rows = [new Float64Array(text.length * 2), new Float64Array(text.length * 2)]
     from = [new Int32Array(text.length * 2), new Int32Array(text.length * 2)]
@@ -166,9 +170,9 @@ function nearest(q: Uint16Array, text: Uint16Array, max: number): { cost: number
     if (low > max) return null
     ;[prev, cur, pf, cf] = [cur, prev, cf, pf]
   }
-  let end = 0
-  for (let j = 1; j <= text.length; j++) if (prev[j] < prev[end]) end = j
-  return prev[end] <= max ? { cost: prev[end], start: pf[end], end } : null
+  let end = -1
+  for (let j = 1; j <= text.length; j++) if (owner[j - 1] !== owner[j] && (end < 0 || prev[j] < prev[end])) end = j
+  return end > 0 && prev[end] <= max ? { cost: prev[end], start: pf[end], end } : null
 }
 
 /** The letters of the name equal to the query's, in order, near where the match ended (a wrong letter stays unmarked). */
@@ -197,7 +201,7 @@ function typo(e: IndexEntry, q: string, qj: Uint16Array, max: number): { cost: n
       f.jm = { tj: codes(jamo(f.f.text)), owner }
     }
     if (f.jm.tj.length < qj.length - max) continue
-    const r = nearest(qj, f.jm.tj, max), o = f.jm.owner
+    const o = f.jm.owner, r = nearest(qj, f.jm.tj, max, o)
     // the stretch has to open a word: a short query one letter off would otherwise match across any two words
     if (!r || o[r.start] === o[r.start - 1] || !isWordStart(f.text, f.f.map[o[r.start]])) continue
     if (!best || r.cost < best.cost) best = { cost: r.cost, reason: { field: 'fuzzy', text: f.text, ranges: equalLetters(f.f, q, f.jm.owner[r.end - 1]) } }

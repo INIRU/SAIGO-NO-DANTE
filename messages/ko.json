@@ -2313,6 +2313,8 @@
     "moreFilters": "필터",
     "giftUnit": "개",
     "packUnit": "개",
+    "suggestKeyword": "키워드",
+    "suggestEffect": "효과",
     "sort": "정렬",
     "sortKeyword": "키워드별",
     "sortReverse": "정렬 순서 뒤집기",

@@ -148,6 +148,10 @@ describe('hangul typos', () => {
     expect(search([named('합성 재료 소모')], '료슈')).toEqual([])
     expect(search([named('강한 쐐기')], '쇄기')[0].kind).toBe('typo')
   })
+  it('does not end a typo match in the middle of a syllable', () => {
+    expect(search([named('1호선')], '호수')).toEqual([])
+    expect(search([named('진동 폭발')], '진둥')[0].kind).toBe('typo')
+  })
   it('keeps the english one-edit fallback', () => {
     const r = search(entries, 'meursalt')
     expect(r[0].entry.href).toBe('/sinners/meursault')

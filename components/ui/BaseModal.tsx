@@ -97,7 +97,8 @@ export default function BaseModal({
               forceMount
               {...(!description ? { 'aria-describedby': undefined } : {})}
               onPointerDownOutside={() => onClose()}
-              onEscapeKeyDown={() => onClose()}
+              // Escape first closes an open suggestion panel (SearchBox); the dialog stays.
+              onEscapeKeyDown={event => { if ((event.target as Element | null)?.closest?.('[data-suggest-open]')) event.preventDefault(); else onClose() }}
               onOpenAutoFocus={initialFocus === 'dialog' ? event => { event.preventDefault(); (event.currentTarget as HTMLElement | null)?.focus({ preventScroll: true }) } : undefined}
             >
               <m.div

@@ -178,7 +178,7 @@ test('event gallery loads every confirmed original without placeholders', async 
   }
   await page.evaluate(() => window.scrollTo(0, 0))
   await page.screenshot({ path: info.outputPath('gallery.png'), animations: 'disabled' })
-  await page.getByRole('textbox').last().fill('zzzz-no-matching-event')
+  await page.getByRole('combobox').last().fill('zzzz-no-matching-event')
   await expect(cards).toHaveCount(0)
   await expect(page.getByText('결과 없음', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '검색 지우기', exact: true }).click()

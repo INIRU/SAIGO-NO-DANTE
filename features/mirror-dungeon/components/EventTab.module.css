@@ -1,9 +1,6 @@
 .catalog { padding-top: .5rem; }
 .filters { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; padding-bottom: 1.25rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
-.search { display: flex; align-items: center; gap: .75rem; flex: 1; min-width: 12rem; max-width: 28rem; padding: .75rem 1rem; border: 1px solid var(--border); color: var(--text-secondary); background: var(--bg-panel); }
-.search:focus-within { border-color: var(--gold-light); outline: 1px solid var(--gold-light); }
-.search input { outline: none; flex: 1; min-width: 0; font-size: .8125rem; color: var(--text-primary); background: transparent; }
-.search button { cursor: pointer; }
+.search { flex: 1; min-width: 12rem; max-width: 28rem; }
 .count { margin-left: auto; color: var(--text-tertiary); font-size: .8125rem; font-variant-numeric: tabular-nums; }
 .gallery { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; position: relative; z-index: 0; }
 .card { text-align: left; min-width: 0; display: flex; flex-direction: column; cursor: pointer; }

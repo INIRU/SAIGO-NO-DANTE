@@ -5,13 +5,14 @@ import Image from 'next/image'
 import { eventCheckSins, groupEventChoices } from '@/features/mirror-dungeon/lib/event-flow'
 import { colorizeEventText } from '@/features/mirror-dungeon/lib/event-text'
 import { getRootEvents } from '@/lib/utils/event-catalog'
-import { Search, X } from 'lucide-react'
 import styles from './EventTab.module.css'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import Dropdown from '@/components/ui/Dropdown'
+import SearchBox, { SuggestCut, SuggestRow, nameMarks, type SuggestGroup } from '@/components/ui/SearchBox'
 import QuietImage from '@/components/ui/QuietImage'
 import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import type { EgoGift, EgoGiftTheme, MdEvent, MdEventChoice } from '@/features/mirror-dungeon/types'
+import { choiceEntries, eventEntries, eventSuggestions, foundEventIds, givenGiftEntries } from '@/features/mirror-dungeon/lib/search-suggestions'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
@@ -80,43 +81,68 @@ export default function EventTab({
       })),
   ], [themes, lang])
 
-  const { filteredEvents, totalCount } = useMemo(() => {
-    const q = eventSearch.trim().toLowerCase()
-    const filtered = q
-      ? rootEvents.filter(ev => {
-          const localizedName = getEventName(ev)
-          const localizedDesc = getEventDesc(ev)
-          if (localizedName?.toLowerCase().includes(q) || ev.name?.toLowerCase().includes(q)) return true
-          if (localizedDesc?.toLowerCase().includes(q) || ev.desc_text?.toLowerCase().includes(q)) return true
-          if (choicesByEventId.get(ev.id)?.some(c =>
-            c.message?.toLowerCase().includes(q) || c.message_desc?.toLowerCase().includes(q)
-          )) return true
-          if (ev.gift_ids?.some(gid => {
-            const g = giftByGameId.get(gid)
-            if (!g) return false
-            const localizedGiftName = getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang)
-            return localizedGiftName.toLowerCase().includes(q) || g.name.toLowerCase().includes(q)
-          })) return true
-          return false
-        })
-      : rootEvents
+  // Reward gifts are matched through the event (its context); the ones listed as suggestions are those some event gives.
+  const eventIndex = useMemo(() => eventEntries(rootEvents, giftByGameId, lang, getEventTitle), [rootEvents, giftByGameId, lang]) // eslint-disable-line react-hooks/exhaustive-deps
+  const choiceIndex = useMemo(() => choiceEntries(rootEvents, choicesByEventId, getEventTitle), [rootEvents, choicesByEventId, lang]) // eslint-disable-line react-hooks/exhaustive-deps
+  const giftIndex = useMemo(() => givenGiftEntries(rootEvents.map(ev => ev.gift_ids ?? []), giftByGameId, lang), [rootEvents, giftByGameId, lang])
+  const rootById = useMemo(() => new Map(rootEvents.map(ev => [String(ev.id), ev])), [rootEvents])
 
+  const suggestGroups = useMemo<SuggestGroup[]>(() => {
+    const found = eventSuggestions(eventIndex, choiceIndex, giftIndex, eventSearch)
+    return [
+      {
+        title: t('mirrorDungeon.tab.events'),
+        rows: found.events.map(hit => {
+          const event = rootById.get(hit.entry.href)!
+          return {
+            key: `e${event.id}`,
+            onPick: () => onSelectEvent(event),
+            body: hit.snippet
+              ? <SuggestCut image={hit.entry.icon} name={hit.entry.label} {...hit.snippet} />
+              : <SuggestRow image={hit.entry.icon} name={hit.entry.label} marks={nameMarks(hit)} />,
+          }
+        }),
+      },
+      {
+        title: t('mirrorDungeon.event.choicesLabel'),
+        rows: found.choices.map(hit => {
+          const event = rootById.get(hit.entry.href.split(':')[0])!
+          return { key: `c${hit.entry.href}`, onPick: () => onSelectEvent(event), body: <SuggestCut image={event.image_url} name={hit.entry.sublabel!} {...hit.snippet!} /> }
+        }),
+      },
+      {
+        title: t('mirrorDungeon.tab.gifts'),
+        rows: found.gifts.map(hit => ({
+          key: `g${hit.entry.href}`,
+          onPick: () => setEventSearch(hit.entry.label),
+          body: <SuggestRow image={hit.entry.icon} name={hit.entry.label} marks={nameMarks(hit)} right={`${t('mirrorDungeon.tab.events')} ${hit.entry.sublabel}`} />,
+        })),
+      },
+    ].filter(group => group.rows.length > 0)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventIndex, choiceIndex, giftIndex, rootById, eventSearch, lang, onSelectEvent, setEventSearch])
+
+  const { filteredEvents, totalCount } = useMemo(() => {
+    const q = eventSearch.trim()
+    const found = q ? foundEventIds(eventIndex, choiceIndex, q).map(id => rootById.get(String(id))!) : rootEvents
     const themeFiltered = eventThemeFilter
-      ? filtered.filter(ev => ev.theme_ids?.includes(Number(eventThemeFilter)))
-      : filtered
+      ? found.filter(ev => ev.theme_ids?.includes(Number(eventThemeFilter)))
+      : found
 
     return { filteredEvents: themeFiltered, totalCount: rootEvents.length }
-  }, [rootEvents, eventSearch, eventThemeFilter, giftByGameId, choicesByEventId, lang])
+  }, [rootEvents, eventSearch, eventThemeFilter, eventIndex, choiceIndex, rootById])
 
   return (
     <section className={styles.catalog}>
       <div className={styles.filters}>
-        <div className={styles.search}>
-          <Search size={17} aria-hidden="true" />
-          <input aria-label={t('mirrorDungeon.event.search')} placeholder={t('mirrorDungeon.event.search')}
-            value={eventSearch} onChange={e => setEventSearch(e.target.value)} />
-          {eventSearch && <button type="button" onClick={() => setEventSearch('')} aria-label={t('mirrorDungeon.event.clearSearch')}><X size={16} /></button>}
-        </div>
+        <SearchBox
+          value={eventSearch}
+          onChange={setEventSearch}
+          label={t('mirrorDungeon.event.search')}
+          clearLabel={t('mirrorDungeon.event.clearSearch')}
+          groups={suggestGroups}
+          className={styles.search}
+        />
         <Dropdown value={eventThemeFilter} options={themeOptions} onChange={setEventThemeFilter}
           prefix={t('mirrorDungeon.event.themePrefix')} defaultValue="" minWidth={140} />
         <span className={styles.count}>{filteredEvents.length} / {totalCount}</span>

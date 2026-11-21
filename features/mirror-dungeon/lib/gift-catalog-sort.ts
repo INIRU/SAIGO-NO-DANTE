@@ -16,8 +16,8 @@ interface GiftFilterOptions {
   keywords: ReadonlySet<string>
   grades: ReadonlySet<string>
   tiers: ReadonlySet<string>
-  /** the lower-cased search text */
-  query: string
+  /** Gift id -> place in the search engine's order; null when nothing is searched. Only these gifts pass. */
+  ranks: ReadonlyMap<string, number> | null
   sortBy: 'default' | 'name' | 'grade'
   sortDesc: boolean
   slotFilter: string
@@ -30,7 +30,7 @@ interface GiftFilterOptions {
 
 /** The gifts that pass every filter, in the catalog's order: pinned groups first, then by keyword, name or grade. */
 export function filterAndSortGifts(gifts: readonly EgoGift[], o: GiftFilterOptions): EgoGift[] {
-  const { keywords, grades, tiers, query, sortBy, sortDesc, slotFilter, themeGiftNames, giftSlotMap, pinned, keywordOrder, keepOrder } = o
+  const { keywords, grades, tiers, ranks, sortBy, sortDesc, slotFilter, themeGiftNames, giftSlotMap, pinned, keywordOrder, keepOrder } = o
   const slotNum = slotFilter !== '전체' ? Number(slotFilter) : null
   const result = gifts.filter(g => {
     if (keywords.size > 0 && !keywords.has(g.keyword)) return false
@@ -42,12 +42,15 @@ export function filterAndSortGifts(gifts: readonly EgoGift[], o: GiftFilterOptio
       const slots = giftSlotMap.get(g.id)
       if (!slots || !slots.has(slotNum)) return false
     }
-    if (query && ![g.name, g.name_en, g.name_jp].some(name => name?.toLocaleLowerCase().includes(query))) return false
+    if (ranks && !ranks.has(g.id)) return false
     if (themeGiftNames && !themeGiftNames.has(g.name)) return false
     return true
   })
 
-  if (keepOrder) {
+  if (ranks && !keepOrder && sortBy === 'default') {
+    // A search lists the best match first, until the person picks a sort.
+    result.sort((a, b) => ranks.get(a.id)! - ranks.get(b.id)!)
+  } else if (keepOrder) {
     // The sort is stable: inside a keyword the gifts stay in the order given. Pinned groups keep that order as it is.
     if (!pinned?.length) return result.sort((a, b) => keywordRank(a.keyword, keywordOrder) - keywordRank(b.keyword, keywordOrder))
   } else if (sortBy === 'name') {
