@@ -29,7 +29,7 @@ export interface KeywordEgo {
   folder_name: string | null; image_url: string | null
 }
 export interface KeywordGift {
-  name: string; keyword: string; grade: string; image_url: string | null
+  game_id?: number | null; name: string; keyword: string; grade: string; image_url: string | null
   effect_base: string | null; effect_plus: string | null; effect_plusplus: string | null
 }
 

@@ -18,6 +18,13 @@ import ThemeTabView from '@/features/mirror-dungeon/components/ThemeTab'
 import EventTab from '@/features/mirror-dungeon/components/EventTab'
 import PageHeader from '@/components/ui/PageHeader'
 import { useHtmlFlag } from '@/hooks/useHtmlFlag'
+import { stepInto } from '@/lib/utils/detail-trail'
+import { getLocalizedName } from '@/lib/i18n/localize'
+import { getThemePackCompositeImageUrl, getThemePackVisualConfig } from '@/lib/data/theme-pack-visuals'
+
+type DetailRef = { kind: 'gift' | 'pack'; id: string }
+const refKey = (ref: DetailRef) => `${ref.kind}:${ref.id}`
+
 const ThemeModal = dynamic(() => import('@/features/mirror-dungeon/components/ThemeModal'), { ssr: false })
 const GiftModal = dynamic(() => import('@/features/mirror-dungeon/components/GiftModal'), { ssr: false })
 const EventModal = dynamic(() => import('@/features/mirror-dungeon/components/EventModal'), { ssr: false })
@@ -150,7 +157,7 @@ export default function MirrorDungeonClient({
   const [giftIdParam, setGiftIdParam] = useQueryState('gift', parseAsString.withDefault(''))
   const {
     localizedEvents, eventById, choicesByEventId, eventCount, choiceCountByEventId, selected, giftByGameId, themeGiftNames,
-    giftNameByGameId, recipeMap, giftImageMap, giftNameMap, giftSlotMap,
+    recipeMap, giftImageMap, giftNameMap, giftSlotMap,
   } = useMirrorDungeonData({ lang, gifts, recipes, themes, events, choices, selectedThemeId, giftIdParam })
   const setSelected = useCallback((gift: EgoGift | null) => startTransition(() => { void setGiftIdParam(gift ? String(gift.id) : null) }), [setGiftIdParam])
   const [packIdParam, setPackIdParam] = useQueryState('pack', parseAsString.withDefault(''))
@@ -160,11 +167,35 @@ export default function MirrorDungeonClient({
   const selectedEvent = eventById.get(Number(eventIdParam)) ?? null
   const setSelectedEvent = (event: MdEvent | null) => startTransition(() => { void setEventIdParam(event ? String(event.id) : null) })
 
-  // ThemeModal에서 기프트 선택 시: 테마 모달 닫고 GiftModal 열기
-  const handleThemeModalSelectGift = useCallback((gift: EgoGift) => {
-    setExpandedThemeId(null)
-    setSelected(gift)
-  }, [])
+  // The gift and pack windows opened one from another: one shows at a time, and the last entry is the one on screen.
+  const [trail, setTrail] = useState<DetailRef[]>([])
+  const showDetail = (ref: DetailRef | null) => startTransition(() => {
+    void setGiftIdParam(ref?.kind === 'gift' ? ref.id : null)
+    void setPackIdParam(ref?.kind === 'pack' ? ref.id : null)
+  })
+  const current: DetailRef | null = selected ? { kind: 'gift', id: String(selected.id) } : expandedThemeId !== null ? { kind: 'pack', id: String(expandedThemeId) } : null
+  // A window opened from a list or by its address starts a new trail.
+  const onTrail = current !== null && trail.length > 0 && refKey(trail[trail.length - 1]) === refKey(current)
+  const moveTo = (next: DetailRef) => {
+    setTrail(stepInto(onTrail ? trail : current ? [current] : [], next, refKey))
+    showDetail(next)
+  }
+  const closeDetail = () => { setTrail([]); showDetail(null) }
+  const previous = onTrail ? trail[trail.length - 2] : undefined
+  const back = (() => {
+    if (!previous) return undefined
+    const onClick = () => { setTrail(trail.slice(0, -1)); showDetail(previous) }
+    if (previous.kind === 'gift') {
+      const gift = gifts.find(g => String(g.id) === previous.id)
+      return gift && { name: getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang), image: gift.image_url, onClick }
+    }
+    const theme = themes.find(th => String(th.id) === previous.id)
+    return theme && {
+      name: getLocalizedName({ name_kr: theme.name, name_en: theme.name_en, name_jp: theme.name_jp }, lang),
+      image: getThemePackVisualConfig(theme.id) ? getThemePackCompositeImageUrl(theme.id) : theme.image_url,
+      onClick,
+    }
+  })()
 
   const tabs = (['gifts', 'themes', 'events'] as const).map(tab => ({
     key: tab,
@@ -288,8 +319,9 @@ export default function MirrorDungeonClient({
             theme={theme}
             themeGifts={themeGifts}
             getGiftKeywordIcon={getGiftKeywordIcon}
-            onClose={() => setExpandedThemeId(null)}
-            onSelectGift={handleThemeModalSelectGift}
+            onClose={closeDetail}
+            onSelectGift={gift => moveTo({ kind: 'gift', id: String(gift.id) })}
+            back={back}
             events={localizedEvents}
             choiceCountByEventId={choiceCountByEventId}
           />
@@ -297,28 +329,21 @@ export default function MirrorDungeonClient({
       })()}
 
       {/* 기프트 상세 모달 */}
-      {selected && (() => {
-        const resolvedGift = {
-          ...selected,
-          effect_base: selected.effect_base?.replace('{0}', selected.convert_to ? `→ [${giftNameByGameId.get(selected.convert_to) ?? selected.convert_to}]` : '') ?? null,
-          effect_base_en: selected.effect_base_en?.replace('{0}', selected.convert_to ? `→ [${giftNameByGameId.get(selected.convert_to) ?? selected.convert_to}]` : '') ?? null,
-          effect_base_jp: selected.effect_base_jp?.replace('{0}', selected.convert_to ? `→ [${giftNameByGameId.get(selected.convert_to) ?? selected.convert_to}]` : '') ?? null,
-        }
-        return (
-          <GiftModal
-            gift={resolvedGift}
-            recipe={recipeMap.get(selected.name) ?? null}
-            giftImageMap={giftImageMap}
-            giftNameMap={giftNameMap}
-            onClose={() => setSelected(null)}
-            getGiftKeywordIcon={getGiftKeywordIcon}
-            themes={themes}
-            onThemeClick={setExpandedThemeId}
-            gifts={gifts}
-            onSelectGift={setSelected}
-          />
-        )
-      })()}
+      {selected && (
+        <GiftModal
+          gift={selected}
+          recipe={recipeMap.get(selected.name) ?? null}
+          giftImageMap={giftImageMap}
+          giftNameMap={giftNameMap}
+          onClose={closeDetail}
+          getGiftKeywordIcon={getGiftKeywordIcon}
+          themes={themes}
+          onThemeClick={id => moveTo({ kind: 'pack', id: String(id) })}
+          gifts={gifts}
+          onSelectGift={gift => moveTo({ kind: 'gift', id: String(gift.id) })}
+          back={back}
+        />
+      )}
 
       {/* 이벤트 상세 모달 */}
       {selectedEvent && (

@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { CATALOG_CACHE_CONTROL } from '@/lib/constants/http-cache'
+import { giftIdsIn } from '@/lib/game-text/placeholders'
 
 async function getCachedEgoGifts() {
   'use cache'
@@ -18,7 +19,12 @@ async function getCachedEgoGifts() {
   return data
 }
 
-/** One whole gift for a note label: a uuid key is its id (note blocks), anything else its Korean name (older tokens). */
+const GIFT_COLUMNS = 'id, game_id, name, name_en, name_jp, keyword, grade, image_url, effect_base, effect_base_en, effect_base_jp, effect_plus, effect_plus_en, effect_plus_jp, effect_plusplus, effect_plusplus_en, effect_plusplus_jp, activation_condition'
+
+/**
+ * One whole gift for a note label: a uuid key is its id (note blocks), anything else its Korean name (older tokens).
+ * `named_gifts` holds the gifts its text points at ({{gift:<game id>}}), so the modal shows them by name and opens them.
+ */
 async function getCachedEgoGift(key: string) {
   'use cache'
   cacheLife('max')
@@ -27,12 +33,16 @@ async function getCachedEgoGift(key: string) {
   const { data, error } = await createAdminClient()
     .schema('limbus')
     .from('ego_gifts')
-    .select('id, game_id, name, name_en, name_jp, keyword, grade, image_url, effect_base, effect_base_en, effect_base_jp, effect_plus, effect_plus_en, effect_plus_jp, effect_plusplus, effect_plusplus_en, effect_plusplus_jp, activation_condition')
+    .select(GIFT_COLUMNS)
     .eq(/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(key) ? 'id' : 'name', key)
     .limit(1)
     .maybeSingle()
   if (error) throw new Error(error.message)
-  return data
+  const named = data ? giftIdsIn(data.effect_base, data.effect_plus, data.effect_plusplus) : []
+  if (!named.length) return data
+  const targets = await createAdminClient().schema('limbus').from('ego_gifts').select(GIFT_COLUMNS).in('game_id', named)
+  if (targets.error) throw new Error(targets.error.message)
+  return { ...data, named_gifts: targets.data }
 }
 
 export async function GET(request: Request) {

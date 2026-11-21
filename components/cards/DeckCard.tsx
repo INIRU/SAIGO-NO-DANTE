@@ -9,14 +9,14 @@ import IntentLink from '@/components/ui/IntentLink'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
-import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
 import type { NotePreviewComponent } from '@/components/cards/note-preview'
 import { CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
-import { contentTypeMessageKey, localizeDeckKeyword } from '@/lib/decks/decks-types'
+import { contentTypeMessageKey } from '@/lib/decks/decks-types'
 import type { SupportedLang } from '@/lib/i18n'
 import { guestAuthorName } from '@/lib/guest/copy'
 import { computeDeckMainKeywordsFromSlots, normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
 import OwnedBadge, { useMissingSinners } from '@/components/cards/OwnedBadge'
+import CardKeywords from '@/components/cards/CardKeywords'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
 
 type IdentityPreview = {
@@ -71,8 +71,6 @@ function DeckCard({ deck, onTagClick, NotePreview }: DeckCardProps) {
   const locale = useLocale() as SupportedLang
   const t = useTranslations('decks')
   const preview = deck.description ? notePreviewText(deck.description) : ''
-  const { getIconUrl } = useKeywordData()
-  const keywords = useKeywords()
   const date = useMemo(() => {
     const d = deck.created_at.slice(0, 10) // "YYYY-MM-DD"
     const [, mm, dd] = d.split('-')
@@ -100,10 +98,6 @@ function DeckCard({ deck, onTagClick, NotePreview }: DeckCardProps) {
 
     return computeDeckMainKeywordsFromSlots(sorted.filter((slot): slot is IdentityPreview => Boolean(slot)))
   }, [deck.main_keywords, sorted])
-
-  // 키워드 최대 3개 + 넘치면 "+N" 뱃지
-  const visibleKeywords = useMemo(() => topKeywords.slice(0, 3), [topKeywords])
-  const overflowCount = topKeywords.length - visibleKeywords.length
 
   return (
     <div className="board-card group relative flex flex-col h-full overflow-hidden">
@@ -149,8 +143,8 @@ function DeckCard({ deck, onTagClick, NotePreview }: DeckCardProps) {
           )}
 
           {/* 콘텐츠 유형 + 자동 키워드 (한 줄) */}
-          {(showContentType || visibleKeywords.length > 0) && (
-            <div className="flex flex-wrap items-center mb-2" style={{ gap: '0.25rem' }}>
+          {(showContentType || topKeywords.length > 0) && (
+            <div className="mb-2 flex flex-wrap items-center gap-x-2.5 gap-y-1">
               {showContentType && (
                 <span
                   style={{
@@ -169,55 +163,7 @@ function DeckCard({ deck, onTagClick, NotePreview }: DeckCardProps) {
                   {t(`contentTypes.${contentTypeMessageKey(deck.content_type)}`)}
                 </span>
               )}
-              {visibleKeywords.map(kw => {
-                const iconUrl = getIconUrl(kw)
-                return (
-                  <span
-                    key={kw}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                      padding: '0.125rem 0.5rem',
-                      background: 'rgba(136,88,40,0.15)',
-                      color: '#c8a450',
-                      border: '1px solid rgba(136,88,40,0.3)',
-                      borderRadius: 'var(--radius-sm)',
-                      fontFamily: 'var(--font-heading)',
-                      fontSize: '0.75rem',
-                      letterSpacing: '0.03em',
-                    }}
-                  >
-                    {iconUrl && (
-                      <Image
-                        src={iconUrl}
-                        alt=""
-                        width={11}
-                        height={11}
-                        style={{ width: '0.6875rem', height: '0.6875rem', flexShrink: 0 }}
-                      />
-                    )}
-                    {localizeDeckKeyword(kw, keywords[kw], locale)}
-                  </span>
-                )
-              })}
-              {overflowCount > 0 && (
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    padding: '0.125rem 0.375rem',
-                    background: 'rgba(136,88,40,0.08)',
-                    color: 'var(--text-muted)',
-                    border: '1px solid rgba(136,88,40,0.2)',
-                    borderRadius: 'var(--radius-sm)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  +{overflowCount}
-                </span>
-              )}
+              <CardKeywords keywords={topKeywords} />
             </div>
           )}
 

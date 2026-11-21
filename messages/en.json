@@ -1037,8 +1037,7 @@
         "loadingMore": "Loading..."
       },
       "card": {
-        "anonymous": "Anonymous",
-        "toggleKeyword": "Toggle {keyword} keyword filter"
+        "anonymous": "Anonymous"
       },
       "relativeTime": {
         "now": "just now",
@@ -1073,10 +1072,10 @@
     "floorCount": "{count}F",
     "floorTab": {
       "difficulty": {
-        "normal": "Normal",
-        "hard": "Hard",
-        "overlap": "Infinity Loop",
-        "extreme": "Extreme"
+        "normal": "NORMAL",
+        "hard": "HARD",
+        "overlap": "INFINITY LOOP",
+        "extreme": "EXTREME"
       },
       "difficultySelectorLabel": "Floor {floor} difficulty",
       "themeModalTitle": "Floor {floor} theme packs",

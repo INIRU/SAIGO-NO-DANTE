@@ -1,9 +1,10 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { giftConditionScope } from '@/lib/planner/gift-condition-status'
 import GiftDetailModal, { localizedGiftText, useGiftConditionText, type GiftDetailData, type GiftDetailRecipePart } from '@/features/mirror-dungeon/components/GiftDetailModal'
+import type { DetailBackTarget } from '@/components/ui/DetailBack'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import type { EgoGift, Recipe, EgoGiftTheme } from '@/features/mirror-dungeon/types'
@@ -20,6 +21,7 @@ export default function GiftModal({
   onThemeClick,
   gifts,
   onSelectGift,
+  back,
 }: {
   gift: EgoGift
   recipe: Recipe | null
@@ -32,20 +34,17 @@ export default function GiftModal({
   /** Full catalog, so recipe ingredients can open their own detail. */
   gifts?: EgoGift[]
   onSelectGift?: (gift: EgoGift) => void
+  /** The gift or pack this one was opened from. */
+  back?: DetailBackTarget
 }) {
   const lang = useLocale() as SupportedLang
   const t = useTranslations('giftDetail')
   const conditionText = useGiftConditionText(lang)
   const giftByName = useMemo(() => new Map((gifts ?? []).map(g => [g.name, g])), [gifts])
-  const [previous, setPrevious] = useState<EgoGift | null>(null)
 
   const name = getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang)
 
-  const open = (target: EgoGift) => {
-    setPrevious(gift)
-    onSelectGift?.(target)
-  }
-  // Upgrade targets and other gifts named in the effect text open in place, with a back link.
+  // Upgrade targets and other gifts named in the effect text open in place.
   const giftLinks = useMemo(() => gifts?.length ? {
     selfId: gift.id,
     convertToId: gift.convert_to != null ? gifts.find(g => g.game_id === gift.convert_to)?.id ?? null : null,
@@ -55,7 +54,7 @@ export default function GiftModal({
       image_url: g.image_url,
       keyword: g.keyword,
       gameId: g.game_id,
-      onClick: () => { setPrevious(gift); onSelectGift?.(g) },
+      onClick: () => onSelectGift?.(g),
     })),
   } : null, [gifts, gift, lang, onSelectGift])
 
@@ -63,7 +62,7 @@ export default function GiftModal({
     if (ingredient === RECIPE_FRAGMENTS) return { text: t('recipeFragments') }
     const found = giftByName.get(ingredient)
     const label = giftNameMap.get(ingredient) ?? ingredient
-    if (found) return { gift: { ...found, name: label }, onClick: found.id !== gift.id && onSelectGift ? () => open(found) : undefined }
+    if (found) return { gift: { ...found, name: label }, onClick: found.id !== gift.id && onSelectGift ? () => onSelectGift(found) : undefined }
     return { gift: { name: label, image_url: giftImageMap.get(ingredient) ?? null } }
   }
 
@@ -113,8 +112,7 @@ export default function GiftModal({
       gift={detail}
       lang={lang}
       onClose={onClose}
-      onBack={previous && onSelectGift ? () => { onSelectGift(previous); setPrevious(null) } : undefined}
-      backLabel={previous ? t('back', { gift: getLocalizedName({ name_kr: previous.name, name_en: previous.name_en, name_jp: previous.name_jp }, lang) }) : undefined}
+      back={back}
     />
   )
 }

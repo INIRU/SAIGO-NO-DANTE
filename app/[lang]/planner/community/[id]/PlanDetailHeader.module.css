@@ -67,12 +67,17 @@
   white-space: nowrap;
 }
 
-.fact dd[data-text] {
-  font-family: var(--font-heading);
+/* Three facts share a phone's width, so INFINITY LOOP and NORMAL/HARD are set smaller there, in a line as tall as the numbers. */
+.fact dd [data-plan-difficulty] {
+  padding: 0.25rem 0;
   font-size: 1.25rem;
-  line-height: 1.4;
-  white-space: normal;
-  word-break: keep-all;
+}
+
+@media (min-width: 640px) {
+  .fact dd [data-plan-difficulty] {
+    padding: 0;
+    font-size: 1.75rem;
+  }
 }
 
 .actions {

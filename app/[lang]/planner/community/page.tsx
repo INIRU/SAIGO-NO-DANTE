@@ -26,10 +26,10 @@ export default async function CommunityPage({ params }: { params: Promise<{ lang
   return (
     <div className="community-board flex min-h-screen flex-col" style={{ background: 'var(--bg-deep)' }}>
       <BoardHeader kind="planner" title={t('title')} action={t('newPlan')} viewAll={tShelf('viewAllPlans')} back={tShelf('back', { title: t('title') })} assist={tActions('triggerMode')} />
-      <Suspense fallback={<BoardShelfSkeleton />}>
+      <Suspense fallback={<BoardShelfSkeleton plan />}>
         {/* The default view is the discovery shelf, rendered with its first page (initialShelf, a minutes-long cache
             entry); the client loads the full list when browsing or searching. URL filters apply after hydration (StaticQueryAdapter). */}
-        <StaticQueryAdapter fallback={<BoardShelfSkeleton />}>
+        <StaticQueryAdapter fallback={<BoardShelfSkeleton plan />}>
           <CommunityClient initialShelf={initialShelf} />
         </StaticQueryAdapter>
       </Suspense>

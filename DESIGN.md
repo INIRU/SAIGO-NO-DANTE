@@ -89,6 +89,7 @@
 - 동기화(uptie)는 I~IV 이미지로 표시한다. 동기화 I·II는 기본 일러스트, III·IV는 각성(강제 동기화) 일러스트다. 편성의 기본값은 IV다.
 - 수감자 로고는 인격 등급(1·2·3성)마다 다른 에셋을 쓴다.
 - 인격 이름 줄바꿈은 게임 카드 제목을 따른다(`lib/data/identity-card-titles.json`, `identityNameLines`). 예: "흑수 - 미"는 한 줄.
+- 플랜 난이도는 게임처럼 영어 대문자로 쓴다(NORMAL, HARD, NORMAL/HARD, INFINITY LOOP, EXTREME). 모든 언어에서 같고, Bebas Kai와 난이도 색만 쓰며 상자를 두르지 않는다. 카드에서는 제목 위에 둔다(`components/cards/PlanDifficulty.tsx`). 게임 데이터 표시라서 "영어 대문자 소제목" 금지와는 다르다.
 - 거울 던전 가격은 크레딧 아이콘(`resources/md-credit`, `getGameUiAsset`)과 Bebas 숫자로 쓴다. "구매" 같은 글자 라벨은 화면에 두지 않는다(스크린 리더용으로만).
 - 사이트 로고는 단테 머리 SVG(`components/brand/DanteLogo.tsx`)다. 내비게이션, 히어로, 파비콘, OG 이미지, 로그인, 에러 페이지가 모두 같은 로고를 쓴다. 예전 로고 이미지는 쓰지 않는다.
 
@@ -104,6 +105,8 @@
 - 효과 글은 게임 글꼴(`--font-game-text`), 키워드는 게임 원문 색 그대로.
 - 테마팩 줄: 팩 그림을 칸 왼쪽에 꽉 채우고 이름을 옆에. 칸 높이는 모바일 44px, PC 36px. 남은 개수 버튼(+N)은 금색 Bebas.
 - 미리보기 카드는 같은 문법을 줄여 쓴다: 이름, 키워드 줄, `--border` 선, 효과 글.
+- 효과 글이 가리키는 다른 기프트(변하는 기프트 등)는 어디서나 노트의 기프트 라벨 하나로 그린다: 그림 + 이름, 키워드 색, 상자 없음(`GiftLabel`). 밑줄 링크나 `기프트` 글자 칩으로 두지 않는다.
+- 다른 창에서 넘어온 창은 닫기 버튼 줄에 이전 버튼을 둔다: ‹ + 지나온 것의 그림 + 이름(`components/ui/DetailBack.tsx`). 기프트 ↔ 기프트, 기프트 ↔ 테마팩 모두 같다.
 
 ## 6. 공용 컴포넌트
 
@@ -118,6 +121,7 @@
 | 기프트 카드, 아트, 등급 | `features/mirror-dungeon/components/GiftCard.tsx`, `GiftArtwork.tsx`, `GiftGrade.tsx` |
 | 기프트 목록(키워드 탭, 등급 칩, 검색) | `features/mirror-dungeon/components/GiftCatalog.tsx` |
 | 테마팩 카드 | `components/ui/ThemePackCard.tsx` |
+| 덱·플랜 카드의 주요 키워드(아이콘 + 이름, 상자 없이, 설명 아래), 플랜 난이도 | `components/cards/CardKeywords.tsx`, `components/cards/PlanDifficulty.tsx` |
 | 게시판 필터 칸(구역 제목, 글자 선택 버튼, 아이콘 타일, 고른 항목 줄, 입력 칸) | `components/board/FilterControls.tsx` |
 | 인격·E.G.O 고르는 창의 왼쪽 필터(이름 검색, 등급, 수감자) | `components/ui/CharacterPickerFilters.tsx` |
 | 층 제약 | `features/planner/components/FloorConstraints.tsx` |

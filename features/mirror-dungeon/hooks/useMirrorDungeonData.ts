@@ -5,7 +5,7 @@ import { getRootEvents } from '@/lib/utils/event-catalog'
 import type { SupportedLang } from '@/lib/i18n/types'
 import type { EgoGift, EgoGiftTheme, MdEvent, MdEventChoice, Recipe } from '../types'
 import {
-  buildGiftSlotMap, countChoicesByEvent, groupChoicesByEvent, indexEventsById, indexGiftImages, indexGiftNames, indexGiftNamesByGameId,
+  buildGiftSlotMap, countChoicesByEvent, groupChoicesByEvent, indexEventsById, indexGiftImages, indexGiftNames,
   indexGiftsByGameId, indexRecipesByResult, localizeChoices, localizeEvents, themeGiftNameSet,
 } from '../lib/md-data'
 
@@ -37,8 +37,6 @@ export function useMirrorDungeonData({ lang, gifts, recipes, themes, events, cho
   const giftByGameId = useMemo(() => indexGiftsByGameId(gifts), [gifts])
   // 테마팩별 기프트 이름 Set (GiftTab 필터용)
   const themeGiftNames = useMemo(() => themeGiftNameSet(selectedThemeId, themes, giftByGameId), [selectedThemeId, themes, giftByGameId])
-  // game_id → 로컬라이즈된 기프트 이름 (convert_to {0} 치환용)
-  const giftNameByGameId = useMemo(() => indexGiftNamesByGameId(gifts, lang), [gifts, lang])
   // 레시피 맵: result_name → Recipe
   const recipeMap = useMemo(() => indexRecipesByResult(recipes), [recipes])
   // 기프트 이름 → 이미지 URL 맵
@@ -49,6 +47,6 @@ export function useMirrorDungeonData({ lang, gifts, recipes, themes, events, cho
 
   return {
     localizedEvents, eventById, choicesByEventId, eventCount, choiceCountByEventId, selected, giftByGameId, themeGiftNames,
-    giftNameByGameId, recipeMap, giftImageMap, giftNameMap, giftSlotMap,
+    recipeMap, giftImageMap, giftNameMap, giftSlotMap,
   }
 }

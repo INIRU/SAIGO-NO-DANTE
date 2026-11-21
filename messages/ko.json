@@ -1037,8 +1037,7 @@
         "loadingMore": "불러오는 중..."
       },
       "card": {
-        "anonymous": "익명",
-        "toggleKeyword": "{keyword} 키워드 필터 전환"
+        "anonymous": "익명"
       },
       "relativeTime": {
         "now": "방금 전",
@@ -1073,10 +1072,10 @@
     "floorCount": "{count}층",
     "floorTab": {
       "difficulty": {
-        "normal": "노말",
-        "hard": "하드",
-        "overlap": "평행 중첩",
-        "extreme": "익스트림"
+        "normal": "NORMAL",
+        "hard": "HARD",
+        "overlap": "INFINITY LOOP",
+        "extreme": "EXTREME"
       },
       "difficultySelectorLabel": "{floor}층 난이도 선택",
       "themeModalTitle": "{floor}층 테마팩",

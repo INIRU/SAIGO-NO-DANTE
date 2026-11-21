@@ -15,6 +15,6 @@ export default function BoardLoading({ kind }: { kind: 'deck' | 'planner' }) {
       </div>
     </div>
     <div className="mx-auto w-full max-w-7xl shrink-0 px-4 [--ad-bottom-gap:0] md:px-6"><AdSlotSpace /></div>
-    <BoardShelfSkeleton />
+    <BoardShelfSkeleton plan={kind === 'planner'} />
   </div>
 }

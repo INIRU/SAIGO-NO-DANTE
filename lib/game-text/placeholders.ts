@@ -56,6 +56,11 @@ export function leadingPlaceholder(text: string): (PlaceholderMatch & { length: 
   return match ? { ...toMatch(match[1], match[2]), length: match[0].length } : null
 }
 
+/** The game ids of the gifts some texts point at ({{gift:<game id>}}). */
+export function giftIdsIn(...texts: (string | null | undefined)[]): number[] {
+  return [...new Set(texts.flatMap(text => [...(text ?? '').matchAll(/\{\{gift:(\d+)\}\}/g)].map(match => Number(match[1]))))]
+}
+
 /** Text split into plain runs and tokens, in order. */
 export function splitPlaceholders(text: string): PlaceholderPart[] {
   const parts: PlaceholderPart[] = []

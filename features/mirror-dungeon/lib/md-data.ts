@@ -95,17 +95,6 @@ export function themeGiftNameSet(selectedThemeId: number | null, themes: readonl
   return names
 }
 
-/** game_id → the gift's name in the page language (for the convert_to {0} placeholder). */
-export function indexGiftNamesByGameId(gifts: readonly EgoGift[], lang: SupportedLang) {
-  const m = new Map<number, string>()
-  gifts.forEach(g => {
-    if (g.game_id) {
-      m.set(g.game_id, getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang))
-    }
-  })
-  return m
-}
-
 /** result_name → Recipe */
 export function indexRecipesByResult(recipes: readonly Recipe[]) {
   const map = new Map<string, Recipe>()

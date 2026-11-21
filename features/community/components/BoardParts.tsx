@@ -4,26 +4,19 @@ import { useMemo } from 'react'
 import Image from 'next/image'
 import { Eye, Heart, MessageCircle } from 'lucide-react'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
-import { useLocale, useTranslations } from 'next-intl'
-import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
-import { contentTypeMessageKey, localizeDeckKeyword } from '@/lib/decks/decks-types'
+import { useTranslations } from 'next-intl'
+import { contentTypeMessageKey } from '@/lib/decks/decks-types'
 import { CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 import { normalizeDeckMainKeyword } from '@/lib/decks/keyword-rules'
-import { normalizePlannerListKeywords, planDifficultyBadge } from '@/lib/planner/strip-plan-for-list'
+import { normalizePlannerListKeywords } from '@/lib/planner/strip-plan-for-list'
 import { guestAuthorName } from '@/lib/guest/copy'
 import { noteSummaryText } from '@/lib/notes/blocks'
 import type { DiscoveryKind } from '@/features/community/lib/recommend'
 import type { SupportedLang } from '@/lib/i18n/types'
+import CardKeywords from '@/components/cards/CardKeywords'
 
 /** A board post (deck or plan) as the discovery feeds send it. */
 export type RowPost = Record<string, any> & { id: string; title: string }
-
-const DIFFICULTY_STYLE = {
-  normal: { bg: 'rgba(74,152,104,0.12)', color: '#4a9868', border: 'rgba(74,152,104,0.3)' },
-  hard: { bg: 'rgba(200,144,10,0.12)', color: '#e8b030', border: 'rgba(200,144,10,0.3)' },
-  overlap: { bg: 'rgba(72,152,176,0.12)', color: '#48b0c0', border: 'rgba(72,152,176,0.3)' },
-  extreme: { bg: 'rgba(200,48,48,0.12)', color: '#ec6a5e', border: 'rgba(200,48,48,0.3)' },
-} as const
 
 const chipStyle = { display: 'inline-flex', flexShrink: 0, whiteSpace: 'nowrap', alignItems: 'center', gap: '0.25rem', padding: '0.125rem 0.5rem', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-heading)', fontSize: '0.75rem', letterSpacing: '0.03em' } as const
 
@@ -34,13 +27,9 @@ export function postSlots(kind: DiscoveryKind, post: RowPost) {
     : (Array.isArray(post.deck) ? post.deck : [])
 }
 
-/** The content type or difficulty and the main keywords of a post, in the chip style of its card. */
+/** A deck's content type as a chip and the main keywords of a post (CardKeywords); a plan's difficulty stands over its title (PlanDifficulty). */
 export function PostChips({ kind, post, max = 2, className = '', nowrap = false }: { kind: DiscoveryKind; post: RowPost; max?: number; className?: string; /** One line: what does not fit is cut off. */ nowrap?: boolean }) {
-  const locale = useLocale() as SupportedLang
   const t = useTranslations('decks')
-  const tPlan = useTranslations('planner.communityBoard')
-  const { getIconUrl } = useKeywordData()
-  const keywords = useKeywords()
   const tags = useMemo(() => {
     const raw = kind === 'deck'
       ? ((post.main_keywords ?? []) as string[]).flatMap(keyword => normalizeDeckMainKeyword(keyword) ?? [])
@@ -48,29 +37,15 @@ export function PostChips({ kind, post, max = 2, className = '', nowrap = false 
     return raw.slice(0, max)
   }, [kind, max, post.main_keywords, post.selected_keywords, post.theme_keywords])
   const contentType = kind === 'deck' && post.content_type && CONTENT_TYPE_COLORS[post.content_type] ? post.content_type as string : null
-  const badge = kind === 'planner' ? planDifficultyBadge(post.difficulty, post.difficulty_summary) : null
-  if (!contentType && !badge && tags.length === 0) return null
+  if (!contentType && tags.length === 0) return null
   return (
-    <div className={`flex items-center gap-1 ${nowrap ? 'h-6 flex-wrap overflow-hidden' : 'flex-wrap'} ${className}`}>
+    <div className={`flex items-center gap-x-2.5 gap-y-1 ${nowrap ? 'h-6 flex-wrap overflow-hidden' : 'flex-wrap'} ${className}`}>
       {contentType && (
         <span style={{ ...chipStyle, background: CONTENT_TYPE_COLORS[contentType].bg, color: CONTENT_TYPE_COLORS[contentType].color, border: `1px solid ${CONTENT_TYPE_COLORS[contentType].border}` }}>
           {t(`contentTypes.${contentTypeMessageKey(contentType)}`)}
         </span>
       )}
-      {badge && (
-        <span style={{ ...chipStyle, fontFamily: 'var(--font-body)', fontWeight: 700, background: DIFFICULTY_STYLE[badge.styleKey].bg, color: DIFFICULTY_STYLE[badge.styleKey].color, border: `1px solid ${DIFFICULTY_STYLE[badge.styleKey].border}` }}>
-          {badge.labelKeys.map(difficulty => tPlan(`difficulty.${difficulty}`)).join('/')}
-        </span>
-      )}
-      {tags.map(keyword => {
-        const iconUrl = getIconUrl(keyword)
-        return (
-          <span key={keyword} style={{ ...chipStyle, background: 'rgba(136,88,40,0.15)', color: '#c8a450', border: '1px solid rgba(136,88,40,0.3)' }}>
-            {iconUrl && <Image src={iconUrl} alt="" width={11} height={11} style={{ width: '0.6875rem', height: '0.6875rem', flexShrink: 0 }} />}
-            {localizeDeckKeyword(keyword, keywords[keyword], locale)}
-          </span>
-        )
-      })}
+      <CardKeywords keywords={tags} max={max} />
     </div>
   )
 }

@@ -8,6 +8,7 @@ import { formationThumbnail } from '@/lib/decks/formation-thumbnail'
 import type { DiscoveryKind } from '@/features/community/lib/recommend'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { AuthorLine, PostChips, PostCounts, postSlots, type RowPost } from './BoardParts'
+import PlanDifficulty from '@/components/cards/PlanDifficulty'
 
 export const postHref = (kind: DiscoveryKind, id: string) => (kind === 'deck' ? `/decks/${id}` : `/planner/community/${id}`)
 
@@ -46,6 +47,7 @@ export default function FormationRow({ kind, post, lead, tags = true }: {
       {lead}
       <FormationMosaic kind={kind} post={post} />
       <span className="min-w-0 flex-1">
+        {tags && kind === 'planner' && <PlanDifficulty difficulty={post.difficulty} summary={post.difficulty_summary} className="mb-1" />}
         <span className="line-clamp-2 font-[family-name:var(--font-heading)] text-[0.9375rem] leading-snug text-[var(--text-primary)]">{post.title}</span>
         {tags && <PostChips kind={kind} post={post} max={3} nowrap className="mt-1.5" />}
         <span className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5">

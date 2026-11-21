@@ -30,7 +30,8 @@ import {
   type PassiveData as PlannerPassiveData, type RecipeData, type SinnerData as PlannerSinnerData,
   type SkillSummary as PlannerSkillSummary, type ThemeData as PlannerThemeData,
 } from '@/lib/planner/types'
-import { computeDifficultySummary, planDifficultyBadge } from '@/lib/planner/strip-plan-for-list'
+import { computeDifficultySummary } from '@/lib/planner/strip-plan-for-list'
+import PlanDifficulty from '@/components/cards/PlanDifficulty'
 import { getGiftActivationConditionStatus, type GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import { observationCost, type Observation } from '@/features/planner'
 import { normalizeFloorPlanDifficulty } from '@/lib/planner/floor-difficulty'
@@ -57,13 +58,6 @@ import EmptyState from '@/components/ui/EmptyState'
 import { usePlanDetailModel } from '@/features/planner/hooks/usePlanDetailModel'
 import { usePlanDetailReactions } from '@/features/planner/hooks/usePlanDetailReactions'
 import { GiftGrid, Section, SectionHead, StarlightCost, SubHead } from './_components/PlanDetailParts'
-
-const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: string }> = {
-  normal:  { bg: 'rgba(74,152,104,0.15)',  color: '#4a9868', border: 'rgba(74,152,104,0.35)' },
-  hard:    { bg: 'rgba(200,144,10,0.15)',  color: '#e8b030', border: 'rgba(200,144,10,0.35)' },
-  overlap: { bg: 'rgba(72,152,176,0.15)',  color: '#48b0c0', border: 'rgba(72,152,176,0.35)' },
-  extreme: { bg: 'rgba(200,48,48,0.15)',   color: '#ec6a5e', border: 'rgba(200,48,48,0.35)' },
-}
 
 // ── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -164,7 +158,6 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
   const tPlanner = useTranslations('planner')
   const tFloor = useTranslations('planner.floorTab')
   const tDetail = useTranslations('planner.detail')
-  const tCommunity = useTranslations('planner.communityBoard')
   const tBlessing = useTranslations('planner.blessingTab')
   const tShare = useTranslations('decks.detail')
   const { data: session, status: authStatus } = useSession()
@@ -184,8 +177,6 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
 
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin === true
 
-  const difficultyBadge = planDifficultyBadge(plan.difficulty, computeDifficultySummary(plan.floor_plan, plan.difficulty))
-  const diffStyle = DIFFICULTY_STYLE[difficultyBadge.styleKey]
 
   const deck: IdentitySlot[] = (Array.isArray(plan.deck) ? plan.deck : []).map(slot => ({ ...slot, identity_id: resolvePlannerIdentity(slot, identities)?.id ?? slot.identity_id }))
   const egoSlots: EgoSlot[] = (Array.isArray(plan.egos) ? plan.egos : []).map(slot => ({ ...slot, ego_id: resolvePlannerEgo(slot, egos)?.id ?? slot.ego_id }))
@@ -211,7 +202,6 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
 
   const { voted, voteCount, voteLoading, handleVote, handleShare } = usePlanDetailReactions({ planId: plan.id, planTitle: plan.title, initialVoteCount: plan.vote_count, session })
 
-  const difficultyLabel = difficultyBadge.labelKeys.map(key => tCommunity(`difficulty.${key}`)).join("/\u200b")
   const mainKeywords = (plan.tags ?? []).filter(Boolean)
   const configuredFloors = floorPlan.filter(f => f.theme_id).length
   const floorCountLabel = tFloor('configuredFloorCount', { configured: configuredFloors, total: floorPlan.length })
@@ -284,7 +274,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           <dl className={styles.facts}>
             <div className={styles.fact}>
               <dt>{tDetail('factDifficulty')}</dt>
-              <dd data-text style={{ color: diffStyle.color }}>{difficultyLabel}</dd>
+              <dd><PlanDifficulty difficulty={plan.difficulty} summary={computeDifficultySummary(plan.floor_plan, plan.difficulty)} /></dd>
             </div>
             <div className={styles.fact}>
               <dt>{tDetail('factIdentities')}</dt>

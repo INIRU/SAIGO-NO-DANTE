@@ -27,6 +27,20 @@ export function PlaceholderGiftProvider({ lookup, children }: { lookup: GiftLook
   return <PlaceholderGiftContext.Provider value={lookup}>{children}</PlaceholderGiftContext.Provider>
 }
 
+/** A gift named inside game text, as the notes draw one (globals.css .note-gift-label): icon and name in the keyword colour, no box. */
+export function GiftLabel({ gift, title }: { gift: PlaceholderGift; title?: string }) {
+  const style = { '--gift-color': GIFT_KEYWORD_COLORS[gift.keyword ?? ''] ?? '#c8b898', textIndent: 0 } as CSSProperties
+  const content = (
+    <>
+      {gift.image_url && <Image src={gift.image_url} alt="" width={40} height={40} />}
+      <strong>{gift.name}</strong>
+    </>
+  )
+  return gift.onClick
+    ? <button type="button" data-placeholder="gift" className="note-gift-label" style={style} title={title} onClick={gift.onClick}>{content}</button>
+    : <span data-placeholder="gift" className="note-gift-label" style={style} title={title}>{content}</span>
+}
+
 const ICONS: Partial<Record<PlaceholderToken, typeof Activity>> = {
   live: Activity,
   sinner: UserRound,
@@ -45,19 +59,7 @@ export default function PlaceholderLabel({ token, giftId }: PlaceholderMatch) {
   const Icon = ICONS[token]
   const hint = t(`hint.${token}`)
 
-  if (gift) {
-    // The notes' gift label (globals.css .note-gift-label): icon and name in the keyword colour, no box.
-    const style = { '--gift-color': GIFT_KEYWORD_COLORS[gift.keyword ?? ''] ?? '#c8b898', textIndent: 0 } as CSSProperties
-    const content = (
-      <>
-        {gift.image_url && <Image src={gift.image_url} alt="" width={40} height={40} />}
-        <strong>{gift.name}</strong>
-      </>
-    )
-    return gift.onClick
-      ? <button type="button" data-placeholder="gift" className="note-gift-label" style={style} title={hint} onClick={gift.onClick}>{content}</button>
-      : <span data-placeholder="gift" className="note-gift-label" style={style} title={hint}>{content}</span>
-  }
+  if (gift) return <GiftLabel gift={gift} title={hint} />
 
   return (
     <span data-placeholder={token} className={styles.chip} title={hint}>

@@ -3,9 +3,10 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import Image from 'next/image'
 import QuietImage from '@/components/ui/QuietImage'
-import { X, ChevronLeft } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import BaseModal from '@/components/ui/BaseModal'
+import DetailBack, { type DetailBackTarget } from '@/components/ui/DetailBack'
 import GiftArtwork, { type GiftArtworkGift } from '@/components/ui/GiftArtwork'
 import GiftCard, { GiftEnhanceMark, GiftEnhancePicker } from '@/features/mirror-dungeon/components/GiftCard'
 import { GiftConditionDivider } from '@/features/mirror-dungeon/components/GiftCondition'
@@ -21,7 +22,7 @@ import { gameTextToPlain, splitGameTextLines } from '@/lib/game-text/rich-text'
 import { createGiftRefSplitter, type GiftRefTarget } from '@/features/mirror-dungeon/lib/gift-refs'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { conditionLines } from '@/features/mirror-dungeon/lib/gift-condition-lines'
-import { PlaceholderGiftProvider, type PlaceholderGift } from '@/components/ui/PlaceholderLabel'
+import { GiftLabel, PlaceholderGiftProvider, type PlaceholderGift } from '@/components/ui/PlaceholderLabel'
 
 const CREDIT_ICON = getGameUiAsset('resources/md-credit')
 
@@ -93,7 +94,8 @@ interface GiftLinkTarget extends GiftRefTarget {
   keyword?: string | null
   /** Game id, so a {{gift:<id>}} placeholder in the effect text shows this gift. */
   gameId?: number | null
-  onClick: () => void
+  /** Opens the gift; without it the label is not a button. */
+  onClick?: () => void
 }
 
 export interface GiftDetailData {
@@ -158,7 +160,7 @@ export function EffectText({ text, color, links, gate }: { text: string; color: 
   const render = (line: string, lineColor: string) => split
     ? split(line).map((part, i) => typeof part === 'string'
       ? <span key={i}>{formatSkillDesc(part, lineColor, undefined, undefined, ENHANCE_CHANGE)}</span>
-      : <GiftLink key={i} target={part.gift as GiftLinkTarget} />)
+      : <GiftLabel key={i} gift={part.gift as GiftLinkTarget} />)
     : formatSkillDesc(line, lineColor, undefined, undefined, ENHANCE_CHANGE)
   return (
     <PlaceholderGiftProvider lookup={giftById}>
@@ -180,20 +182,6 @@ export function EffectText({ text, color, links, gate }: { text: string; color: 
         })}
       </div>
     </PlaceholderGiftProvider>
-  )
-}
-
-function GiftLink({ target }: { target: GiftLinkTarget }) {
-  return (
-    <button
-      type="button"
-      onClick={target.onClick}
-      className="mx-0.5 inline-flex items-baseline gap-1 rounded-sm align-baseline underline decoration-[rgba(232,176,48,0.6)] underline-offset-[0.2em] transition-colors hover:text-[#ffd479] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)]"
-      style={{ color: 'var(--gold-light)', textIndent: 0, cursor: 'pointer' }}
-    >
-      {target.image_url && <Image src={target.image_url} alt="" width={18} height={18} className="self-center" style={{ width: '1.125rem', height: '1.125rem', objectFit: 'contain' }} />}
-      {target.name}
-    </button>
   )
 }
 
@@ -221,16 +209,15 @@ const Sign = ({ children }: { children: ReactNode }) => (
 )
 
 /** Gift detail layout shared by the Mirror Dungeon catalog and the planner. */
-export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0, onLevelChange, onBack, backLabel, zIndex }: {
+export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0, onLevelChange, back, zIndex }: {
   gift: GiftDetailData
   lang: SupportedLang
   onClose: () => void
   initialLevel?: number
   /** When the gift is one the plan holds: the level picked here is written back to the plan. */
   onLevelChange?: (level: number) => void
-  /** Shown while viewing a recipe ingredient opened from another gift. */
-  onBack?: () => void
-  backLabel?: string
+  /** The gift or pack this one was opened from. */
+  back?: DetailBackTarget
   /** Over a full-screen layer (the story dungeon view is z-70) */
   zIndex?: number
 }) {
@@ -265,17 +252,8 @@ export default function GiftDetailModal({ gift, lang, onClose, initialLevel = 0,
         </button>
 
         <div className="overflow-y-auto overscroll-contain" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          {onBack && (
-            <button
-              type="button"
-              onClick={onBack}
-              className="ml-3 mt-3 inline-flex min-h-9 items-center gap-1 rounded px-2 transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)]"
-              style={{ color: '#bfae92', fontSize: '0.8125rem' }}
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-              {backLabel}
-            </button>
-          )}
+          {/* Kept clear of the close button on the right. */}
+          {back && <div className="ml-3 mt-2 flex pr-14"><DetailBack back={back} /></div>}
 
           {/* Like the game's gift panel: the slot leads, the price sits under it as in the shop, the name and a terse stat line beside it. */}
           <header className="flex items-center gap-4 px-5 pb-3 pr-14 pt-5 sm:gap-5 sm:px-6 sm:pt-6">

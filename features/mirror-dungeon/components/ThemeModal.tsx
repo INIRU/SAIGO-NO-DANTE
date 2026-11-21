@@ -13,6 +13,7 @@ import { getThemePackCompositeImageUrl, getThemePackVisualConfig } from '@/lib/d
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
+import type { DetailBackTarget } from '@/components/ui/DetailBack'
 
 interface ThemeModalProps {
   lang: SupportedLang
@@ -23,6 +24,8 @@ interface ThemeModalProps {
   onSelectGift: (gift: EgoGift) => void
   events?: MdEvent[]
   choiceCountByEventId?: Map<number, number>
+  /** The gift this pack was opened from. */
+  back?: DetailBackTarget
 }
 
 const DUNGEON_COLORS: Record<string, string> = { '익스트림': '#e06a5a', '평행중첩': '#c09ae0', '하드': '#e89030', '노말': '#bfae92' }
@@ -61,6 +64,7 @@ export default function ThemeModal({
   onSelectGift,
   events,
   choiceCountByEventId,
+  back,
 }: ThemeModalProps) {
   const tp = useTranslations('themePackDetail')
   // The first commit paints the header, rewards and exclusives; the shared pool (up to ~190 cards) renders
@@ -131,6 +135,7 @@ export default function ThemeModal({
     <ThemePackModalShell
       title={displayName}
       onClose={onClose}
+      back={back}
       closeLabel={t('mirrorDungeon.theme.close')}
       maxWidth="48rem"
       poster={posterSrc ? (

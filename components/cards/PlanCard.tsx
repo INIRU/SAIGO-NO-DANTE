@@ -9,40 +9,27 @@ import { memo } from 'react'
 import IntentLink from '@/components/ui/IntentLink'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
-import type { Difficulty } from '@/lib/planner/types'
 import { DEFAULT_AVATAR_URL } from '@/lib/constants/game'
-import { useKeywordData, useKeywords } from '@/components/providers/KeywordProvider'
 import { useLocale, useTranslations } from 'next-intl'
-import { localizeDeckKeyword } from '@/lib/decks/decks-types'
 import type { SupportedLang } from '@/lib/i18n'
-import { normalizePlannerListKeywords, planDifficultyBadge, type PlanSummary } from '@/lib/planner/strip-plan-for-list'
+import { normalizePlannerListKeywords, type PlanSummary } from '@/lib/planner/strip-plan-for-list'
+import PlanDifficulty from '@/components/cards/PlanDifficulty'
+import CardKeywords from '@/components/cards/CardKeywords'
 import { guestAuthorName } from '@/lib/guest/copy'
 import OwnedBadge, { useMissingSinners } from '@/components/cards/OwnedBadge'
 
 export type { PlanSummary }
 
-const DIFFICULTY_STYLE: Record<Difficulty, { bg: string; color: string; border: string }> = {
-  normal:  { bg: 'rgba(74,152,104,0.12)',  color: '#4a9868', border: 'rgba(74,152,104,0.3)' },
-  hard:    { bg: 'rgba(200,144,10,0.12)',  color: '#e8b030', border: 'rgba(200,144,10,0.3)' },
-  overlap: { bg: 'rgba(72,152,176,0.12)',  color: '#48b0c0', border: 'rgba(72,152,176,0.3)' },
-  extreme: { bg: 'rgba(200,48,48,0.12)',   color: '#ec6a5e', border: 'rgba(200,48,48,0.3)' },
-}
-
 function PlanCard({
   plan,
-  onKeywordToggle,
   NotePreview,
 }: {
   plan: PlanSummary
-  onKeywordToggle?: (keyword: string) => void
   /** 설명 한 줄을 그리는 컴포넌트. 없으면 글만 보인다. */
   NotePreview?: NotePreviewComponent
 }) {
-  const { getIconUrl } = useKeywordData()
-  const keywords = useKeywords()
   const locale = useLocale() as SupportedLang
   const t = useTranslations('planner.communityBoard.card')
-  const difficultyT = useTranslations('planner.communityBoard.difficulty')
   const missing = useMissingSinners(Array.isArray(plan.deck) ? plan.deck.map(slot => ({ id: slot.identity_id, sinnerId: slot.sinner_id, slot_order: slot.slot_order })) : [])
   const username = plan.profiles?.username ?? guestAuthorName(plan.guest_tag, locale) ?? t('anonymous')
   const avatarUrl = plan.profiles?.avatar_url ?? DEFAULT_AVATAR_URL
@@ -52,9 +39,6 @@ function PlanCard({
   const topKeywords = normalizePlannerListKeywords((plan.selected_keywords && plan.selected_keywords.length > 0)
     ? plan.selected_keywords
     : (plan.theme_keywords ?? []))
-  const difficultyBadge = planDifficultyBadge(plan.difficulty, plan.difficulty_summary)
-  const visibleKeywords = topKeywords.slice(0, 3)
-  const hiddenKeywordCount = Math.max(0, topKeywords.length - visibleKeywords.length)
 
   return (
     <article
@@ -65,6 +49,7 @@ function PlanCard({
         <OwnedBadge missing={missing} />
 
         <div className="flex flex-col flex-1 p-4">
+          <PlanDifficulty difficulty={plan.difficulty} summary={plan.difficulty_summary} className="mb-1.5" />
           {/* 제목 */}
           <h3 className="font-[family-name:var(--font-paperlogy)] font-bold tracking-[-0.015em] mb-1.5 leading-snug line-clamp-1 transition-colors duration-200 group-hover:text-[var(--gold-light)]"
             style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>
@@ -77,6 +62,8 @@ function PlanCard({
               {NotePreview ? <NotePreview text={preview} /> : preview}
             </p>
           ) : <div className="flex-1" />}
+
+          {topKeywords.length > 0 && <div className="mb-3 flex h-6 items-center gap-x-2.5 overflow-hidden"><CardKeywords keywords={topKeywords} /></div>}
 
           {/* 하단: 작성자 + 통계 */}
           <div className="mt-auto flex flex-wrap items-center gap-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
@@ -103,66 +90,6 @@ function PlanCard({
           </div>
         </div>
       </IntentLink>
-      <div
-        data-planner-card-meta="true"
-        className="flex items-center gap-1.5 px-4 pb-3"
-        style={{ minHeight: '2.75rem' }}
-      >
-        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
-          <span key={difficultyBadge.key} style={{
-              display: 'inline-flex', alignItems: 'center', flexShrink: 0,
-              padding: '0.125rem 0.4375rem',
-              background: DIFFICULTY_STYLE[difficultyBadge.styleKey].bg, color: DIFFICULTY_STYLE[difficultyBadge.styleKey].color, border: `1px solid ${DIFFICULTY_STYLE[difficultyBadge.styleKey].border}`,
-              borderRadius: '0.25rem', fontFamily: 'var(--font-body)',
-              fontSize: '0.8125rem', fontWeight: 700,
-            }}>
-              {difficultyBadge.labelKeys.map(difficulty => difficultyT(difficulty)).join('/')}
-          </span>
-        </div>
-        {visibleKeywords.length > 0 && (
-          <div className="flex min-w-0 max-w-[58%] items-center justify-end gap-1 overflow-hidden">
-            {visibleKeywords.map(kw => {
-              const iconUrl = getIconUrl(kw)
-              const label = localizeDeckKeyword(kw, keywords[kw], locale)
-              const commonStyle = {
-                padding: '0.125rem 0.25rem',
-                background: 'transparent',
-                border: '1px solid transparent',
-                borderRadius: '0.25rem',
-                fontSize: '0.875rem',
-                color: '#9f8b68',
-              } satisfies React.CSSProperties
-              const content = (
-                <>
-                  {iconUrl && <Image src={iconUrl} alt="" width={14} height={14} style={{ width: '0.875rem', height: '0.875rem', flexShrink: 0 }} />}
-                  <span className="truncate">{label}</span>
-                </>
-              )
-              return onKeywordToggle ? (
-                <button
-                  key={kw}
-                  type="button"
-                  onClick={() => onKeywordToggle(kw)}
-                  className="flex min-h-8 min-w-0 items-center gap-1 transition-colors hover:border-[var(--gold-dim)] hover:text-[var(--gold)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--gold)]"
-                  style={commonStyle}
-                  aria-label={t('toggleKeyword', { keyword: label })}
-                >
-                  {content}
-                </button>
-              ) : (
-                <span key={kw} className="flex min-h-8 min-w-0 items-center gap-1" style={commonStyle}>
-                  {content}
-                </span>
-              )
-            })}
-            {hiddenKeywordCount > 0 && (
-              <span style={{ flexShrink: 0, fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                +{hiddenKeywordCount}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
     </article>
   )
 }

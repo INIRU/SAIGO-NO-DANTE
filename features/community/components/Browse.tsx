@@ -62,7 +62,7 @@ export function BoardResults({ kind, posts, loading, hasMore, loadingMore, senti
   sentinelRef: Ref<HTMLDivElement>
   empty: ReactNode
 }) {
-  if (loading) return <CardGridSkeleton />
+  if (loading) return <CardGridSkeleton plan={kind === 'planner'} />
   if (posts.length === 0) return <>{empty}</>
   return (
     <>
@@ -70,7 +70,7 @@ export function BoardResults({ kind, posts, loading, hasMore, loadingMore, senti
         {posts.map(post => <div key={post.id} className="min-w-0"><BoardCard kind={kind} post={post} compactOnPhone /></div>)}
         {/* The next page's shapes in the same grid, so they take the cells after the last card: two on a phone, six from md up. */}
         {loadingMore && Array.from({ length: 6 }, (_, index) => (
-          <div key={`loading-${index}`} data-loading-card="" className={index < 2 ? 'min-w-0' : 'min-w-0 max-md:hidden'}><BoardCardSkeleton phoneRows={1} /></div>
+          <div key={`loading-${index}`} data-loading-card="" className={index < 2 ? 'min-w-0' : 'min-w-0 max-md:hidden'}><BoardCardSkeleton phoneRows={1} plan={kind === 'planner'} /></div>
         ))}
       </div>
       <div ref={sentinelRef} className="py-6" aria-hidden={!hasMore && !loadingMore} />

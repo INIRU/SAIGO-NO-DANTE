@@ -15,12 +15,13 @@ export function CardSkeleton({ kind }: { kind: Kind }) {
       </div>
       : <>
         <div className="flex flex-1 flex-col p-4">
+          <div className="mb-1.5 flex h-4 items-center"><SkeletonLine w="4.5rem" h="0.75rem" raised /></div>
           <div className="mb-1.5 flex h-[1.375rem] items-center"><SkeletonLine w="40%" h="1rem" raised /></div>
           {/* PlanCard keeps two description lines (0.8125rem at 1.6) even when a plan has none: the row is as tall as its tallest card. */}
           <div className="mb-3 flex flex-1 flex-col justify-around" style={{ minHeight: '2.6rem' }}><SkeletonLine w="92%" h="0.75rem" raised /><SkeletonLine w="64%" h="0.75rem" raised /></div>
+          <div className="mb-3 flex h-6 items-center gap-2.5"><SkeletonLine w="3.5rem" h="0.75rem" raised /><SkeletonLine w="3rem" h="0.75rem" raised /></div>
           <div className="mt-auto flex items-center gap-1.5 border-t border-white/[0.04] pt-2"><SkeletonCircle size="1.125rem" raised /><SkeletonLine w="6rem" h="0.75rem" raised /><SkeletonLine w="3rem" h="0.75rem" raised className="ml-auto" /></div>
         </div>
-        <div className="flex min-h-[2.75rem] items-center px-4 pb-3"><Skeleton raised className="h-6 w-14" /></div>
       </>}
   </div>
 }
