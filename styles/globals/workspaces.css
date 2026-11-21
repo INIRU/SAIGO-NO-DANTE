@@ -15,6 +15,8 @@ html[data-with-page-error], html[data-with-page-error] body { overflow: hidden; 
 html[data-with-compact-footer] .site-footer { margin-top: 2rem; }
 html[data-with-compact-footer] .site-footer .footer-main { display: none; }
 html[data-with-compact-footer] .footer-content { gap: .75rem; padding-block: 1.5rem; }
+/* The footer's own top rule is the only one: with the link columns gone, the legal row's rule would sit right under it. */
+html[data-with-compact-footer] .footer-legal { border-top: 0; padding-top: 0; }
 /* Tool screens (random formation): no footer; on desktop tall enough for the whole board, no page scroll either. */
 html[data-with-tool-screen] .site-footer { display: none; }
 @media (min-width: 64rem) and (min-height: 45rem) { html[data-with-tool-screen], html[data-with-tool-screen] body { overflow: hidden; } }
