@@ -1,22 +1,24 @@
 /*
  * Deck detail page. Same shape as the plan detail page (app/[lang]/planner/community/[id]):
- * the hero sits on the page (keywords, title, author, a row of facts, one command row), then a
+ * the hero sits on the page (content type and keywords, title, author, one command row), then a
  * sticky section nav and open sections divided by hairlines. Fork is the single solid gold element.
  */
 
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: 'identity' 'author' 'facts' 'actions';
+  grid-template-areas: 'identity' 'author' 'actions';
   row-gap: 1.25rem;
   padding-bottom: 1.5rem;
 }
 
 .identity { grid-area: identity; min-width: 0; }
 .author { grid-area: author; min-width: 0; display: flex; align-items: center; gap: 0.75rem; }
-.facts { grid-area: facts; min-width: 0; }
 
-.keywords { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; margin-bottom: 0.75rem; }
+/* Above the title: what the deck is for, then its keywords. */
+.lead { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; min-height: 2rem; margin-bottom: 0.75rem; }
+.content { font-family: var(--font-heading); font-size: 1rem; line-height: 1; }
+.keywords { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
 .keywords li {
   display: inline-flex; min-height: 2rem; align-items: center; gap: 0.375rem;
   color: #cfc2ad; font-family: var(--font-heading); font-size: 1rem; line-height: 1;
@@ -31,22 +33,6 @@
   overflow-wrap: anywhere;
   text-wrap: pretty;
 }
-
-/* Facts: small label over a large value, separated by hairlines. */
-.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 0.875rem; }
-.fact { min-width: 0; padding: 0 0.875rem; border-left: 1px solid #2e2417; }
-.fact:nth-child(3n + 1) { padding-left: 0; border-left: 0; }
-.fact dt { font-size: 0.8125rem; line-height: 1.3; color: #9c8b73; }
-.fact dd {
-  margin-top: 0.125rem;
-  font-family: var(--font-title);
-  font-size: 1.75rem;
-  line-height: 1;
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.fact dd[data-text] { font-family: var(--font-heading); font-size: 1.25rem; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; }
 
 .actions {
   grid-area: actions;
@@ -64,9 +50,9 @@
   gap: 0.5rem;
   min-height: 2.75rem;
   padding: 0.5rem 0.875rem;
-  border: 1px solid #2e2417;
+  border: 1px solid transparent;
   border-radius: 0.25rem;
-  background: #17120c;
+  background: transparent;
   color: #cbb994;
   font-size: 0.9375rem;
   font-weight: 600;
@@ -76,14 +62,14 @@
 }
 
 .actions > button svg, .edit svg { flex-shrink: 0; }
-.actions > button:hover:not(:disabled) { border-color: var(--gold-dim); background: #211a12; color: var(--gold-light); }
+.actions > button:hover:not(:disabled) { background: #17120c; color: var(--gold-light); }
 .actions > button:disabled { cursor: not-allowed; opacity: 0.5; }
-.actions > button[aria-pressed='true'] { border-color: var(--gold-dim); background: #2a1f0c; color: var(--gold-light); }
-.actions > button[data-done] { border-color: rgb(16 185 129 / 0.4); background: rgb(16 185 129 / 0.1); color: #6ee7b7; }
+.actions > button[aria-pressed='true'] { color: var(--gold-light); }
+.actions > button[data-done] { color: #6ee7b7; }
 
 /* Owner tool: visibly secondary. */
-.edit { border-color: #3a2c14; background: transparent; color: var(--gold); }
-.edit:hover { border-color: var(--gold); background: #17120c; color: var(--gold-light); }
+.edit { color: var(--gold); }
+.edit:hover { background: #17120c; color: var(--gold-light); }
 
 /* Fork: the page's one solid gold element. */
 .actions > button[data-primary] {
@@ -99,18 +85,14 @@
 
 @media (min-width: 640px) {
   .title { font-size: 2.625rem; }
-  .facts { display: flex; flex-wrap: wrap; }
-  .fact { padding: 0 1.5rem; }
-  .fact:nth-child(3n + 1) { padding-left: 1.5rem; border-left: 1px solid #2e2417; }
-  .fact:first-child { padding-left: 0; border-left: 0; }
-  .actions { display: flex; flex-wrap: wrap; }
+  .actions { display: flex; flex-wrap: wrap; margin-left: -0.875rem; }
   .actions > button[data-primary] { min-width: 15rem; min-height: 3rem; margin-left: auto; }
 }
 
 @media (min-width: 1024px) {
   .hero {
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: 'identity author' 'facts facts' 'actions actions';
+    grid-template-areas: 'identity author' 'actions actions';
     column-gap: 2rem;
     row-gap: 1.75rem;
     padding-bottom: 2rem;

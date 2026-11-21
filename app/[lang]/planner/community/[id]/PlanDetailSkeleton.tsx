@@ -14,7 +14,7 @@ export default function PlanDetailSkeleton() {
   return <div data-plan-detail className="min-h-screen bg-[var(--bg-deep)] pb-20 pt-24">
     <HtmlFlag name="with-plan-detail" />
     <SkeletonPage>
-      <DetailPageSkeleton s={styles} facts={6} actions={['4.5rem', '4.2rem', '7.5rem', '4.2rem']} nav={['3.5rem', '1.8rem', '2.5rem', '3.6rem', '4.6rem', '2.4rem']}>
+      <DetailPageSkeleton s={styles} actions={['4.5rem', '4.2rem', '7.5rem', '4.2rem']} nav={['3.5rem', '1.8rem', '2.5rem', '3.6rem', '4.6rem', '2.4rem']}>
         <section className={styles.section}>
           <SectionHeadSkeleton w="5rem" />
           <div className="mb-4 flex items-end justify-between gap-4 shadow-[inset_0_-1px_0_#2e2417]">

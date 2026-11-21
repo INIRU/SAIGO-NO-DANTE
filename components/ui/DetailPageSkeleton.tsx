@@ -43,10 +43,9 @@ export function DeckInsightsSkeleton() {
   </div>
 }
 
-/** Back link, hero (keywords, title, author, facts, command row), section nav. Children are the sections. */
-export default function DetailPageSkeleton({ s, facts, actions, nav, children }: {
+/** Back link, hero (lead row, title, author, command row), section nav. Children are the sections. */
+export default function DetailPageSkeleton({ s, actions, nav, children }: {
   s: HeroStyles
-  facts: number
   /** Secondary button widths on wide screens; the gold primary (assist / fork) follows, pushed right. */
   actions: string[]
   /** Section nav label widths; the first is active. */
@@ -57,17 +56,13 @@ export default function DetailPageSkeleton({ s, facts, actions, nav, children }:
     <div className="mb-5 flex min-h-[44px] items-center gap-2 px-1"><Skeleton className="h-4 w-4" /><SkeletonLine w="5.5rem" h="0.9375rem" /></div>
     <div className={s.hero}>
       <div className={s.identity}>
-        <div className="mb-3 flex min-h-8 items-center gap-4">{['2.5rem', '2.5rem'].map((w, i) => <div key={i} className="flex items-center gap-1.5"><SkeletonCircle size="1.75rem" /><SkeletonLine w={w} h="1rem" /></div>)}</div>
+        <div className="mb-3 flex min-h-8 items-center gap-4"><SkeletonLine w="4rem" h="1rem" />{['2.5rem', '2.5rem'].map((w, i) => <div key={i} className="flex items-center gap-1.5"><SkeletonCircle size="1.75rem" /><SkeletonLine w={w} h="1rem" /></div>)}</div>
         <div className={s.title}>&#8203;<Skeleton className="inline-block h-[0.8em] w-[6em] align-middle" /></div>
       </div>
       <div className={`${s.author} flex items-center gap-3`}>
         <SkeletonCircle size="2.75rem" />
-        <div className="space-y-1.5"><SkeletonLine w="7rem" h="1rem" /><SkeletonLine w="3rem" h="0.8125rem" /></div>
+        <div className="space-y-1.5"><SkeletonLine w="7rem" h="1rem" /><SkeletonLine w="7rem" h="0.8125rem" /></div>
       </div>
-      <div className={s.facts}>{Array.from({ length: facts }, (_, i) => <div key={i} className={s.fact}>
-        <div className="flex h-[1.06rem] items-center"><SkeletonLine w="2.25rem" h="0.75rem" /></div>
-        <Skeleton className="mt-0.5 h-[1.75rem]" style={{ width: i === 0 ? '3rem' : '2rem' }} />
-      </div>)}</div>
       {/* Own classes: the plan module sets `.actions > div { display: contents }` for PlanActions' wrapper. */}
       <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap" style={{ gridArea: 'actions' }}>
         {actions.map((w, i) => <Skeleton key={i} line className="h-11 sm:w-[var(--w)]" style={{ '--w': w } as CSSProperties} />)}
