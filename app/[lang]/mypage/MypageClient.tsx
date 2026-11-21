@@ -9,7 +9,7 @@ import { showSuccess, showError } from "@/lib/toast";
 import { useHtmlFlag } from "@/hooks/useHtmlFlag";
 import { claimGuestPosts, useGuestPosts } from "@/features/account/hooks/useGuestPosts";
 import { getGuestCopy } from "@/features/account";
-import MypageTabs, { MYPAGE_TABS, type MypageTab } from "@/app/[lang]/mypage/_components/MypageTabs";
+import MypageTabs, { RailSignOut, resolveMypageTab, type MypageTab } from "@/app/[lang]/mypage/_components/MypageTabs";
 import ProfileRail from "@/features/community/components/ProfileRail";
 import ProfileTab from "@/app/[lang]/mypage/_components/ProfileTab";
 import DecksTab from "@/app/[lang]/mypage/_components/DecksTab";
@@ -75,13 +75,12 @@ export default function MypageClient() {
   const t = getCommunityCopy(locale);
   const guestT = getGuestCopy(locale);
   const [followKind, setFollowKind] = useState<"following" | "followers">("following");
-  const [activeTab, setActiveTab] = useState<MypageTab>("badges");
+  const [activeTab, setActiveTab] = useState<MypageTab>("decks");
   const [eggs, setEggs] = useState<EasterEgg[]>([]);
   // A workspace like assist and support: no site navbar or footer; the rail's back link leads out.
   useHtmlFlag("with-mypage");
   useEffect(() => {
-    const next = search.get("tab") || localStorage.getItem("mypage-tab");
-    setActiveTab(next && MYPAGE_TABS.includes(next as MypageTab) ? (next as MypageTab) : "badges");
+    setActiveTab(resolveMypageTab(search.get("tab"), localStorage.getItem("mypage-tab")));
   }, [search]);
   const { data, error, isLoading, mutate } = useSWR<ProfileData>(status === "authenticated" ? "/api/profile" : null, fetcher);
   const community = useSWR<CommunityProfile>(status === "authenticated" ? "/api/community/me" : null, fetcher);
@@ -159,6 +158,7 @@ export default function MypageClient() {
         <div className={styles.top}>
           <BackLink href="/" className={styles.back}><ArrowLeft aria-hidden="true" />{t.backToSite}</BackLink>
           <DanteLogo size="2rem" className="text-[var(--gold-light)]" />
+          <RailSignOut />
         </div>
         <ProfileRail data={community.data} onEdit={() => changeTab("profile")} onOpenFollows={(kind) => { setFollowKind(kind); changeTab("follows"); }} />
         <MypageTabs activeTab={activeTab} onTabChange={changeTab}

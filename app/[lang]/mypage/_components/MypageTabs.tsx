@@ -2,12 +2,30 @@
 
 import { useCallback, useRef } from 'react'
 import { useLocale } from 'next-intl'
-import { Archive, Layers, Map as MapIcon, Medal, Settings, Users } from 'lucide-react'
+import { Archive, Layers, LogOut, Map as MapIcon, Medal, Settings, Users } from 'lucide-react'
 import { getCommunityCopy } from '@/features/community'
+import { useAccountActions } from '@/app/[lang]/mypage/_components/useAccountActions'
 import styles from '@/styles/components/CommunityProfile.module.css'
 
 export type MypageTab = 'badges' | 'decks' | 'planner' | 'collection' | 'follows' | 'profile'
 export const MYPAGE_TABS: MypageTab[] = ['badges', 'decks', 'planner', 'collection', 'follows', 'profile']
+
+/** The tab from `?tab=`, else the one stored in this browser, else decks (what the person wrote comes first). */
+export function resolveMypageTab(param: string | null, stored: string | null): MypageTab {
+  const next = param || stored
+  return MYPAGE_TABS.find(tab => tab === next) ?? 'decks'
+}
+
+/** Sign-out that every tab can reach: a button in the rail's top row, on the first screen at any size, not a tab. */
+export function RailSignOut() {
+  const t = getCommunityCopy(useLocale())
+  const { logout } = useAccountActions()
+  return (
+    <button type="button" className={styles.logout} onClick={logout}>
+      <LogOut aria-hidden="true" />{t.logout}
+    </button>
+  )
+}
 
 const ICONS: Record<MypageTab, typeof Medal> = { badges: Medal, decks: Layers, planner: MapIcon, collection: Archive, follows: Users, profile: Settings }
 

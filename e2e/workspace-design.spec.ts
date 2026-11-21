@@ -11,7 +11,7 @@ for(const width of [1440,390])test(`workspace controls and privacy ${width}`,asy
  await page.route('**/api/profile',r=>r.fulfill({json:{profile,email:'qa@example.invalid',decks:[],bookmarkedDecks:[],stats:{deckCount:0,planCount:0,bookmarkCount:0,totalVotesReceived:0}}}))
  await page.route('**/api/community/me',async r=>{if(r.request().method()==='PATCH'){const b=r.request().postDataJSON();following=b.public_following??following;followers=b.public_followers??followers}await r.fulfill({json:{profile,stats:{points:0,deck:0,like:0,contribution:0},decks:[]}})})
  await page.route('**/api/community/profiles/*/follows*',r=>r.fulfill({json:{owner:true,following_count:0,follower_count:0,public_following:following,public_followers:followers,can_view:true,is_following:false,items:[]}}))
- await page.goto('/ko/mypage')
+ await page.goto('/ko/mypage?tab=profile')
  const toggle=page.getByRole('switch',{name:'팔로잉 목록 공개',exact:true})
  await expect(toggle).toHaveAttribute('aria-checked','false');await toggle.focus();await page.keyboard.press('Space');await expect(toggle).toHaveAttribute('aria-checked','true')
  await expect(page.getByRole('switch',{name:'팔로워 목록 공개',exact:true})).toHaveAttribute('aria-checked','false')
