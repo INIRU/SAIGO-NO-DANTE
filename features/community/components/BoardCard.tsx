@@ -11,6 +11,7 @@ import type { DiscoveryKind } from '@/features/community/lib/recommend'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { AuthorLine, PostChips, PostCounts, PostSummary, postSlots, type RowPost } from './BoardParts'
 import { postHref } from './FormationRow'
+import PlanDifficulty from '@/components/cards/PlanDifficulty'
 
 /** The rank of a post as a gold plate with a cut corner (first three) or a dark one. */
 export function RankPlate({ rank }: { rank: number }) {
@@ -45,6 +46,7 @@ export default function BoardCard({ kind, post, lead, compactOnPhone = false }: 
         ))}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5 px-3 pb-2 pt-2.5">
+        {kind === 'planner' && <PlanDifficulty difficulty={post.difficulty} summary={post.difficulty_summary} />}
         <h3 className="line-clamp-1 font-[family-name:var(--font-heading)] text-[1rem] leading-snug text-[var(--text-primary)]">{post.title}</h3>
         <PostSummary post={post} />
         <PostChips kind={kind} post={post} max={3} nowrap className="min-h-6" />

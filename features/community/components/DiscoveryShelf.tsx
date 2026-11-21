@@ -45,7 +45,7 @@ export default function DiscoveryShelf({ kind, onBrowse, initialData }: {
       </div>
     )
   }
-  if (!data) return <div data-discovery-shelf><BoardShelfSkeleton /></div>
+  if (!data) return <div data-discovery-shelf><BoardShelfSkeleton plan={kind === 'planner'} /></div>
 
   const hasPosts = [data.recent, data.updated, data.popular].some(posts => posts.length > 0)
   if (!hasPosts && data.identities.length === 0) {
@@ -95,7 +95,7 @@ export default function DiscoveryShelf({ kind, onBrowse, initialData }: {
           )}
         </section>
 
-        {risingLoading && <RisingShelfSkeleton />}
+        {risingLoading && <RisingShelfSkeleton plan={kind === 'planner'} />}
 
         {showRising && (
           <section data-shelf="rising" aria-labelledby="shelf-rising" className="space-y-5">

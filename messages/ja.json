@@ -1037,8 +1037,7 @@
         "loadingMore": "読み込み中..."
       },
       "card": {
-        "anonymous": "匿名",
-        "toggleKeyword": "{keyword}キーワードフィルターを切り替え"
+        "anonymous": "匿名"
       },
       "relativeTime": {
         "now": "たった今",
@@ -1073,10 +1072,10 @@
     "floorCount": "{count}階",
     "floorTab": {
       "difficulty": {
-        "normal": "ノーマル",
-        "hard": "ハード",
-        "overlap": "インフィニティループ",
-        "extreme": "エクストリーム"
+        "normal": "NORMAL",
+        "hard": "HARD",
+        "overlap": "INFINITY LOOP",
+        "extreme": "EXTREME"
       },
       "difficultySelectorLabel": "{floor}階の難易度選択",
       "themeModalTitle": "{floor}階テーマパック",

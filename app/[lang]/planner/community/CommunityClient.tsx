@@ -11,6 +11,7 @@ import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { Link2, Search, User, X } from 'lucide-react'
 import { type PlanSummary } from '@/components/cards/PlanCard'
+import { DIFFICULTY_COLOR, DIFFICULTY_NAME } from '@/components/cards/PlanDifficulty'
 import { BoardResults, BrowseBar } from '@/features/community/components/Browse'
 import type { RowPost } from '@/features/community/components/BoardParts'
 import { DIFFICULTY_CONFIG, type Difficulty } from '@/lib/planner/types'
@@ -34,7 +35,6 @@ import { useAutocompleteKeys } from '@/hooks/useAutocompleteKeys'
 
 type SortKey = 'latest' | 'popular'
 
-const DIFFICULTY_COLOR: Record<string, string> = { normal: '#4a9868', hard: '#e8b030', overlap: '#48b0c0', extreme: '#ec6a5e' }
 
 
 type CommunityClientProps = {
@@ -269,7 +269,7 @@ export default function CommunityClient({ initialPlans, initialTotal, initialShe
           <FilterChoice active={!difficulty} onClick={() => setDifficulty(null)}>{t('filters.all')}</FilterChoice>
           {(Object.keys(DIFFICULTY_CONFIG) as Difficulty[]).map(key => {
             const active = difficulty === key
-            return <FilterChoice key={key} active={active} tone={DIFFICULTY_COLOR[key]} onClick={() => setDifficulty(active ? null : key)}>{t(`difficulty.${key}`)}</FilterChoice>
+            return <FilterChoice key={key} active={active} tone={DIFFICULTY_COLOR[key]} onClick={() => setDifficulty(active ? null : key)}><span className="font-[family-name:var(--font-title)] text-[1.0625rem] leading-none tracking-[0.04em]">{DIFFICULTY_NAME[key]}</span></FilterChoice>
           })}
         </div>
       </FilterSection>
