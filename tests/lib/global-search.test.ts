@@ -3,7 +3,7 @@ import { committedQuery, groupHits, markParts } from '@/lib/utils/global-search'
 import type { Hit, IndexEntry } from '@/lib/search/engine'
 
 const hit = (type: IndexEntry['type'], score: number, label: string = type): Hit =>
-  ({ entry: { type, href: '/' + label, label, names: {} }, score, reasons: [] })
+  ({ entry: { type, href: '/' + label, label, names: {} }, score, reasons: [], similarity: 1, kind: 'exact' })
 
 describe('global search helpers', () => {
   it('markParts cuts text into marked and plain parts by the reason ranges', () => {
