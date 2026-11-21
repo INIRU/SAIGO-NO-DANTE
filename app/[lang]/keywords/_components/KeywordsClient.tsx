@@ -15,6 +15,7 @@ import KeywordModal, { type KeywordEgo, type KeywordGift, type KeywordIdentity }
 import { keywordDesc, keywordName, kt, type KeywordEntry } from './KeywordCard'
 import { gameTextToPlain, refNameLabels } from '@/lib/game-text/rich-text'
 import { createGiftMentionMatcher } from '@/lib/keywords/gift-mentions'
+import { resolveKeywordIconUrl } from '@/lib/keywords/catalog'
 import { useGameTextRefs, wantGameTextRefs } from '@/hooks/useGameTextRefs'
 
 interface Sinner {
@@ -260,8 +261,7 @@ export default function KeywordsClient({
           }}
           lang={lang}
           onClose={closeAll}
-          onBack={() => setSelectedGift(null)}
-          backLabel={keywordName(selected, lang)}
+          back={{ name: keywordName(selected, lang), image: resolveKeywordIconUrl(selected.name, selected.icon_slug), onClick: () => setSelectedGift(null) }}
         />
       )}
     </div>

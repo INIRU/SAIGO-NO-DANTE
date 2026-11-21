@@ -1,6 +1,7 @@
 'use client'
 
 import BaseModal from '@/components/ui/BaseModal'
+import DetailBack, { type DetailBackTarget } from '@/components/ui/DetailBack'
 import QuietImage from '@/components/ui/QuietImage'
 import { blurPlaceholder } from '@/lib/utils/thumbhash'
 import ThemePackCard from '@/components/ui/ThemePackCard'
@@ -23,6 +24,8 @@ interface ThemePackModalShellProps {
   closeLabel: string
   /** Pack poster shown beside the title; replaces the faded banner image. */
   poster?: ReactNode
+  /** The gift this pack was opened from. */
+  back?: DetailBackTarget
 }
 
 export function ThemePackModalShell({
@@ -35,6 +38,7 @@ export function ThemePackModalShell({
   maxWidth = '52rem',
   closeLabel,
   poster,
+  back,
 }: ThemePackModalShellProps) {
   return (
     <BaseModal open={true} onClose={onClose} maxWidth={maxWidth} padding="1rem" title={title} sheet>
@@ -65,6 +69,8 @@ export function ThemePackModalShell({
           >
             <X size={18} aria-hidden="true" />
           </button>
+
+          {back && <div className="ml-3 mt-2 flex pr-14"><DetailBack back={back} /></div>}
 
           {poster ? (
             <div className="flex items-end gap-4 px-5 pb-4 pr-14 pt-5 sm:gap-6">
