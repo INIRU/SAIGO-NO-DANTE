@@ -329,7 +329,6 @@ export default function PlanDeckTabs({
         active={deckSubTab}
         onChange={setDeckSubTab}
         label={tDeck('subTabs.label')}
-        hint={deckSubTab === 'identity' && deck.length > 0 ? tDeck('identity.openDetailHint') : null}
       />
 
       {/* 편성 보드: 인격 / E.G.O(카드가 제자리에서 뒤집힘) / 스킬(어두워진 카드 위에 스킬과 개수). 덱 상세와 같다 */}

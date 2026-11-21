@@ -419,7 +419,6 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
               id="plan-floor-title"
               title={tPlanner('tabs.floor')}
               meta={floorCountLabel}
-              caption={tDetail('floorPlanCaption')}
             />
             <FloorPlanPreviewBoard
               inventory={giftInventory}

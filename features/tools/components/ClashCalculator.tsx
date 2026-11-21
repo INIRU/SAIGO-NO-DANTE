@@ -88,7 +88,7 @@ export default function ClashCalculator() {
   const reset = () => { setA(EMPTY); setB(EMPTY); setResetKey(key => key + 1) }
 
   return <div className={styles.page}>
-    <PageHeader title={t('title')} description={t('subtitle')} actions={
+    <PageHeader title={t('title')} actions={
       <button type="button" className={styles.reset} onClick={reset}><RotateCcw size={16} aria-hidden="true" />{t('reset')}</button>
     } />
     <div className={clash.arena}>

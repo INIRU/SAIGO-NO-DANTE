@@ -150,7 +150,7 @@ export default function LunacyCalendar() {
   };
   return (
     <div className={css.page}>
-      <PageHeader title={t.title} description={t.intro} actions={
+      <PageHeader title={t.title} actions={
         <Image src={getResourceIconUrl("lunacy")} alt="" width={112} height={112} priority className="hidden h-12 w-12 opacity-70 sm:block" />
       } />
       <LunacySettings
@@ -267,7 +267,6 @@ export default function LunacyCalendar() {
         {error ? t.error : t.saved}
       </p>
       <p className={css.caption}>{t.assumption}</p>
-      <p className={css.caption}>{t.notice}</p>
       <BaseModal
         open={!!date}
         onClose={() => setDate(null)}

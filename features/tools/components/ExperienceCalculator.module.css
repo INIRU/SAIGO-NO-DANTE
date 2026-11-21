@@ -1,5 +1,5 @@
 .page{max-width:76rem;margin:0 auto;padding:5.5rem 1.5rem 4rem;color:var(--text-primary)}
-.hint{color:var(--text-secondary);font-size:.82rem;line-height:1.7}
+.hint{min-height:1.7em;color:var(--text-secondary);font-size:.82rem;line-height:1.7}
 .workspace{display:grid;grid-template-columns:1fr 1.05fr;gap:1.25rem;align-items:stretch}.inputs{display:flex;flex-direction:column;gap:1.25rem;min-width:0}
 .panel{background:var(--bg-card);border:1px solid var(--border);padding:1.5rem;min-width:0}.panel h2{display:flex;gap:.8rem;align-items:center;font:1.12rem var(--font-heading);margin:0 0 1.3rem}.panel h2>span{color:var(--gold);font:.75rem var(--font-mono)}
 .sectionHeading{display:flex;justify-content:space-between;align-items:center;gap:.5rem}.sectionHeading h2{margin-bottom:.7rem}

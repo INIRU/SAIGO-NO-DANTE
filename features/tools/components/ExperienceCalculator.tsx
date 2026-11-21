@@ -32,7 +32,7 @@ export default function ExperienceCalculator() {
   const selected = skip ? skipped : manual
   const maxProgress = current === MAX_EXPERIENCE_LEVEL ? 0 : LEVEL_COSTS[current + 1] - 1
   return <div className={styles.page}>
-    <PageHeader title={t('title')} description={t('subtitle')} />
+    <PageHeader title={t('title')} />
     <div className={styles.workspace}>
       <div className={styles.inputs}>
         <section className={styles.panel} aria-labelledby="level-heading">
@@ -46,7 +46,6 @@ export default function ExperienceCalculator() {
         </section>
         <section className={styles.panel} aria-labelledby="inventory-heading">
           <div className={styles.sectionHeading}><h2 id="inventory-heading"><span>02</span>{t('inventory')}</h2><button className={styles.reset} type="button" title={t('reset')} aria-label={t('reset')} onClick={()=>setInventory([0,0,0,0])}><RotateCcw size={16}/></button></div>
-          <p className={styles.hint}>{t('inventoryHelp')}</p>
           <div className={styles.inventory}>{TICKET_NAMES.map((tier,i)=><label key={tier} className={styles.ticketInput}>
             <ResourceImage name={ticketIcons[i]} />
             <span className={styles.ticketTier}>{tier}<small>{number(TICKET_EXP[i])} EXP</small></span>
@@ -70,18 +69,17 @@ export default function ExperienceCalculator() {
         </label>)}</fieldset>
         <div className={styles.reward}><span>{t('reward')}</span><div>{selected.reward.map((count,i)=> count>0 && <span key={i} title={t('ticket',{tier:TICKET_NAMES[i]})}><ResourceImage name={ticketIcons[i]}/><b>×{count}</b></span>)}</div></div>
         <p className={styles.fixed}>{t('fixed')}</p>
-        <p className={styles.hint}>{t('skipHelp')}</p>
       </section>
     </div>
     <section className={`${styles.panel} ${styles.results}`} aria-labelledby="results-heading">
       <div className={styles.sectionHeading}><h2 id="results-heading">{t('recommendation')}</h2><span className={styles.methodBadge}>{t(skip ? 'skip' : 'manual')}</span></div>
-      <p className={styles.hint}>{required===0 ? t('already') : selected.runs===0 ? t('noFarm') : t('planHelp')}</p>
+      <p className={styles.hint}>{required===0 ? t('already') : selected.runs===0 ? t('noFarm') : null}</p>
       <div className={styles.resultGrid}>
         <div className={styles.ticketResults}>{TICKET_NAMES.map((tier,i)=><div key={tier} className={styles.ticketResult}>
           <ResourceImage name={ticketIcons[i]}/><span>{tier}</span><strong data-testid={`use-ticket-${i+1}`}>{number(selected.plan.used[i])}<small>{t('use')}</small></strong><p>{t('left')} <b>{number(selected.plan.left[i])}</b></p>
         </div>)}</div>
         <dl className={styles.totals}><div><dt>{t('spent')}</dt><dd>{number(selected.plan.spent)} EXP</dd></div><div><dt>{t('excess')}</dt><dd data-testid="excess-exp">+{number(selected.plan.excess)} EXP</dd></div><div className={styles.enkephalin}><dt><ResourceImage name="enkephalin"/>{t('enkephalin')}</dt><dd>{number(selected.enkephalin)}</dd></div></dl>
-      </div><p className={styles.hint}>{t('excessHelp')}</p>
+      </div>
     </section>
     <details className={styles.details}><summary>{t('levelTable')}</summary><div className={styles.tableWrap}><table><thead><tr><th>{t('level')}</th><th>{t('cumulative')}</th><th>{t('next')}</th></tr></thead><tbody>{Array.from({length:MAX_EXPERIENCE_LEVEL},(_,i)=><tr key={i}><td>{i+1}</td><td>{number(experienceNeeded(1,i+1))}</td><td>{i===MAX_EXPERIENCE_LEVEL-1 ? t('max') : number(LEVEL_COSTS[i+2])}</td></tr>)}</tbody></table></div></details>
   </div>

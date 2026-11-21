@@ -14,11 +14,10 @@ export type DeckRecommendationsData = {
   similarDecks: DeckRecommendationSummary[]
 }
 
-/** A titled row of post cards (decks and plans share it); `description` is optional and the heading stands alone without it. */
-export function RecommendationLane({ id, title, description, count, children }: {
+/** A titled row of post cards (decks and plans share it). */
+export function RecommendationLane({ id, title, count, children }: {
   id: string
   title: string
-  description?: string
   count: number
   children: ReactNode
 }) {
@@ -28,19 +27,12 @@ export function RecommendationLane({ id, title, description, count, children }: 
   return (
     <section aria-labelledby={`${id}-recommendations-title`} className="min-w-0">
       <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h3
-            id={`${id}-recommendations-title`}
-            className="font-[family-name:var(--font-heading)] text-[1.0625rem] leading-snug text-[var(--text-primary)]"
-          >
-            {title}
-          </h3>
-          {description && (
-            <p className="mt-1 text-[0.875rem] leading-snug text-[#9c8b73]">
-              {description}
-            </p>
-          )}
-        </div>
+        <h3
+          id={`${id}-recommendations-title`}
+          className="min-w-0 font-[family-name:var(--font-heading)] text-[1.0625rem] leading-snug text-[var(--text-primary)]"
+        >
+          {title}
+        </h3>
         <span className="text-[0.875rem] tabular-nums text-[#9c8b73]">
           {t('count', { count })}
         </span>
@@ -75,7 +67,6 @@ export default function DeckRecommendations({
       <RecommendationLane
         id="other-opinions"
         title={t('otherOpinions')}
-        description={t('otherOpinionsDescription')}
         count={otherOpinions.length}
       >
         {otherOpinions.map(deck => <div key={deck.id} className="min-w-0"><DeckCard deck={deck} NotePreview={NoteCardPreview} /></div>)}
@@ -83,7 +74,6 @@ export default function DeckRecommendations({
       <RecommendationLane
         id="similar-decks"
         title={t('similarDecks')}
-        description={t('similarDecksDescription')}
         count={similarDecks.length}
       >
         {similarDecks.map(deck => <div key={deck.id} className="min-w-0"><DeckCard deck={deck} NotePreview={NoteCardPreview} /></div>)}

@@ -8,13 +8,10 @@ import { getLocalizedName } from '@/lib/i18n/localize'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 import styles from '../PlanDetailHeader.module.css'
 
-export function SectionHead({ id, title, meta, caption }: { id: string; title: string; meta?: ReactNode; caption?: string }) {
+export function SectionHead({ id, title, meta }: { id: string; title: string; meta?: ReactNode }) {
   return (
     <div className="mb-5 flex min-w-0 flex-wrap items-end justify-between gap-x-4 gap-y-1">
-      <div className="min-w-0">
-        <h2 id={id} className="font-[family-name:var(--font-heading)] text-[1.375rem] leading-snug text-[var(--text-primary)] sm:text-[1.5rem]">{title}</h2>
-        {caption && <p className="mt-1 text-[0.9375rem] leading-snug text-[#9c8b73]">{caption}</p>}
-      </div>
+      <h2 id={id} className="min-w-0 font-[family-name:var(--font-heading)] text-[1.375rem] leading-snug text-[var(--text-primary)] sm:text-[1.5rem]">{title}</h2>
       {meta != null && <div className="shrink-0 text-[0.9375rem] tabular-nums text-[#9c8b73]">{meta}</div>}
     </div>
   )

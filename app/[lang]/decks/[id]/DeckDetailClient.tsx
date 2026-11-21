@@ -374,7 +374,6 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                   active={formationTab}
                   onChange={setFormationTab}
                   label={rootT('planner.deckTab.subTabs.label')}
-                  hint={formationTab === 'identity' ? t('boardHintShort') : null}
                 />
                 <FormationBoard
                   view={formationTab}
