@@ -9,6 +9,7 @@ import type { GiftConditionStatus } from '@/lib/planner/gift-condition-status'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
 import { stepInto } from '@/lib/utils/detail-trail'
+import { giftIdsIn } from '@/lib/game-text/placeholders'
 
 interface RecipeLookup {
   materials: GiftData[]
@@ -44,8 +45,8 @@ export default function PlannerGiftModal({ gift, onClose, themes = [], onThemeCl
   const localName = (g: GiftData) => getLocalizedName({ name_kr: g.name, name_en: g.name_en, name_jp: g.name_jp }, lang)
   const part = (g: GiftData): GiftDetailRecipePart => ({ gift: { ...g, name: localName(g) }, onClick: g.game_id === shown.game_id ? undefined : () => open(g) })
   const name = localName(shown)
-  const named = new Set([...`${shown.effect_base} ${shown.effect_plus} ${shown.effect_plusplus}`.matchAll(/\{\{gift:(\d+)\}\}/g)].map(m => Number(m[1])))
-  const targets = (gifts ?? []).filter(g => named.has(g.game_id)).map(g => ({ id: String(g.game_id), name: localName(g), image_url: g.image_url, keyword: g.keyword, gameId: g.game_id, onClick: () => open(g) }))
+  const named = giftIdsIn(shown.effect_base, shown.effect_plus, shown.effect_plusplus)
+  const targets = (named.length ? gifts ?? [] : []).filter(g => named.includes(g.game_id)).map(g => ({ id: String(g.game_id), name: localName(g), image_url: g.image_url, keyword: g.keyword, gameId: g.game_id, onClick: () => open(g) }))
 
   return (
     <GiftDetailModal

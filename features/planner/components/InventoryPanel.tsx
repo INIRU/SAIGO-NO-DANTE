@@ -72,7 +72,7 @@ export default function InventoryPanel({ state, dispatch, giftMap, recipes }: Pr
         </section>
       )}
 
-      {modalGift && <PlannerGiftModal gift={modalGift} onClose={closeGiftModal} conditionStatus={conditionOf(modalGift)} />}
+      {modalGift && <PlannerGiftModal gift={modalGift} onClose={closeGiftModal} conditionStatus={conditionOf(modalGift)} gifts={[...giftMap.values()]} />}
     </>
   )
 }

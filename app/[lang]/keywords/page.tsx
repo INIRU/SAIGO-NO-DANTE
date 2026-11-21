@@ -92,7 +92,7 @@ async function renderKeywords(withRefs: boolean) {
     supabase.schema('limbus').from('sinners')
       .select('id, name_kr, name_en, name_jp'),
     supabase.schema('limbus').from('ego_gifts')
-      .select('name, keyword, grade, image_url, effect_base, effect_plus, effect_plusplus')
+      .select('game_id, name, keyword, grade, image_url, effect_base, effect_plus, effect_plusplus')
       .order('name'),
     supabase.schema('limbus').from('ego')
       .select('id, name_kr, name_en, name_jp, sinner_id, grade, sin_affinity, keywords, folder_name, image_url')

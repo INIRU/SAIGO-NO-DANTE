@@ -98,7 +98,7 @@ export default function RunStatus({ state, dispatch, gifts, giftMap, recipes }: 
         </div>
       </section>
       <InventoryPanel state={state} dispatch={dispatch} giftMap={giftMap} recipes={recipes} />
-      {modalGift && <PlannerGiftModal gift={modalGift} onClose={closeModal} />}
+      {modalGift && <PlannerGiftModal gift={modalGift} onClose={closeModal} gifts={gifts} />}
     </div>
   )
 }

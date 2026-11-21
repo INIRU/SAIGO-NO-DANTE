@@ -16,6 +16,7 @@ import { keywordDesc, keywordName, kt, type KeywordEntry } from './KeywordCard'
 import { gameTextToPlain, refNameLabels } from '@/lib/game-text/rich-text'
 import { createGiftMentionMatcher } from '@/lib/keywords/gift-mentions'
 import { resolveKeywordIconUrl } from '@/lib/keywords/catalog'
+import { giftIdsIn } from '@/lib/game-text/placeholders'
 import { useGameTextRefs, wantGameTextRefs } from '@/hooks/useGameTextRefs'
 
 interface Sinner {
@@ -56,6 +57,12 @@ export default function KeywordsClient({
   const [selectedGift, setSelectedGift] = useState<KeywordGift | null>(null)
   const lang = useLocale() as SupportedLang
   const t = (key: string) => kt(key, lang)
+  // The gift a gift turns into ({{gift:<game id>}}) shows by name and opens in the same window.
+  const giftLinks = (gift: KeywordGift) => {
+    const named = giftIdsIn(gift.effect_base, gift.effect_plus, gift.effect_plusplus)
+    const targets = named.length ? gifts.filter(g => g.game_id != null && named.includes(g.game_id)).map(g => ({ id: String(g.game_id), gameId: g.game_id, name: g.name, image_url: g.image_url, keyword: g.keyword, onClick: () => setSelectedGift(g) })) : []
+    return targets.length ? { targets } : null
+  }
 
   const sortOptions: DropdownOption<SortKey>[] = useMemo(() => [
     { value: 'default', label: kt('keyword.sort.frequency', lang) },
@@ -258,6 +265,7 @@ export default function KeywordsClient({
             art: selectedGift,
             keyword: selectedGift.keyword,
             effects: [selectedGift.effect_base, selectedGift.effect_plus, selectedGift.effect_plusplus],
+            giftLinks: giftLinks(selectedGift),
           }}
           lang={lang}
           onClose={closeAll}

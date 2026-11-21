@@ -106,11 +106,11 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
   useDeckDetailLoad({ id, initialDeck, setDeck, setLoading, onVoteCount: setVoteCount })
   const [egoModalId, setEgoModalId] = useState<string | null>(null)
   // A gift label in the note: the list above is the light one, so the pressed gift is fetched whole for the modal.
-  const [noteGift, setNoteGift] = useState<GiftData | null>(null)
+  const [noteGift, setNoteGift] = useState<GiftData & { named_gifts?: GiftData[] } | null>(null)
   const openNoteGift = useCallback((key: string) => {
     fetch(`/api/ego-gifts?key=${encodeURIComponent(key)}`)
       .then(r => (r.ok ? r.json() : null))
-      .then((gift: GiftData | null) => { if (gift) setNoteGift({ ...gift, theme_ids: null }) })
+      .then((gift: GiftData & { named_gifts?: GiftData[] } | null) => { if (gift) setNoteGift({ ...gift, theme_ids: null }) })
       .catch(() => {})
   }, [])
 
@@ -471,7 +471,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
       {egoModalId && (
         <EgoDetailModal egoId={egoModalId} onClose={() => setEgoModalId(null)} />
       )}
-      {noteGift && <PlannerGiftModal gift={noteGift} onClose={() => setNoteGift(null)} />}
+      {noteGift && <PlannerGiftModal gift={noteGift} onClose={() => setNoteGift(null)} gifts={noteGift.named_gifts} />}
       <ConfirmModal
         open={confirmDelete}
         title={guestT.deleteDeckTitle}

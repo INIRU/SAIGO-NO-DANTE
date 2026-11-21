@@ -22,7 +22,7 @@ import { gameTextToPlain, splitGameTextLines } from '@/lib/game-text/rich-text'
 import { createGiftRefSplitter, type GiftRefTarget } from '@/features/mirror-dungeon/lib/gift-refs'
 import { getGameUiAsset } from '@/lib/utils/game-ui'
 import { conditionLines } from '@/features/mirror-dungeon/lib/gift-condition-lines'
-import { PlaceholderGiftProvider, type PlaceholderGift } from '@/components/ui/PlaceholderLabel'
+import { GiftLabel, PlaceholderGiftProvider, type PlaceholderGift } from '@/components/ui/PlaceholderLabel'
 
 const CREDIT_ICON = getGameUiAsset('resources/md-credit')
 
@@ -94,7 +94,8 @@ interface GiftLinkTarget extends GiftRefTarget {
   keyword?: string | null
   /** Game id, so a {{gift:<id>}} placeholder in the effect text shows this gift. */
   gameId?: number | null
-  onClick: () => void
+  /** Opens the gift; without it the label is not a button. */
+  onClick?: () => void
 }
 
 export interface GiftDetailData {
@@ -159,7 +160,7 @@ export function EffectText({ text, color, links, gate }: { text: string; color: 
   const render = (line: string, lineColor: string) => split
     ? split(line).map((part, i) => typeof part === 'string'
       ? <span key={i}>{formatSkillDesc(part, lineColor, undefined, undefined, ENHANCE_CHANGE)}</span>
-      : <GiftLink key={i} target={part.gift as GiftLinkTarget} />)
+      : <GiftLabel key={i} gift={part.gift as GiftLinkTarget} />)
     : formatSkillDesc(line, lineColor, undefined, undefined, ENHANCE_CHANGE)
   return (
     <PlaceholderGiftProvider lookup={giftById}>
@@ -181,20 +182,6 @@ export function EffectText({ text, color, links, gate }: { text: string; color: 
         })}
       </div>
     </PlaceholderGiftProvider>
-  )
-}
-
-function GiftLink({ target }: { target: GiftLinkTarget }) {
-  return (
-    <button
-      type="button"
-      onClick={target.onClick}
-      className="mx-0.5 inline-flex items-baseline gap-1 rounded-sm align-baseline underline decoration-[rgba(232,176,48,0.6)] underline-offset-[0.2em] transition-colors hover:text-[#ffd479] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)]"
-      style={{ color: 'var(--gold-light)', textIndent: 0, cursor: 'pointer' }}
-    >
-      {target.image_url && <Image src={target.image_url} alt="" width={18} height={18} className="self-center" style={{ width: '1.125rem', height: '1.125rem', objectFit: 'contain' }} />}
-      {target.name}
-    </button>
   )
 }
 

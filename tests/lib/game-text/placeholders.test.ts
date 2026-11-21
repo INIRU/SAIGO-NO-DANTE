@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { hasRawPlaceholder, placeholdersToPlainText, splitPlaceholders } from '@/lib/game-text/placeholders'
+import { giftIdsIn, hasRawPlaceholder, placeholdersToPlainText, splitPlaceholders } from '@/lib/game-text/placeholders'
 
 describe('placeholder tokens', () => {
+  it('lists the gifts some texts point at, each once', () => {
+    expect(giftIdsIn('변경됨\n{{gift:9295}}', null, '{{gift:9295}} {{gift:9228}} {{live}}')).toEqual([9295, 9228])
+    expect(giftIdsIn(undefined, 'gift:1 {gift:2}')).toEqual([])
+  })
   it('splits text into runs and tokens, ignoring braces that are not tokens', () => {
     expect(splitPlaceholders('a{{live}}b{{nope}}{{count}}{{gift:9228}}')).toEqual(['a', { token: 'live' }, 'b{{nope}}', { token: 'count' }, { token: 'gift', giftId: 9228 }])
   })

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocale, useTranslations } from 'next-intl'
 import BaseModal from '@/components/ui/BaseModal'
@@ -29,6 +29,10 @@ function NotePreviewBody({ asset }: { asset: NoteAssetData }) {
   const kwSlug = keyword ? getGiftKeywordSlug(keyword) : null
   const kwIcon = kwSlug ? getGiftKeywordIconUrl(kwSlug) : null
   const description = (lang === 'en' ? asset.description_en : lang === 'ja' ? asset.description_jp : asset.description) || asset.description
+  // The gift this one turns into shows by its name and art, as in the detail window.
+  const giftLinks = useMemo(() => asset.giftRefs?.length ? {
+    targets: asset.giftRefs.map(g => ({ id: String(g.gameId), gameId: g.gameId, name: (lang === 'en' ? g.name_en : lang === 'ja' ? g.name_jp : g.name) || g.name, image_url: g.image_url, keyword: g.keyword })),
+  } : null, [asset, lang])
   return <div className="note-preview-card" data-kind={asset.kind}>
     <div className="note-preview-art">
       {asset.kind === 'identity' && asset.identity ? <IdentityFrameCard identity={asset.identity} name={name} sizes="7rem" /> : <NoteAssetArtwork asset={asset} compact />}
@@ -39,7 +43,7 @@ function NotePreviewBody({ asset }: { asset: NoteAssetData }) {
       {keyword && <small className="note-preview-keyword" style={{ color: getGiftKeywordColor(keyword) }}>
         {kwIcon && <Image src={kwIcon} alt="" width={16} height={16} />}{localizeGiftKeyword(keyword, lang as SupportedLang)}
       </small>}
-      {asset.kind === 'gift' && description && <EffectText text={description} color={GIFT_KEYWORD_COLORS[asset.keyword ?? ''] ?? '#c8b898'} />}
+      {asset.kind === 'gift' && description && <EffectText text={description} color={GIFT_KEYWORD_COLORS[asset.keyword ?? ''] ?? '#c8b898'} links={giftLinks} />}
     </div>
   </div>
 }

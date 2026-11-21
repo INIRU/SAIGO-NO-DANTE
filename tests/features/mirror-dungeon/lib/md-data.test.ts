@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { EgoGift, EgoGiftTheme, MdEvent, MdEventChoice, Recipe } from '@/features/mirror-dungeon'
 import {
-  buildGiftSlotMap, countChoicesByEvent, groupChoicesByEvent, indexEventsById, indexGiftImages, indexGiftNames, indexGiftNamesByGameId,
+  buildGiftSlotMap, countChoicesByEvent, groupChoicesByEvent, indexEventsById, indexGiftImages, indexGiftNames,
   indexGiftsByGameId, indexRecipesByResult, localizeChoices, localizeEvents, themeGiftNameSet,
 } from '@/features/mirror-dungeon/lib/md-data'
 
@@ -65,8 +65,7 @@ describe('gift indexes', () => {
     expect([...indexGiftsByGameId(gifts).keys()]).toEqual([1, 3])
   })
 
-  it('names by game id and by Korean name in the page language, Korean as the fallback', () => {
-    expect([...indexGiftNamesByGameId(gifts, 'en')]).toEqual([[1, 'Namea'], [3, '이름c']])
+  it('names by Korean name in the page language, Korean as the fallback', () => {
     expect([...indexGiftNames(gifts, 'en')]).toEqual([['이름a', 'Namea'], ['이름b', 'Nameb'], ['이름c', '이름c']])
     expect([...indexGiftNames(gifts, 'ko')].map(([, v]) => v)).toEqual(['이름a', '이름b', '이름c'])
   })

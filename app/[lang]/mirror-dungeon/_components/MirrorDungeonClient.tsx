@@ -157,7 +157,7 @@ export default function MirrorDungeonClient({
   const [giftIdParam, setGiftIdParam] = useQueryState('gift', parseAsString.withDefault(''))
   const {
     localizedEvents, eventById, choicesByEventId, eventCount, choiceCountByEventId, selected, giftByGameId, themeGiftNames,
-    giftNameByGameId, recipeMap, giftImageMap, giftNameMap, giftSlotMap,
+    recipeMap, giftImageMap, giftNameMap, giftSlotMap,
   } = useMirrorDungeonData({ lang, gifts, recipes, themes, events, choices, selectedThemeId, giftIdParam })
   const setSelected = useCallback((gift: EgoGift | null) => startTransition(() => { void setGiftIdParam(gift ? String(gift.id) : null) }), [setGiftIdParam])
   const [packIdParam, setPackIdParam] = useQueryState('pack', parseAsString.withDefault(''))
@@ -329,29 +329,21 @@ export default function MirrorDungeonClient({
       })()}
 
       {/* 기프트 상세 모달 */}
-      {selected && (() => {
-        const resolvedGift = {
-          ...selected,
-          effect_base: selected.effect_base?.replace('{0}', selected.convert_to ? `→ [${giftNameByGameId.get(selected.convert_to) ?? selected.convert_to}]` : '') ?? null,
-          effect_base_en: selected.effect_base_en?.replace('{0}', selected.convert_to ? `→ [${giftNameByGameId.get(selected.convert_to) ?? selected.convert_to}]` : '') ?? null,
-          effect_base_jp: selected.effect_base_jp?.replace('{0}', selected.convert_to ? `→ [${giftNameByGameId.get(selected.convert_to) ?? selected.convert_to}]` : '') ?? null,
-        }
-        return (
-          <GiftModal
-            gift={resolvedGift}
-            recipe={recipeMap.get(selected.name) ?? null}
-            giftImageMap={giftImageMap}
-            giftNameMap={giftNameMap}
-            onClose={closeDetail}
-            getGiftKeywordIcon={getGiftKeywordIcon}
-            themes={themes}
-            onThemeClick={id => moveTo({ kind: 'pack', id: String(id) })}
-            gifts={gifts}
-            onSelectGift={gift => moveTo({ kind: 'gift', id: String(gift.id) })}
-            back={back}
-          />
-        )
-      })()}
+      {selected && (
+        <GiftModal
+          gift={selected}
+          recipe={recipeMap.get(selected.name) ?? null}
+          giftImageMap={giftImageMap}
+          giftNameMap={giftNameMap}
+          onClose={closeDetail}
+          getGiftKeywordIcon={getGiftKeywordIcon}
+          themes={themes}
+          onThemeClick={id => moveTo({ kind: 'pack', id: String(id) })}
+          gifts={gifts}
+          onSelectGift={gift => moveTo({ kind: 'gift', id: String(gift.id) })}
+          back={back}
+        />
+      )}
 
       {/* 이벤트 상세 모달 */}
       {selectedEvent && (

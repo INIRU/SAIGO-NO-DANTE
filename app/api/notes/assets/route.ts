@@ -3,13 +3,14 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CACHE_TAGS } from '@/lib/constants/cache-tags'
 import { ASSET_KINDS, isAssetKind, type AssetKind } from '@/lib/notes/blocks'
-import type { NoteAssetData } from '@/features/notes'
+import type { NoteAssetData, NoteGiftRef } from '@/features/notes'
 import { SIN_ORDER, SIN_LABELS_KR, SIN_ICON_MAP } from '@/lib/constants/sin'
 import { getIdentityInfoUrl } from '@/lib/utils/images'
 import { resolveKeywordIconUrl } from '@/lib/keywords/catalog'
 import { withEgoStage } from '@/lib/db/queries'
 import type { Identity, Skill } from '@/lib/types'
 import { isUuid } from '@/lib/utils/uuid'
+import { giftIdsIn } from '@/lib/game-text/placeholders'
 
 const TABLES = { gift:'ego_gifts', theme:'ego_gift_themes', identity:'identities', ego:'ego', skill:'skills', keyword:'keyword_meta' } as const
 const COLUMNS = {
@@ -59,7 +60,17 @@ async function load(kind: AssetKind, query: string, ids: string[], offset = 0, g
     if (parents.error || allSkills.error) throw Error('Skill data unavailable')
     identities = parents.data as Identity[]; siblings = allSkills.data as Skill[]
   }
+  // The gifts a gift's text points at ({{gift:<game id>}}, a convert_to target): four gifts have one, so this query is rare.
+  const namedIn = (row: Record<string, unknown>) => kind === 'gift' ? giftIdsIn(row.effect_base as string | null) : []
+  const namedIds = [...new Set(rows.flatMap(namedIn))]
+  let named: NoteGiftRef[] = []
+  if (namedIds.length) {
+    const targets = await db.from('ego_gifts').select('game_id,name,name_en,name_jp,image_url,keyword').in('game_id', namedIds)
+    if (targets.error) throw Error('Assets unavailable')
+    named = targets.data.map(g => ({ gameId: g.game_id as number, name: g.name, name_en: g.name_en, name_jp: g.name_jp, image_url: g.image_url, keyword: g.keyword }))
+  }
   return rows.map(row => {
+    const giftRefs = named.filter(g => namedIn(row).includes(g.gameId))
     const identity = kind === 'identity' ? row as Identity : identities.find(i => i.id === row.identity_id)
     return { kind, id:String(kind === 'keyword' ? row.name : row.id), name:String(row.name_kr || row.name || ''),
       name_en:row.name_en as string, name_jp:row.name_jp as string,
@@ -67,6 +78,7 @@ async function load(kind: AssetKind, query: string, ids: string[], offset = 0, g
       grade:row.grade as string, keyword:row.keyword as string, description:(row.description ?? row.effect_base) as string, description_en:(row.description_en ?? row.effect_base_en) as string, description_jp:(row.description_jp ?? row.effect_base_jp) as string,
       ...(kind === 'ego' ? {ego: {grade:String(row.grade), image_url:row.image_url as string, sin_affinity:row.sin_affinity as string, max_construe_level:withEgoStage({stage_levels:row.stage_levels as {construe_level:number|null}[]}).max_construe_level}, sinnerId:String(row.sinner_id)} : {}),
       ...(identity ? {identity} : {}),
+      ...(giftRefs.length ? {giftRefs} : {}),
       ...(kind === 'skill' ? {skill:row as Skill, skills:siblings.filter(s => s.identity_id === row.identity_id), sinnerName:identity?.name_kr} : {}),
     }
   })
