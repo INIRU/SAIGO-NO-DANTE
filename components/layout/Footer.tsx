@@ -49,7 +49,7 @@ export default async function Footer({ lang }: { lang: string }) {
           </nav>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-[var(--border)] pt-6 text-[0.75rem] text-[var(--text-muted)] lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+        <div className="footer-legal flex flex-col gap-3 border-t border-[var(--border)] pt-6 text-[0.75rem] text-[var(--text-muted)] lg:flex-row lg:items-start lg:justify-between lg:gap-8">
           {/* Wraps between the links on a phone, never inside one. */}
           <div className="flex flex-wrap gap-x-4 gap-y-2 whitespace-nowrap">
             {legal.map(link => (

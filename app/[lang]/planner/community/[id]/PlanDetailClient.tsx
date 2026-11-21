@@ -238,8 +238,10 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
           animate={shouldReduceMotion ? undefined : 'animate'}
         >
           <div className={styles.identity}>
+            <div className={styles.lead}>
+            <PlanDifficulty difficulty={plan.difficulty} summary={computeDifficultySummary(plan.floor_plan, plan.difficulty)} />
             {mainKeywords.length > 0 && (
-              <ul className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <ul className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 {mainKeywords.map(keyword => {
                   const iconUrl = kwContext.getIconUrl(keyword)
                   return (
@@ -253,6 +255,7 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                 })}
               </ul>
             )}
+            </div>
             <h1 className={styles.title}>{plan.title}</h1>
             {series && <SeriesBox series={series} kind="plan" postId={plan.id} />}
           </div>
@@ -266,39 +269,13 @@ export default function PlanDetailClient({ plan, themes, gifts, recipes, identit
                 profilePublic={plan.profiles?.public_profile}
                 className="block truncate text-[1rem] font-semibold leading-snug text-[var(--text-primary)] hover:text-[var(--gold-light)]"
               />
-              <RelativeTime date={plan.created_at} className="text-[0.875rem] text-[#9c8b73]" />
+              <p className="flex gap-3 text-[0.875rem] text-[#9c8b73]">
+                <RelativeTime date={plan.created_at} />
+                <span>{tDetail('viewsLabel')} <span className="tabular-nums">{plan.view_count}</span></span>
+              </p>
             </div>
             {plan.profiles?.username && plan.profiles.public_profile !== false && <FollowAuthorButton userId={plan.user_id} />}
           </div>
-
-          <dl className={styles.facts}>
-            <div className={styles.fact}>
-              <dt>{tDetail('factDifficulty')}</dt>
-              <dd><PlanDifficulty difficulty={plan.difficulty} summary={computeDifficultySummary(plan.floor_plan, plan.difficulty)} /></dd>
-            </div>
-            <div className={styles.fact}>
-              <dt>{tDetail('factIdentities')}</dt>
-              <dd>{deck.length}</dd>
-            </div>
-            <div className={styles.fact}>
-              <dt>{tPlanner('deckTab.subTabs.ego')}</dt>
-              <dd>{egoSlots.length}</dd>
-            </div>
-            {floorPlan.length > 0 && (
-              <div className={styles.fact}>
-                <dt>{tDetail('factFloors')}</dt>
-                <dd aria-label={floorCountLabel}>{configuredFloors}<span className="text-[var(--text-muted)]">/{floorPlan.length}</span></dd>
-              </div>
-            )}
-            <div className={styles.fact}>
-              <dt>{tDetail('viewsLabel')}</dt>
-              <dd>{plan.view_count}</dd>
-            </div>
-            <div className={styles.fact}>
-              <dt>{tDetail('commentsLabel')}</dt>
-              <dd>{plan.comment_count}</dd>
-            </div>
-          </dl>
 
           <div className={styles.actions}>
             <button type="button" onClick={handleVote} disabled={voteLoading} aria-pressed={voted}>

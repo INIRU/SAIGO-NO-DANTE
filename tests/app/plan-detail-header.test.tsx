@@ -44,3 +44,19 @@ it('keeps DOM order = visual order: utilities, then Assist Mode, then owner tool
   expect(order).toEqual(icons)
   expect(css).not.toMatch(/\border:/)
 })
+
+const read = (path: string) => readFileSync(resolve(__dirname, '../..', path), 'utf8')
+
+it('the plan and deck detail heroes carry no strip of big-number facts', () => {
+  for (const file of ['app/[lang]/planner/community/[id]/PlanDetailClient.tsx', 'app/[lang]/decks/[id]/DeckDetailClient.tsx', 'components/ui/DetailPageSkeleton.tsx']) {
+    expect(read(file), file).not.toMatch(/\bfacts\b/)
+  }
+  for (const file of ['app/[lang]/planner/community/[id]/PlanDetailHeader.module.css', 'app/[lang]/decks/[id]/DeckDetail.module.css']) {
+    expect(read(file), file).not.toMatch(/\.facts?\b/)
+  }
+})
+
+it('only the primary action is a filled box: the other header buttons have neither border nor background', () => {
+  expect(css).toMatch(/\.actions button \{[^}]*border: 1px solid transparent;[^}]*background: transparent;/)
+  expect(read('app/[lang]/decks/[id]/DeckDetail.module.css')).toMatch(/\.actions > button,\s*\.edit \{[^}]*border: 1px solid transparent;[^}]*background: transparent;/)
+})

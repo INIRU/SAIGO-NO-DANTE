@@ -32,6 +32,7 @@ import RelativeTime from '@/components/ui/RelativeTime'
 import DeckInsights from '@/features/decks/components/DeckInsights'
 import DeckResourceSummary from '@/features/decks/components/DeckResourceSummary'
 import SkillExchangePanel from '@/components/ui/SkillExchangePanel'
+import { CONTENT_TYPE_COLORS } from '@/lib/constants/deck-tokens'
 import { topUptieSkills, BOARD_SLOT_COUNT, adaptBoardIdentity, contentTypeMessageKey, localizeDeckKeyword } from '@/features/decks'
 import { useKeywordData } from '@/components/providers/KeywordProvider'
 import { localizeIdentityName } from '@/lib/decks/localize'
@@ -233,6 +234,8 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
           animate={shouldReduceMotion ? undefined : 'animate'}
         >
           <div className={styles.identity}>
+            <div className={styles.lead}>
+            {contentLabel && <span className={styles.content} style={{ color: CONTENT_TYPE_COLORS[deck.content_type!]?.color }}>{contentLabel}</span>}
             {keywords.length > 0 && (
               <ul className={styles.keywords}>
                 {keywords.map(keyword => {
@@ -246,6 +249,7 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                 })}
               </ul>
             )}
+            </div>
             <h1 className={styles.title}>{deck.title}</h1>
             {initialSeries && <SeriesBox series={initialSeries} kind="deck" postId={id} />}
           </div>
@@ -259,35 +263,13 @@ export default function DeckDetailClient({ id, initialDeck, initialComments, ini
                 profilePublic={deck.profiles?.public_profile}
                 className="block truncate text-[1rem] font-semibold leading-snug text-[var(--text-primary)] hover:text-[var(--gold-light)]"
               />
-              <RelativeTime date={deck.created_at} className="text-[0.875rem] text-[#9c8b73]" />
+              <p className="flex gap-3 text-[0.875rem] text-[#9c8b73]">
+                <RelativeTime date={deck.created_at} />
+                <span>{t('factViews')} <span className="tabular-nums">{deck.view_count}</span></span>
+              </p>
             </div>
             {deck.profiles?.username && deck.profiles.public_profile !== false && <FollowAuthorButton userId={deck.user_id} />}
           </div>
-
-          <dl className={styles.facts}>
-            {contentLabel && (
-              <div className={styles.fact}>
-                <dt>{t('factContent')}</dt>
-                <dd data-text>{contentLabel}</dd>
-              </div>
-            )}
-            <div className={styles.fact}>
-              <dt>{t('factFormed')}</dt>
-              <dd>{formedSlots.length}<span className="text-[var(--text-muted)]">/{BOARD_SLOT_COUNT}</span></dd>
-            </div>
-            <div className={styles.fact}>
-              <dt>E.G.O</dt>
-              <dd>{deck.deck_egos?.filter(row => row.ego).length ?? 0}</dd>
-            </div>
-            <div className={styles.fact}>
-              <dt>{t('vote')}</dt>
-              <dd>{voteCount}</dd>
-            </div>
-            <div className={styles.fact}>
-              <dt>{t('factViews')}</dt>
-              <dd>{deck.view_count}</dd>
-            </div>
-          </dl>
 
           <div className={styles.actions}>
             <button

@@ -32,3 +32,13 @@ describe('deck card author', () => {
     expect(hidden).toContain('작성자')
   })
 })
+
+// The footer reads like the board cards: how long ago, no dot between name and date, counts in the body face.
+describe('deck card footer', () => {
+  it('shows how long ago the deck went up, with no dot separator and no monospace', () => {
+    const html = renderToStaticMarkup(<DeckCard deck={deck({ username: '작성자', profile_public: true })} />)
+    expect(html).not.toContain('decks.card.date')
+    expect(html).not.toContain('·')
+    expect(html).not.toContain('font-mono')
+  })
+})
