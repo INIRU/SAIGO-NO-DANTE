@@ -440,7 +440,6 @@
       "identityEmpty": "인격 정보 없음",
       "slotPreview": "{index}번 칸 {identity} 상세 미리보기 열기",
       "emptySlot": "{index}번 빈 슬롯",
-      "boardHint": "인격 카드를 클릭하면 스킬, 패시브, E.G.O 상세 정보를 볼 수 있습니다.",
       "deckNote": "덱 노트",
       "skillDistribution": "스킬 분포",
       "passives": "패시브",
@@ -477,15 +476,12 @@
       "factViews": "조회",
       "sectionNav": "덱 구역",
       "sectionFormation": "덱 편성",
-      "sectionRelated": "관련 덱",
-      "boardHintShort": "카드를 누르면 스킬·패시브·E.G.O를 볼 수 있어요"
+      "sectionRelated": "관련 덱"
     },
     "recommendations": {
       "count": "{count}개",
       "otherOpinions": "다른 의견",
-      "otherOpinionsDescription": "같은 인격 편성에서 순서나 E.G.O 선택이 다른 덱입니다.",
       "similarDecks": "비슷한 덱",
-      "similarDecksDescription": "편성, 테마, E.G.O 구성이 가까운 덱입니다.",
       "coVisited": "함께 본 글"
     },
     "identityPreview": {
@@ -885,7 +881,6 @@
       "deletePlanMessage": "이 플랜을 삭제하시겠습니까? 삭제 후 복구할 수 없습니다.",
       "deleteFailed": "플랜을 삭제하지 못했습니다.",
       "deleteError": "삭제 중 오류가 발생했습니다.",
-      "floorPlanCaption": "층별 테마팩, 획득 기프트, 메모를 한 번에 확인합니다.",
       "viewEventPage": "이벤트 페이지에서 보기",
       "startGifts": "시작 기프트",
       "observeGifts": "관측 기프트",
@@ -1205,7 +1200,6 @@
         "clearSearch": "검색어 지우기",
         "rarity": "{rarity}성",
         "noResults": "조건에 맞는 인격이 없습니다",
-        "openDetailHint": "클릭하여 상세 보기",
         "editOpen": "인격 편성하기",
         "editDone": "인격 편성 완료",
         "editHint": "수감자를 클릭해서 인격을 선택해주세요",
@@ -1817,7 +1811,7 @@
       "pierce": "관통",
       "blunt": "타격",
       "season": "시즌",
-      "traits": "인격 키워드 · 소속"
+      "traits": "소속"
     },
     "stats": {
       "title": "스탯",
@@ -2133,13 +2127,11 @@
   },
   "experience": {
     "title": "경험치 계산기",
-    "subtitle": "보유 티켓부터 계산하고, 필요한 만큼만 채광하세요.",
     "levels": "레벨 설정",
     "current": "현재 레벨",
     "target": "목표 레벨",
     "progress": "현재 레벨에서 쌓인 EXP",
     "inventory": "보유 경험치 티켓",
-    "inventoryHelp": "일반 학습 티켓 I~IV의 보유 수량을 입력하세요.",
     "ticket": "인격 학습 티켓 {tier}",
     "reset": "티켓 초기화",
     "required": "목표까지 필요한 EXP",
@@ -2148,7 +2140,6 @@
     "farming": "경험치 채광",
     "stage": "입장 가능한 경던 단계",
     "stageOption": "{stage}단계",
-    "fixed": "고정 보상 · 최소 = 평균 = 최대",
     "manual": "직접 전투",
     "skip": "스킵",
     "enkephalin": "엔케팔린 환산",
@@ -2158,15 +2149,12 @@
     "moduleCount": "{count}개",
     "reward": "1회 티켓 보상",
     "recommendation": "추천 티켓 사용",
-    "planHelp": "선택한 방식의 채광 보상과 보유 티켓을 합친 조합입니다.",
     "noFarm": "보유 티켓만으로 목표 레벨에 도달합니다.",
     "already": "이미 목표 레벨에 도달했습니다.",
     "use": "사용",
     "left": "사용 후 남음",
     "spent": "투입 EXP",
     "excess": "목표 초과 EXP",
-    "excessHelp": "최소 초과 EXP를 우선하고, 같은 EXP면 티켓을 적게 사용합니다. 만렙 미만의 초과분은 다음 레벨로 이어집니다.",
-    "skipHelp": "스킵은 모듈 2배, 티켓별 보상 1.5배(소수점 올림)입니다. 엔케팔린 20 = 모듈 1개.",
     "levelTable": "레벨별 누적 경험치",
     "level": "레벨",
     "cumulative": "1레벨부터 누적 EXP",
@@ -2175,7 +2163,6 @@
   },
   "damage": {
     "title": "피해량 계산기",
-    "subtitle": "스킬과 대상의 조건을 넣어 코인별 피해량을 예상합니다.",
     "reset": "초기화",
     "skill": "스킬",
     "basePower": "기본 위력",
@@ -2290,7 +2277,6 @@
   },
   "clash": {
     "title": "합 계산기",
-    "subtitle": "양쪽 스킬의 코인과 정신력으로 합의 승률과 교환 수, 남는 코인을 계산합니다.",
     "reset": "초기화",
     "sideA": "내 쪽",
     "sideB": "적",

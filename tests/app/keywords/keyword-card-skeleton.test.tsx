@@ -25,3 +25,10 @@ it('a keyword placeholder card shimmers only while on screen', () => {
     expect(bonesOutsideSkippedBoxes(html), `compact=${compact}`).toBe(0)
   }
 })
+
+it('the list placeholder is a row: no boxed card and no three-number strip', () => {
+  const html = renderToStaticMarkup(<KeywordCardSkeleton />)
+  expect(html).not.toContain('grid-cols-3')
+  expect(html).not.toContain('rounded-md border')
+  expect(html).toContain('border-b')
+})

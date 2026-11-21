@@ -4,26 +4,26 @@
 .search:focus-within { border-color: var(--gold-light); outline: 1px solid var(--gold-light); }
 .search input { outline: none; flex: 1; min-width: 0; font-size: .8125rem; color: var(--text-primary); background: transparent; }
 .search button { cursor: pointer; }
-.count { margin-left: auto; color: var(--text-tertiary); font: .75rem var(--font-mono); }
+.count { margin-left: auto; color: var(--text-tertiary); font-size: .8125rem; font-variant-numeric: tabular-nums; }
 .gallery { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; position: relative; z-index: 0; }
-.card { text-align: left; min-width: 0; display: flex; flex-direction: column; cursor: pointer; background: var(--bg-card); border: 1px solid var(--border); transition: border-color .2s, background-color .2s; }
-.card:hover { border-color: var(--gold); background: var(--bg-elevated); }
+.card { text-align: left; min-width: 0; display: flex; flex-direction: column; cursor: pointer; }
+.card:hover h3 { color: var(--gold-light); }
 .card:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 4px; }
 .image { position: relative; width: 100%; aspect-ratio: 1024 / 673; background: var(--bg-deep); overflow: hidden; }
-.caption { padding: 1rem 1.125rem .875rem; display: flex; flex: 1; flex-direction: column; }
-.cardMeta { display: flex; justify-content: space-between; gap: .75rem; color: var(--text-tertiary); font: .6875rem var(--font-mono); }
-.caption h3 { margin-top: .75rem; margin-bottom: .875rem; color: var(--text-primary); font: 500 1rem/1.6 var(--font-heading); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.checks { margin: -.5rem 0 .875rem; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: .375rem .75rem; }
+.caption { padding-top: .75rem; display: flex; flex: 1; flex-direction: column; }
+.caption h3 { margin-bottom: .375rem; color: var(--text-primary); font: 500 1rem/1.6 var(--font-heading); transition: color .2s; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.under { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .875rem; min-height: 1.125rem; margin-bottom: .75rem; color: var(--text-tertiary); font-size: .75rem; }
+.checks { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: .375rem .75rem; }
 .checks li { display: inline-flex; align-items: center; gap: .1875rem; }
-.checks b { display: grid; place-items: center; min-width: 1.125rem; height: 1.125rem; margin-right: .1875rem; border: 1px solid var(--border); border-radius: .1875rem; color: var(--text-secondary); font: .6875rem/1 var(--font-mono); }
+.checks b { margin-right: .25rem; color: var(--text-secondary); font: 400 .9375rem/1 var(--font-title); }
 .checks img { width: 1.125rem; height: 1.125rem; object-fit: contain; }
-.cardFooter { margin-top: auto; padding-top: .625rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); }
-.gifts { display: flex; gap: .5rem; align-items: flex-start; min-height: 2rem; font: .625rem var(--font-mono); }
+.cardFooter { margin-top: auto; }
+.gifts { display: flex; gap: .5rem; align-items: flex-start; min-height: 2rem; }
 .gifts img { object-fit: contain; }
-.unillustrated { display: flex; justify-content: space-between; color: var(--text-secondary); padding: 2rem 1.125rem; border-bottom: 1px solid var(--border); font: .75rem var(--font-mono); }
+.unillustrated { display: grid; place-items: center; aspect-ratio: 1024 / 673; color: var(--text-muted); background: var(--bg-card); font-size: .8125rem; }
 .empty { text-align: center; padding: 4rem 1rem; color: var(--text-secondary); }
 @media (max-width: 63.99rem) { .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; } }
 @media (max-width: 39.99rem) { .gallery { grid-template-columns: 1fr; gap: 1.25rem; } .search { flex-basis: 100%; max-width: none; } }
-@media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .caption h3 { transition: none; } }
 
 .giftPreview { display: block; flex: 0 0 3.75rem; width: 3.75rem; }

@@ -43,9 +43,10 @@ export function useKeywordColor(name: string) {
   return keywordAccentColor(name, useKeywords()[name])
 }
 
-const CARD = 'kw-card flex h-full w-full flex-col rounded-md border border-[#2e2417] bg-[#17120c] text-left'
-const DETAIL = `${CARD} p-4`
-const TILE = `${CARD} items-center gap-2 px-1.5 pb-2.5 pt-3`
+const TILE = 'kw-card flex h-full w-full flex-col items-center gap-2 rounded-md border border-[#2e2417] bg-[#17120c] px-1.5 pb-2.5 pt-3 text-left'
+// A list row: icon, name over one line of description, counts at the end (under the description on a phone).
+const ROW = 'kw-card grid w-full grid-cols-[2.25rem_minmax(0,1fr)] items-center gap-x-3 gap-y-1 border-b border-[#2e2417] px-2 py-2.5 text-left sm:grid-cols-[2.25rem_minmax(0,1fr)_auto]'
+const COUNTS = 'col-start-2 flex h-[1.125rem] items-center gap-3 text-[0.75rem] leading-none text-[var(--text-muted)] sm:col-start-3'
 const INTERACTIVE = 'cursor-pointer transition-colors hover:border-[var(--border)] hover:bg-[#1d160e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-light)] motion-reduce:transition-none'
 
 export default function KeywordCard({ keyword: kw, counts, onClick, lang, compact = false }: {
@@ -78,30 +79,25 @@ export default function KeywordCard({ keyword: kw, counts, onClick, lang, compac
     { label: kt('keyword.stat.gifts', lang), value: counts.gift },
   ]
   return (
-    <button type="button" onClick={onClick} className={`${DETAIL} ${INTERACTIVE}`}>
-      <span className="flex h-11 w-full items-center gap-3">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded bg-[var(--bg-deep)]">
-          {iconUrl && <KeywordIcon src={iconUrl} alt="" width={32} height={32} className="size-8 object-contain" />}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-1.5">
-            <span className="truncate font-[family-name:var(--font-heading)] text-[0.9375rem] leading-tight" style={{ color }}>{name}</span>
-            {sin && <Image src={getSinIconUrl(sin)} alt={kt(`sin.${sin}`, lang)} width={16} height={16} className="size-4 shrink-0" />}
-          </span>
+    <button type="button" onClick={onClick} className={`${ROW} ${INTERACTIVE}`}>
+      <span className="flex size-9 items-center justify-center">
+        {iconUrl && <KeywordIcon src={iconUrl} alt="" width={32} height={32} className="size-8 object-contain" />}
+      </span>
+      <span className="min-w-0">
+        <span className="flex h-5 items-center gap-1.5">
+          <span className="truncate font-[family-name:var(--font-heading)] text-[0.9375rem] leading-tight" style={{ color }}>{name}</span>
+          {sin && <Image src={getSinIconUrl(sin)} alt={kt(`sin.${sin}`, lang)} width={16} height={16} className="size-4 shrink-0" />}
           {kw.max_stack ? (
-            <span className="mt-0.5 block text-[0.75rem] leading-tight text-[#9c8b73]">
-              {kt('keyword.maxStack', lang)} <span className="font-[family-name:var(--font-title)] text-[0.9375rem] tabular-nums text-[var(--gold-light)]">{kw.max_stack}</span>
+            <span className="shrink-0 text-[0.75rem] leading-tight text-[#9c8b73]">
+              {kt('keyword.maxStack', lang)} <span className="font-[family-name:var(--font-title)] text-[0.875rem] tabular-nums text-[var(--gold-light)]">{kw.max_stack}</span>
             </span>
           ) : null}
         </span>
+        <span className="mt-0.5 block h-5 truncate text-[0.8125rem] leading-5 text-[#bfae92]"><PlaceholderText text={plainText(keywordDesc(kw, lang))} /></span>
       </span>
-      <span className="mt-3 line-clamp-2 min-h-[2.6rem] w-full text-[0.8125rem] leading-[1.6] text-[#bfae92]"><PlaceholderText text={plainText(keywordDesc(kw, lang))} /></span>
-      <span className="mt-auto grid w-full grid-cols-3 border-t border-[#2e2417] pt-2.5">
+      <span className={COUNTS}>
         {stats.map(s => (
-          <span key={s.label} className="flex h-6 items-baseline gap-1.5">
-            <span className="font-[family-name:var(--font-title)] text-[1.25rem] leading-6 tabular-nums" style={{ color: s.value ? 'var(--text-primary)' : 'var(--text-muted)' }}>{s.value}</span>
-            <span className="truncate text-[0.75rem] text-[#9c8b73]">{s.label}</span>
-          </span>
+          <span key={s.label} className="sm:min-w-[4rem]">{s.label} <span className="tabular-nums" style={{ color: s.value ? 'var(--text-secondary)' : undefined }}>{s.value}</span></span>
         ))}
       </span>
     </button>
@@ -125,15 +121,13 @@ export function KeywordCardSkeleton({ compact = false, ref }: { compact?: boolea
     )
   }
   return (
-    <div ref={ref} aria-hidden="true" className={DETAIL}>
-      <div className={`flex h-11 w-full items-center gap-3 ${OFFSCREEN_STILL}`}>
-        <Skeleton raised className="size-11 shrink-0" />
-        <div className="min-w-0 flex-1 space-y-1.5"><SkeletonLine raised w="6rem" h="0.9375rem" /><SkeletonLine raised w="3rem" h="0.75rem" /></div>
+    <div ref={ref} aria-hidden="true" className={ROW}>
+      <div className={`size-9 ${OFFSCREEN_STILL}`}><Skeleton raised className="size-9" /></div>
+      <div className={`min-w-0 ${OFFSCREEN_STILL}`}>
+        <div className="flex h-5 items-center"><SkeletonLine raised w="6rem" h="0.9375rem" /></div>
+        <div className="mt-0.5 flex h-5 items-center"><SkeletonLine raised w="80%" h="0.8125rem" /></div>
       </div>
-      <div className={`mt-3 min-h-[2.6rem] w-full space-y-2 pt-1 ${OFFSCREEN_STILL}`}><SkeletonLine raised w="95%" h="0.8125rem" /><SkeletonLine raised w="65%" h="0.8125rem" /></div>
-      <div className="mt-auto grid w-full grid-cols-3 border-t border-[#2e2417] pt-2.5">
-        {[0, 1, 2].map(i => <div key={i} className={`flex h-6 items-center ${OFFSCREEN_STILL}`}><SkeletonLine raised w="3.5rem" h="0.875rem" /></div>)}
-      </div>
+      <div className={`${COUNTS} w-[9rem] sm:w-[13.5rem] ${OFFSCREEN_STILL}`}><SkeletonLine raised w="100%" h="0.75rem" /></div>
     </div>
   )
 }

@@ -5,14 +5,14 @@ import type { SupportedLang } from '@/lib/i18n/types'
 import KeywordCard, { KeywordCardSkeleton, kt, type KeywordEntry } from './KeywordCard'
 
 const COLUMNS = {
-  detail: 'repeat(auto-fill, minmax(min(100%, 17rem), 1fr))',
+  detail: 'repeat(auto-fill, minmax(min(100%, 26rem), 1fr))',
   compact: 'repeat(auto-fill, minmax(5.75rem, 1fr))',
 }
 
 /** Grid of placeholder cards for loading.tsx. */
 export function KeywordGridSkeleton({ count = 12 }: { count?: number }) {
   return (
-    <div className="grid gap-2.5" style={{ gridTemplateColumns: COLUMNS.detail }}>
+    <div className="grid gap-x-8" style={{ gridTemplateColumns: COLUMNS.detail }}>
       {Array.from({ length: count }, (_, i) => <KeywordCardSkeleton key={i} />)}
     </div>
   )
@@ -40,7 +40,7 @@ export default function KeywordGrid({ keywords, countMaps, onSelect, viewMode, l
   }
 
   return (
-    <div className="grid gap-2.5" style={{ gridTemplateColumns: COLUMNS[viewMode] }}>
+    <div className={compact ? 'grid gap-2.5' : 'grid gap-x-8'} style={{ gridTemplateColumns: COLUMNS[viewMode] }}>
       {keywords.slice(0, visible).map(kw => (
         <KeywordCard
           key={kw.name}

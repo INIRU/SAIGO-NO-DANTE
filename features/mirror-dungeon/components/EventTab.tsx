@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { eventCheckSins, groupEventChoices } from '@/features/mirror-dungeon/lib/event-flow'
 import { colorizeEventText } from '@/features/mirror-dungeon/lib/event-text'
 import { getRootEvents } from '@/lib/utils/event-catalog'
-import { Search, X, ArrowUpRight } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import styles from './EventTab.module.css'
 import GiftArtwork from '@/components/ui/GiftArtwork'
 import Dropdown from '@/components/ui/Dropdown'
@@ -130,10 +130,11 @@ export default function EventTab({
             <button type="button" key={event.id} className={`ev-card ${styles.card}`} onClick={() => onSelectEvent(event)} data-event-id={event.id}>
               {event.image_url ? <div className={styles.image}>
                 <QuietImage src={event.image_url} alt="" fill sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw" className="object-contain" loading={index < 6 ? 'eager' : 'lazy'} {...blurPlaceholder(event.image_url)} />
-              </div> : <div className={styles.unillustrated}><span>{t('mirrorDungeon.event.fallbackTitle')}</span><span>#{event.id}</span></div>}
+              </div> : <div className={styles.unillustrated}>{t('mirrorDungeon.event.fallbackTitle')}</div>}
               <div className={styles.caption}>
-                <div className={styles.cardMeta}><span>#{event.id}</span><span>{t('mirrorDungeon.event.choicesLabel')} {count}</span></div>
                 <h3>{colorizeEventText(getEventTitle(event), lang)}</h3>
+                <div className={styles.under}>
+                <span>{t('mirrorDungeon.event.choicesLabel')} {count}</span>
                 {checks.length > 0 && <ul className={styles.checks}>
                   {checks.map(check => (
                     <li key={check.option} aria-label={`${t('mirrorDungeon.event.checkOption').replace('{n}', String(check.option))}: ${check.sins.map(sin => tSin(sin)).join(', ')}`}>
@@ -142,9 +143,9 @@ export default function EventTab({
                     </li>
                   ))}
                 </ul>}
+                </div>
                 <div className={styles.cardFooter}>
                   <span className={styles.gifts}>{gifts.filter(gift => gift.image_url).slice(0, 4).map(gift => <span key={gift.id} className={styles.giftPreview}><GiftArtwork gift={gift} displayName={getLocalizedName({ name_kr: gift.name, name_en: gift.name_en, name_jp: gift.name_jp }, lang)} sizes="64px" /></span>)}{gifts.length > 4 && <span>+{gifts.length - 4}</span>}</span>
-                  <ArrowUpRight size={19} aria-hidden="true" />
                 </div>
               </div>
             </button>

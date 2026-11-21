@@ -13,8 +13,6 @@ export const copy = {
     decrease: "줄이기",
     done: "설정 완료",
     title: "월간 광기 계산기",
-    intro:
-      "이번 달의 계획을 다음 달까지. 무료·유료 광기와 결제 금액을 따로 확인하세요.",
     free: "무료 광기",
     paid: "유료 광기",
     cash: "예상 결제 금액",
@@ -24,8 +22,7 @@ export const copy = {
     opening: "월초 보유량",
     remaining: "월초 남은 일수",
     maintenance: "목요일 점검 보상 300 광기",
-    assumption:
-      "점검 보상은 예상치입니다. 날짜별로 제외할 수 있습니다. 일일 보상은 한국 시간 오전 6시 이후 수령 기준이며, 추출·충전에 쓴 광기는 차감하지 않습니다.",
+    assumption: "점검 보상은 예상치입니다.",
     firstUsed: "이미 초회 구매한 상품",
     schedule: "주간 거던 일정 채우기",
     normal: "노말 3회",
@@ -63,8 +60,6 @@ export const copy = {
     small: "월정액 소",
     large: "월정액 대",
     days: "일",
-    notice:
-      "상품 구성은 게임 값 기준 시즌 7 구성입니다. 판매 종료·가격 변경과 실제 보상 수령 여부는 계획에 맞게 조정하세요.",
     prior: "첫 주에 월초 이전 사용한 거던 보너스",
     normalName: "노말",
     hardName: "하드",
@@ -85,8 +80,6 @@ export const copy = {
     decrease: "Decrease",
     done: "Done",
     title: "Monthly Lunacy planner",
-    intro:
-      "Plan this month and the next, with free Lunacy, paid Lunacy and spending kept separate.",
     free: "Free Lunacy",
     paid: "Paid Lunacy",
     cash: "Estimated spending",
@@ -96,8 +89,7 @@ export const copy = {
     opening: "Opening balance",
     remaining: "Days left at month start",
     maintenance: "300 Lunacy each Thursday",
-    assumption:
-      "Maintenance rewards are estimates and can be excluded by date. Daily claims are after 06:00 KST. Extraction and recharge spending is not deducted.",
+    assumption: "Maintenance rewards are estimates.",
     firstUsed: "First purchase already used",
     schedule: "Fill weekly Mirror Dungeon runs",
     normal: "Normal ×3",
@@ -135,8 +127,6 @@ export const copy = {
     small: "Small membership",
     large: "Large membership",
     days: "days",
-    notice:
-      "Products use the recovered Season 7 data. Adjust plans for discontinued offers, price changes and actual claims.",
     prior: "Bonuses used before month start in the first week",
     normalName: "Normal",
     hardName: "Hard",
@@ -157,7 +147,6 @@ export const copy = {
     decrease: "減らす",
     done: "設定完了",
     title: "月間狂気計算機",
-    intro: "今月から翌月まで。無償・有償狂気と購入金額を別々に計算します。",
     free: "無償狂気",
     paid: "有償狂気",
     cash: "購入予定額",
@@ -167,8 +156,7 @@ export const copy = {
     opening: "月初の所持量",
     remaining: "月初の残り日数",
     maintenance: "木曜日のメンテナンス報酬 300狂気",
-    assumption:
-      "メンテナンス報酬は予想です。日付ごとに除外できます。毎日の受領は韓国時間午前6時以降として計算し、抽出・充填での消費は差し引きません。",
+    assumption: "メンテナンス報酬は予想です。",
     firstUsed: "初回購入済みの商品",
     schedule: "毎週の鏡ダンジョン予定",
     normal: "ノーマル3回",
@@ -205,8 +193,6 @@ export const copy = {
     small: "月額小",
     large: "月額大",
     days: "日",
-    notice:
-      "商品は取得済みのシーズン7データです。販売終了・価格変更や実際の受領に合わせて調整してください。",
     prior: "月初以前に使用した初週のボーナス",
     normalName: "ノーマル",
     hardName: "ハード",

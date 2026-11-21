@@ -84,7 +84,7 @@ export default function DamageCalculator() {
   // The attacking skill and the target face each other across the damage, as the clash calculator's sides do; what changes
   // the damage on top of them (clashes, critical, keyword and gift effects) runs the full width under them.
   return <div className={styles.page}>
-    <PageHeader title={t('title')} description={t('subtitle')} actions={
+    <PageHeader title={t('title')} actions={
       <button type="button" className={styles.reset} onClick={() => { setForm(DEFAULTS); setHeads(ALL_HEADS); setSkillKey(''); setResetKey(key => key + 1) }}><RotateCcw size={16} aria-hidden="true" />{t('reset')}</button>
     } />
     <div className={arena.arena}>
