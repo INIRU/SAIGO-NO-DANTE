@@ -13,11 +13,15 @@
 .popup-confirm { padding:1.75rem; border:1px solid rgba(200,170,110,.18); }
 .popup-confirm h2 { font-size:1.25rem; color:var(--text-primary); margin:0 0 .75rem; }
 .popup-confirm p { color:var(--text-secondary); font-size:.9375rem; line-height:1.75; white-space:pre-line; overflow-wrap:anywhere; }
+/* Korean breaks between words, not inside one; Japanese has no spaces to break at, so it keeps the default. */
+:lang(ko) .popup-confirm p { word-break:keep-all; }
 .popup-actions { display:flex; gap:.75rem; margin-top:1.5rem; }
 .popup-actions button { flex:1; min-height:2.75rem; padding:.625rem 1rem; border-radius:.375rem; background:#ffffff08; color:var(--text-primary); font:600 .875rem var(--font-body); cursor:pointer; transition:background-color 180ms; }
 .popup-actions .popup-primary { background:var(--gold); color:var(--bg-deep); }
 .popup-actions .popup-danger { background:#783c31; color:#fff0e8; }
 .popup-actions button:hover { filter:brightness(1.15); }
+.popup-actions button:disabled { opacity:.55; filter:none; cursor:not-allowed; }
+.popup-actions button:has(>svg) { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; }
 [data-sonner-toast] { font-family:var(--font-body) !important; border-radius:.5rem !important; box-shadow:0 .5rem 1.5rem #0003 !important; }
 [data-sonner-toast][data-type=success] [data-icon] { color:#85bb83; }
 [data-sonner-toast][data-type=error] [data-icon] { color:#e48b7f; }

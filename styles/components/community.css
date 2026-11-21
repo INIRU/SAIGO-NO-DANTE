@@ -215,13 +215,12 @@
   padding-top: 1.5rem;
   margin-top: 1.5rem;
 }
-.community-account summary {
-  cursor: pointer;
+.community-account-email {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin-bottom: 1rem;
   font-size: 0.875rem;
-  color: var(--text-secondary);
-}
-.community-account p {
-  margin: 1rem 0;
   overflow-wrap: anywhere;
 }
 .community-account-actions {
