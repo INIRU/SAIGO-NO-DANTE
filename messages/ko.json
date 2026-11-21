@@ -420,7 +420,6 @@
       "loadingMore": "불러오는 중..."
     },
     "card": {
-      "date": "{month}월 {day}일",
       "contentType": "콘텐츠 유형"
     },
     "identityFilter": {

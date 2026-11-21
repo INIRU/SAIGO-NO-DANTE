@@ -71,19 +71,19 @@ function PlanCard({
               <div className="relative overflow-hidden rounded-full" style={{ width: '1.125rem', height: '1.125rem', flexShrink: 0, border: '1px solid rgba(200,144,10,0.2)' }}>
                 <Image src={avatarUrl} alt={username} width={18} height={18} style={{ width: '1.125rem', height: '1.125rem', objectFit: 'cover' }} />
               </div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{username}</span>
-              <RelativeTime date={plan.created_at} style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }} />
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>{username}</span>
+              <RelativeTime date={plan.created_at} className="shrink-0 pl-0.5 text-[0.75rem] text-[var(--text-muted)]" />
             </div>
-            <div className="ml-auto flex items-center gap-2.5">
-              <span className="flex items-center gap-0.5" style={{ fontSize: '0.75rem', color: plan.vote_count > 0 ? 'var(--gold)' : 'var(--text-muted)' }}>
-                <Heart style={{ width: '0.625rem', height: '0.625rem' }} fill={plan.vote_count > 0 ? 'currentColor' : 'none'} /> {plan.vote_count}
+            <div className="ml-auto flex items-center gap-2.5 text-[0.8125rem] tabular-nums text-[var(--text-tertiary)]">
+              <span className="flex items-center gap-1">
+                <Heart style={{ width: '0.6875rem', height: '0.6875rem' }} fill="currentColor" stroke="none" />{plan.vote_count}
               </span>
-              <span className="flex items-center gap-0.5" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                <Eye style={{ width: '0.625rem', height: '0.625rem' }} /> {plan.view_count}
+              <span className="flex items-center gap-1">
+                <Eye style={{ width: '0.6875rem', height: '0.6875rem' }} />{plan.view_count}
               </span>
               {plan.comment_count > 0 && (
-                <span className="flex items-center gap-0.5" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  <MessageCircle style={{ width: '0.625rem', height: '0.625rem' }} /> {plan.comment_count}
+                <span className="flex items-center gap-1">
+                  <MessageCircle style={{ width: '0.6875rem', height: '0.6875rem' }} />{plan.comment_count}
                 </span>
               )}
             </div>

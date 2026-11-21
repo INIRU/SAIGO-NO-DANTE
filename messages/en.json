@@ -420,7 +420,6 @@
       "loadingMore": "Loading..."
     },
     "card": {
-      "date": "{month}/{day}",
       "contentType": "Content type"
     },
     "identityFilter": {
