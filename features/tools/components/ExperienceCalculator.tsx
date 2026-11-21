@@ -9,7 +9,7 @@ import { getResourceIconUrl } from '@/lib/utils/images'
 import Dropdown from '@/components/ui/Dropdown'
 import styles from './ExperienceCalculator.module.css'
 import PageHeader from '@/components/ui/PageHeader'
-const dropdownStyle = {width:'100%',justifyContent:'space-between',padding:'.7rem',background:'var(--bg-deep)',borderColor:'var(--border)',fontFamily:'var(--font-mono)',fontSize:'1rem',color:'var(--text-primary)'}
+const dropdownStyle = {width:'100%',justifyContent:'space-between',padding:'.7rem',background:'var(--bg-deep)',borderColor:'var(--border)',fontSize:'1rem',color:'var(--text-primary)'}
 
 const ticketIcons = ['ticket-1','ticket-2','ticket-3','ticket-4'] as const
 function ResourceImage({ name, className }: {name: Parameters<typeof getResourceIconUrl>[0]; className?: string}) {
@@ -36,7 +36,7 @@ export default function ExperienceCalculator() {
     <div className={styles.workspace}>
       <div className={styles.inputs}>
         <section className={styles.panel} aria-labelledby="level-heading">
-          <h2 id="level-heading"><span>01</span>{t('levels')}</h2>
+          <h2 id="level-heading">{t('levels')}</h2>
           <div className={styles.levels}>
             <div className={styles.fieldLabel}>{t('current')}<Dropdown ariaLabel={t('current')} className={styles.levelDropdown} buttonStyle={dropdownStyle} value={String(current)} options={Array.from({length:MAX_EXPERIENCE_LEVEL},(_,i)=>({value:String(i+1),label:`Lv. ${i+1}`}))} onChange={value=>{const n=Number(value);setCurrent(n);setTarget(Math.max(n,target));setProgress(0)}} /></div>
             <ArrowRight aria-hidden="true" />
@@ -45,16 +45,16 @@ export default function ExperienceCalculator() {
           <label className={styles.progress}>{t('progress')}<div><input aria-label={t('progress')} type="number" inputMode="numeric" min={0} max={maxProgress} disabled={current===MAX_EXPERIENCE_LEVEL} value={progress} onChange={e=>setProgress(Math.max(0,Math.min(maxProgress,Math.trunc(Number(e.target.value)||0))))}/><span>/ {number(current===MAX_EXPERIENCE_LEVEL ? 0 : LEVEL_COSTS[current+1])}</span></div></label>
         </section>
         <section className={styles.panel} aria-labelledby="inventory-heading">
-          <div className={styles.sectionHeading}><h2 id="inventory-heading"><span>02</span>{t('inventory')}</h2><button className={styles.reset} type="button" title={t('reset')} aria-label={t('reset')} onClick={()=>setInventory([0,0,0,0])}><RotateCcw size={16}/></button></div>
+          <div className={styles.sectionHeading}><h2 id="inventory-heading">{t('inventory')}</h2><button className={styles.reset} type="button" title={t('reset')} aria-label={t('reset')} onClick={()=>setInventory([0,0,0,0])}><RotateCcw size={16}/></button></div>
           <div className={styles.inventory}>{TICKET_NAMES.map((tier,i)=><label key={tier} className={styles.ticketInput}>
             <ResourceImage name={ticketIcons[i]} />
-            <span className={styles.ticketTier}>{tier}<small>{number(TICKET_EXP[i])} EXP</small></span>
+            <span className={styles.ticketTier}>{number(TICKET_EXP[i])} <small>EXP</small></span>
             <input aria-label={t('ticket',{tier})} type="number" inputMode="numeric" min={0} max={99999} value={inventory[i]} onChange={e=>setInventory(inventory.map((n,j)=>i===j ? Math.max(0,Math.min(99999,Math.trunc(Number(e.target.value)||0))) : n) as Tickets)}/>
           </label>)}</div>
         </section>
       </div>
       <section className={`${styles.panel} ${styles.farming}`} aria-labelledby="farming-heading">
-        <h2 id="farming-heading"><span>03</span>{t('farming')}</h2>
+        <h2 id="farming-heading">{t('farming')}</h2>
         <div className={styles.balance} aria-live="polite" aria-atomic="true">
           <span>{t('required')}</span><strong data-testid="required-exp">{number(required)}<small>EXP</small></strong>
           <dl><div><dt>{t('owned')}</dt><dd>{number(owned)}</dd></div><div><dt>{t('missing')}</dt><dd data-testid="missing-exp">{number(Math.max(0,required-owned))}</dd></div></dl>
@@ -68,7 +68,6 @@ export default function ExperienceCalculator() {
           <small>{t('perModule')} {number(Math.round(method.experience/(LUXCAVATIONS[stage-1].modules*(i ? 2 : 1))))}</small>
         </label>)}</fieldset>
         <div className={styles.reward}><span>{t('reward')}</span><div>{selected.reward.map((count,i)=> count>0 && <span key={i} title={t('ticket',{tier:TICKET_NAMES[i]})}><ResourceImage name={ticketIcons[i]}/><b>×{count}</b></span>)}</div></div>
-        <p className={styles.fixed}>{t('fixed')}</p>
       </section>
     </div>
     <section className={`${styles.panel} ${styles.results}`} aria-labelledby="results-heading">
@@ -76,7 +75,7 @@ export default function ExperienceCalculator() {
       <p className={styles.hint}>{required===0 ? t('already') : selected.runs===0 ? t('noFarm') : null}</p>
       <div className={styles.resultGrid}>
         <div className={styles.ticketResults}>{TICKET_NAMES.map((tier,i)=><div key={tier} className={styles.ticketResult}>
-          <ResourceImage name={ticketIcons[i]}/><span>{tier}</span><strong data-testid={`use-ticket-${i+1}`}>{number(selected.plan.used[i])}<small>{t('use')}</small></strong><p>{t('left')} <b>{number(selected.plan.left[i])}</b></p>
+          <ResourceImage name={ticketIcons[i]}/><span className="sr-only">{t('ticket',{tier})}</span><strong data-testid={`use-ticket-${i+1}`}>{number(selected.plan.used[i])}<small>{t('use')}</small></strong><p>{t('left')} <b>{number(selected.plan.left[i])}</b></p>
         </div>)}</div>
         <dl className={styles.totals}><div><dt>{t('spent')}</dt><dd>{number(selected.plan.spent)} EXP</dd></div><div><dt>{t('excess')}</dt><dd data-testid="excess-exp">+{number(selected.plan.excess)} EXP</dd></div><div className={styles.enkephalin}><dt><ResourceImage name="enkephalin"/>{t('enkephalin')}</dt><dd>{number(selected.enkephalin)}</dd></div></dl>
       </div>
