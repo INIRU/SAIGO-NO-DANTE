@@ -19,7 +19,7 @@ export default function CardKeywords({ keywords: list, max = 3 }: { keywords: re
       {list.slice(0, max).map(keyword => {
         const iconUrl = getIconUrl(keyword)
         return (
-          <span key={keyword} data-card-keyword className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[0.875rem] leading-none text-[#9f8b68]">
+          <span key={keyword} className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[0.875rem] leading-none text-[#9f8b68]">
             {iconUrl && <Image src={iconUrl} alt="" width={14} height={14} className="size-[0.875rem] shrink-0" />}
             {localizeDeckKeyword(keyword, keywords[keyword], locale)}
           </span>
