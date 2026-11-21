@@ -1,6 +1,6 @@
 /*
- * Plan detail page. The hero sits directly on the page (no card): title, author, a row of
- * facts and one command row. Assist Mode is the page's single solid gold element.
+ * Plan detail page. The hero sits directly on the page (no card): difficulty and keywords, title,
+ * author and one command row. Assist Mode is the page's single solid gold element.
  *
  * PlanActions ships shared Tailwind hover colors that override its primary button's dark label
  * (gold text on a gold hover background). These unlayered rules outrank Tailwind's
@@ -16,7 +16,6 @@
   grid-template-areas:
     'identity'
     'author'
-    'facts'
     'actions';
   row-gap: 1.25rem;
   padding-bottom: 1.5rem;
@@ -24,7 +23,10 @@
 
 .identity { grid-area: identity; min-width: 0; }
 .author { grid-area: author; min-width: 0; }
-.facts { grid-area: facts; min-width: 0; }
+
+/* Above the title: the run's difficulty, then its keywords. */
+.lead { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; min-height: 2rem; margin-bottom: 0.75rem; }
+.lead [data-plan-difficulty] { font-size: 1.25rem; }
 
 .title {
   max-width: 24ch;
@@ -34,50 +36,6 @@
   color: var(--text-primary);
   overflow-wrap: anywhere;
   text-wrap: pretty;
-}
-
-/* Facts: small label over a large value, separated by hairlines. */
-.facts {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  row-gap: 0.875rem;
-}
-
-.fact {
-  min-width: 0;
-  padding: 0 0.875rem;
-  border-left: 1px solid #2e2417;
-}
-
-.fact:nth-child(3n + 1) { padding-left: 0; border-left: 0; }
-
-.fact dt {
-  font-size: 0.8125rem;
-  line-height: 1.3;
-  color: #9c8b73;
-}
-
-.fact dd {
-  margin-top: 0.125rem;
-  font-family: var(--font-title);
-  font-size: 1.75rem;
-  line-height: 1;
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-/* Three facts share a phone's width, so INFINITY LOOP and NORMAL/HARD are set smaller there, in a line as tall as the numbers. */
-.fact dd [data-plan-difficulty] {
-  padding: 0.25rem 0;
-  font-size: 1.25rem;
-}
-
-@media (min-width: 640px) {
-  .fact dd [data-plan-difficulty] {
-    padding: 0;
-    font-size: 1.75rem;
-  }
 }
 
 .actions {
@@ -99,9 +57,9 @@
   gap: 0.5rem;
   min-height: 44px;
   padding: 0.5rem 0.875rem;
-  border: 1px solid #2e2417;
+  border: 1px solid transparent;
   border-radius: 4px;
-  background: #17120c;
+  background: transparent;
   color: #cbb994;
   font-size: 0.9375rem;
   font-weight: 600;
@@ -117,14 +75,12 @@
 }
 
 .actions button:hover {
-  border-color: var(--gold-dim);
-  background: #211a12;
+  background: #17120c;
   color: var(--gold-light);
 }
 
 .actions button:active {
-  border-color: var(--gold-dim);
-  background: #2a2118;
+  background: #211a12;
   color: var(--gold-light);
 }
 
@@ -133,10 +89,8 @@
   opacity: 0.5;
 }
 
-/* Recommended: filled heart, gold tint. */
+/* Recommended: filled heart, gold label. */
 .actions button[aria-pressed="true"] {
-  border-color: var(--gold-dim);
-  background: #2a1f0c;
   color: var(--gold-light);
 }
 
@@ -168,45 +122,34 @@
 
 /* Owner tools follow the run action and stay visibly secondary. */
 .actions button[data-plan-action="edit"] {
-  border-color: #3a2c14;
-  background: transparent;
   color: var(--gold);
 }
 
 .actions button[data-plan-action="edit"]:hover,
 .actions button[data-plan-action="edit"]:active {
-  border-color: var(--gold);
   background: #17120c;
   color: var(--gold-light);
 }
 
 .actions button[data-plan-action="delete"] {
-  border-color: rgb(239 68 68 / 0.3);
-  background: transparent;
   color: #fca5a5;
 }
 
 .actions button[data-plan-action="delete"]:hover,
 .actions button[data-plan-action="delete"]:active {
-  border-color: #f87171;
   background: rgb(239 68 68 / 0.08);
   color: #fecaca;
 }
 
 .actions button[data-plan-action="copied"],
 .actions button[data-plan-action="copied"]:hover {
-  border-color: rgb(16 185 129 / 0.4);
-  background: rgb(16 185 129 / 0.1);
+  background: transparent;
   color: #6ee7b7;
 }
 
 @media (min-width: 640px) {
   .title { font-size: 2.625rem; }
-  .facts { display: flex; flex-wrap: wrap; row-gap: 0.875rem; }
-  .fact { padding: 0 1.5rem; }
-  .fact:nth-child(3n + 1) { padding-left: 1.5rem; border-left: 1px solid #2e2417; }
-  .fact:first-child { padding-left: 0; border-left: 0; }
-  .actions { display: flex; flex-wrap: wrap; }
+  .actions { display: flex; flex-wrap: wrap; margin-left: -0.875rem; }
   .actions button[data-plan-action="assist"] {
     min-width: 15rem;
     min-height: 3rem;
@@ -219,7 +162,6 @@
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       'identity author'
-      'facts facts'
       'actions actions';
     column-gap: 2rem;
     row-gap: 1.75rem;

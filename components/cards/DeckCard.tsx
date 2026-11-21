@@ -6,6 +6,7 @@ import FormationThumbnail from '@/components/cards/FormationThumbnail'
 import { memo, useMemo } from 'react'
 import { Link } from '@/lib/i18n/navigation'
 import IntentLink from '@/components/ui/IntentLink'
+import RelativeTime from '@/components/ui/RelativeTime'
 import Image from 'next/image'
 import { Heart, Eye, MessageCircle } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
@@ -71,12 +72,6 @@ function DeckCard({ deck, onTagClick, NotePreview }: DeckCardProps) {
   const locale = useLocale() as SupportedLang
   const t = useTranslations('decks')
   const preview = deck.description ? notePreviewText(deck.description) : ''
-  const date = useMemo(() => {
-    const d = deck.created_at.slice(0, 10) // "YYYY-MM-DD"
-    const [, mm, dd] = d.split('-')
-    return t('card.date', { month: Number.parseInt(mm, 10), day: Number.parseInt(dd, 10) })
-  }, [deck.created_at, t])
-
   // 슬롯 순서로 정렬, slot_order=99는 뒤로
   const sorted = useMemo(() => [...(deck.deck_identities ?? [])].sort((a, b) => {
     if (a.slot_order === 99 && b.slot_order !== 99) return 1
@@ -196,7 +191,7 @@ function DeckCard({ deck, onTagClick, NotePreview }: DeckCardProps) {
             </div>
           )}
 
-          {/* 하단 메타 — 왼쪽: user · date / 오른쪽: ♡ N · 👁 N */}
+          {/* Footer, as the board cards draw it: author and how long ago on the left, counts on the right. */}
           <div
             className="flex flex-wrap items-center justify-between gap-2"
             style={{ borderTop: '1px solid rgba(58,42,21,0.5)', paddingTop: '0.625rem' }}
@@ -204,7 +199,7 @@ function DeckCard({ deck, onTagClick, NotePreview }: DeckCardProps) {
             {/* 왼쪽: 작성자 · 날짜 */}
             <div
               className="flex min-w-0 items-center"
-              style={{ gap: '0.25rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}
+              style={{ gap: '0.375rem', fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}
             >
               {(deck.username || deck.guest_tag) && (
                 <>
@@ -215,28 +210,27 @@ function DeckCard({ deck, onTagClick, NotePreview }: DeckCardProps) {
                   {deck.username && deck.user_id && deck.profile_public !== false
                     ? <Link href={`/users/${deck.user_id}`} className="hit-target relative z-10 hover:text-[var(--gold)] hover:underline">{deck.username}</Link>
                     : <span>{deck.username ?? guestAuthorName(deck.guest_tag, locale)}</span>}
-                  <span style={{ color: 'var(--text-tertiary)' }}>·</span>
                 </>
               )}
-              <span style={{ color: 'var(--text-tertiary)' }}>{date}</span>
+              <RelativeTime date={deck.created_at} className="shrink-0 pl-0.5 text-[0.75rem] text-[var(--text-muted)]" />
             </div>
 
             {/* 오른쪽: 투표 · 조회 · 댓글 */}
             <div
-              className="ml-auto flex items-center"
-              style={{ gap: '0.625rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}
+              className="ml-auto flex items-center tabular-nums"
+              style={{ gap: '0.625rem', fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}
             >
               <span className="flex items-center" style={{ gap: '0.25rem' }}>
-                <Heart style={{ width: '0.625rem', height: '0.625rem' }} fill="currentColor" stroke="none" />
+                <Heart style={{ width: '0.6875rem', height: '0.6875rem' }} fill="currentColor" stroke="none" />
                 {deck.vote_count}
               </span>
               <span className="flex items-center" style={{ gap: '0.25rem' }}>
-                <Eye style={{ width: '0.625rem', height: '0.625rem' }} />
+                <Eye style={{ width: '0.6875rem', height: '0.6875rem' }} />
                 {deck.view_count}
               </span>
               {(deck.comment_count ?? 0) > 0 && (
                 <span className="flex items-center" style={{ gap: '0.25rem' }}>
-                  <MessageCircle style={{ width: '0.625rem', height: '0.625rem' }} />
+                  <MessageCircle style={{ width: '0.6875rem', height: '0.6875rem' }} />
                   {deck.comment_count}
                 </span>
               )}
