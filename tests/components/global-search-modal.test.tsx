@@ -29,12 +29,12 @@ describe('global search modal', () => {
     expect(html).toContain('role="listbox"')
   })
   it('marks the matched letters of the label', () => {
-    const html = row({ entry: ego, score: 1, reasons: [{ field: 'label', text: '적안', ranges: [[0, 1]] }] })
+    const html = row({ entry: ego, score: 1, similarity: 1, kind: 'exact', reasons: [{ field: 'label', text: '적안', ranges: [[0, 1]] }] })
     expect(html).toMatch(/<mark[^>]*>적<\/mark>안/)
     expect(html).not.toContain('reasons.')
   })
   it('names the field and marks it when another name matched', () => {
-    const html = row({ entry: ego, score: 1, reasons: [{ field: 'en', text: 'Red Eyes', ranges: [[0, 7]] }] })
+    const html = row({ entry: ego, score: 1, similarity: 1, kind: 'exact', reasons: [{ field: 'en', text: 'Red Eyes', ranges: [[0, 7]] }] })
     expect(html).toContain('reasons.en')
     expect(html).toMatch(/<mark[^>]*>Red Eye<\/mark>s/)
   })

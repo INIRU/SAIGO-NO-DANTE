@@ -394,8 +394,6 @@ export const translations = {
   'mirrorDungeon.theme.spoilerShow': { ko: '스포일러 보기', en: 'Show Spoilers', ja: 'スポイラーを表示' },
   'mirrorDungeon.theme.hiddenExists': { ko: '히든 테마팩이\n존재합니다', en: 'Hidden theme packs\nexist', ja: 'ヒドゥンテーマパックが\n存在します' },
   'mirrorDungeon.theme.other': { ko: '기타', en: 'Other', ja: 'その他' },
-  'mirrorDungeon.theme.autocompleteTheme': { ko: '테마팩', en: 'Theme', ja: 'テーマ' },
-  'mirrorDungeon.theme.autocompleteGift': { ko: '기프트', en: 'Gift', ja: 'ギフト' },
   'mirrorDungeon.theme.selected': { ko: '선택됨', en: 'Selected', ja: '選択済み' },
   'mirrorDungeon.theme.close': { ko: '닫기', en: 'Close', ja: '閉じる' },
 

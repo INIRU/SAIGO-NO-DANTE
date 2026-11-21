@@ -278,7 +278,6 @@ export default function MirrorDungeonClient({
           <ThemeTab
             lang={lang}
             themes={themes}
-            gifts={gifts}
             giftByGameId={giftByGameId}
             themeSearch={themeSearch}
             themeDiffFilter={themeDiffFilter}

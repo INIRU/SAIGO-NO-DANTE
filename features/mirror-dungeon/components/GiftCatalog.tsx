@@ -2,14 +2,19 @@
 
 import { useMemo, useEffect, useLayoutEffect, useRef, useCallback, useState, useDeferredValue, memo, type ReactNode } from 'react'
 import Image from 'next/image'
-import { Search, X, SlidersHorizontal, ArrowUp, ArrowDown } from 'lucide-react'
+import { X, SlidersHorizontal, ArrowUp, ArrowDown } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { translations } from '@/lib/i18n/translations'
 import type { SupportedLang } from '@/lib/i18n/types'
 import { getLocalizedName } from '@/lib/i18n/localize'
+import { search as findHits } from '@/lib/search/engine'
+import { refNameLabels } from '@/lib/game-text/rich-text'
+import { useGameTextRefs, wantGameTextRefs } from '@/hooks/useGameTextRefs'
 import Dropdown from '@/components/ui/Dropdown'
 import GiftCard from '@/features/mirror-dungeon/components/GiftCard'
 import { GiftWarningMark } from '@/features/mirror-dungeon/components/GiftCard'
+import GiftSearchBox from '@/features/mirror-dungeon/components/GiftSearchBox'
+import { giftEntries } from '@/features/mirror-dungeon/lib/search-suggestions'
 import type { EgoGift, EgoGiftTheme } from '@/features/mirror-dungeon/types'
 import { KEYWORD_COLORS, GRADE_LABELS, GRADES } from '@/features/mirror-dungeon/types'
 import type { GiftData } from '@/lib/planner/types'
@@ -397,9 +402,20 @@ export default function GiftCatalog({
   )
 
   const query = search.trim().toLocaleLowerCase()
+  // The gift index is built once something is typed. Effects of raw game text hold [Id]s: they are read as the names the
+  // screen shows, so the index is rebuilt when that table arrives.
+  const typed = inputValue.trim() !== '' || query !== ''
+  const { names: refNames } = useGameTextRefs({ lazy: true })
+  useEffect(() => { if (typed) wantGameTextRefs() }, [typed])
+  const entries = useMemo(
+    () => typed ? giftEntries(gifts, lang, key => keywordLabels[key] ?? key, refNames ? refNameLabels(refNames) : undefined) : null,
+    [typed, gifts, lang, keywordLabels, refNames],
+  )
+  // Gift id -> place in the engine's order; null when nothing is searched
+  const ranks = useMemo(() => query && entries ? new Map(findHits(entries, query).map((hit, i) => [hit.entry.href, i])) : null, [entries, query])
   const filtered = useMemo(() => {
-    return filterAndSortGifts(gifts, { keywords, grades, tiers, query, sortBy, sortDesc, slotFilter, themeGiftNames, giftSlotMap, pinned, keywordOrder, keepOrder })
-  }, [gifts, keywords, grades, tiers, query, sortBy, sortDesc, themeGiftNames, slotFilter, giftSlotMap, pinned, keywordOrder, keepOrder])
+    return filterAndSortGifts(gifts, { keywords, grades, tiers, ranks, sortBy, sortDesc, slotFilter, themeGiftNames, giftSlotMap, pinned, keywordOrder, keepOrder })
+  }, [gifts, keywords, grades, tiers, ranks, sortBy, sortDesc, themeGiftNames, slotFilter, giftSlotMap, pinned, keywordOrder, keepOrder])
 
   const deferredFiltered = useDeferredValue(filtered)
   const isStale = deferredFiltered !== filtered
@@ -436,7 +452,8 @@ export default function GiftCatalog({
   }, [compact, keywords, grades, tiers, query, sortBy, sortDesc, slotFilter, themeGiftNames])
 
   // 기본 정렬 = 키워드별, 등급 정렬 = 등급별 묶음. 이름 정렬은 한 덩어리.
-  const groupBy: 'keyword' | 'grade' | null = keepOrder || sortBy === 'default' ? 'keyword' : sortBy === 'grade' ? 'grade' : null
+  // A search in the default sort lists the gifts in the engine's order, as one run.
+  const groupBy: 'keyword' | 'grade' | null = keepOrder || (!ranks && sortBy === 'default') ? 'keyword' : sortBy === 'grade' ? 'grade' : null
   const groupCounts = useMemo(() => countGiftGroups(deferredFiltered, groupBy, pinned), [deferredFiltered, groupBy, pinned])
   const groups = useMemo(() => groupGifts(visibleGifts, groupBy, pinned), [visibleGifts, groupBy, pinned])
 
@@ -506,30 +523,20 @@ export default function GiftCatalog({
         {/* 검색 · 등급 · 세부 필터 · 결과 수 · 정렬 — 한 줄. 모바일은 검색과 필터 버튼만 두고 나머지는 시트로 */}
         <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-x-3">
           {/* The phone basis is what lets a wide toolbarEnd wrap to its own row instead of squeezing the search box. */}
-          <div className={`relative min-w-0 flex-1 ${collapsed ? 'basis-32' : `${compact ? '' : 'basis-24 '}sm:w-[13rem] sm:flex-none`}`}>
-            <Search size={14} aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#9c8b73]" />
-            <input
-              type="search"
-              aria-label={t('mirrorDungeon.search.placeholder')}
-              placeholder={t('mirrorDungeon.search.placeholder')}
-              value={inputValue}
-              onChange={e => setInputValue(e.target.value)}
-              className="h-9 max-sm:h-11 w-full min-w-0 rounded border border-[#2e2417] bg-[#17120c] pl-8 pr-7 text-[0.8125rem] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus-visible:border-[var(--gold)] [&::-webkit-search-cancel-button]:hidden"
-            />
-            {(inputValue || search) && (
-              <button
-                type="button"
-                aria-label={t('mirrorDungeon.filter.reset')}
-                onClick={() => {
-                  setInputValue('')
-                  setSearch('')
-                }}
-                className={`absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center text-[#9c8b73] hover:text-[var(--text-primary)] ${focusRing}`}
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
+          <GiftSearchBox
+            gifts={gifts}
+            entries={entries}
+            keywordOrder={keywordOrder}
+            keywordLabels={keywordLabels}
+            getGiftKeywordIcon={getGiftKeywordIcon}
+            usable={gift => !cardProps?.(gift)?.disabled}
+            onPick={selectGift}
+            value={inputValue}
+            onChange={value => { setInputValue(value); if (!value) setSearch('') }}
+            label={t('mirrorDungeon.search.placeholder')}
+            clearLabel={t('mirrorDungeon.filter.reset')}
+            className={`min-w-0 flex-1 ${collapsed ? 'basis-32' : `${compact ? '' : 'basis-24 '}sm:w-[13rem] sm:flex-none`}`}
+          />
 
           {collapsed && toolbarEnd && <div className="flex shrink-0 items-center gap-x-3">{toolbarEnd}</div>}
 

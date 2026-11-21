@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { expandIndex, fold, search, type IndexEntry } from '@/lib/search/engine'
+import { expandIndex, fold, search, snippet, type IndexEntry } from '@/lib/search/engine'
 
 const ryoshuCtx = [{ field: 'sinner' as const, text: '료슈' }, { field: 'sinner' as const, text: 'Ryōshū' }, { field: 'sinner' as const, text: '良秀' }]
 const rodionCtx = [{ field: 'sinner' as const, text: '로쟈' }, { field: 'sinner' as const, text: 'Rodion' }, { field: 'alias' as const, text: 'Rodya' }]
@@ -104,5 +104,145 @@ describe('expandIndex', () => {
     ], 'https://cdn')
     expect(identity.context).toEqual(['로쟈', 'Rodion', 'ロージャ', 'Rodya'].map(text => ({ field: 'sinner', text })))
     expect(identity.icon).toBe('https://cdn/identities/a.webp')
+  })
+})
+
+const named = (label: string, extra: Partial<IndexEntry> = {}): IndexEntry =>
+  ({ type: 'identity', href: `/n/${label}`, label, names: { ko: label }, ...extra })
+const wedge = [named('쐐기 사무소 대표'), named('쐐기 사무소 해결사'), named('화상', { type: 'keyword' })]
+const one = (e: IndexEntry, q: string) => search([e], q)[0]
+
+describe('hangul typos', () => {
+  it('finds a name by jamo distance across the dropped space, as the lowest kind', () => {
+    for (const q of ['쇄기사무소', '쇄기']) {
+      const r = search(wedge, q)
+      expect(r.map(h => h.entry.label)).toEqual(expect.arrayContaining(['쐐기 사무소 대표', '쐐기 사무소 해결사']))
+      for (const h of r) {
+        expect(h.kind).toBe('typo')
+        expect(h.similarity).toBeGreaterThanOrEqual(0.3)
+        expect(h.similarity).toBeLessThanOrEqual(0.45)
+      }
+    }
+  })
+  it('marks only the letters that equal the query, in order', () => {
+    expect(search([named('쐐기 사무소 대표')], '쇄기')[0].reasons[0]).toEqual({ field: 'fuzzy', text: '쐐기 사무소 대표', ranges: [[1, 2]] })
+  })
+  it('adds typo hits below solid ones, and none with three solid hits', () => {
+    const solid = ['쇄기 모음', '쇄기 둘', '쇄기 셋']
+    const two = search([named('쐐기 사무소'), ...solid.slice(0, 2).map(l => named(l))], '쇄기')
+    expect(two.map(h => h.kind)).toEqual(['prefix', 'prefix', 'typo'])
+    const three = search([named('쐐기 사무소'), ...solid.map(l => named(l))], '쇄기')
+    expect(three).toHaveLength(3)
+    expect(three.some(h => h.kind === 'typo')).toBe(false)
+  })
+  it('keeps the budget: none under 4 jamo, 1 for 4-7, 2 from 8, and a tense/plain swap costs half', () => {
+    expect(search([named('쏙')], '쇡')).toEqual([])
+    expect(search([named('화산')], '화상')[0].kind).toBe('typo')
+    expect(search([named('하산')], '화상')).toEqual([])
+    expect(search([named('쐐기 삼무소')], '쇄기사무소')[0].kind).toBe('typo')
+    expect(search([named('쐐기 삼문서')], '쇄기사무소')).toEqual([])
+    expect(one(named('쐐기'), '쇄기').similarity).toBeCloseTo(0.4125)
+    expect(one(named('세기'), '쇄기').similarity).toBeCloseTo(0.375)
+  })
+  it('does not start a typo match in the middle of a word', () => {
+    expect(search([named('합성 재료 소모')], '료슈')).toEqual([])
+    expect(search([named('강한 쐐기')], '쇄기')[0].kind).toBe('typo')
+  })
+  it('does not end a typo match in the middle of a syllable', () => {
+    expect(search([named('1호선')], '호수')).toEqual([])
+    expect(search([named('진동 폭발')], '진둥')[0].kind).toBe('typo')
+  })
+  it('keeps the english one-edit fallback', () => {
+    const r = search(entries, 'meursalt')
+    expect(r[0].entry.href).toBe('/sinners/meursault')
+    expect(r[0].kind).toBe('typo')
+  })
+})
+
+describe('a syllable still being typed', () => {
+  it.each(['화ㅅ', '화사', '홧'])('%s finds 화상 without calling it a typo', q => {
+    const hit = one(named('화상'), q)
+    expect(hit).toBeDefined()
+    expect(hit.kind).not.toBe('typo')
+    expect(hit.reasons[0].ranges).toEqual([[0, 2]])
+  })
+  it('counts as the kind it would otherwise be', () => {
+    expect(one(named('화상 피해'), '화사').kind).toBe('prefix')
+    expect(one(named('강한 화상'), '화사').kind).toBe('word')
+  })
+  it('never calls a half-typed match exact, and ranks it under a whole one', () => {
+    expect(one(named('화상'), '화ㅅ').kind).toBe('prefix')
+    expect(search([named('화상 피해'), named('화사한 날')], '화사').map(h => h.entry.label)).toEqual(['화사한 날', '화상 피해'])
+  })
+  it('a single letter only reaches into the next syllable with its final consonant', () => {
+    expect(search([named('일반'), named('이름')], '이').map(h => h.entry.label)).toEqual(['이름'])
+    expect(one(named('하나'), '한').kind).toBe('prefix')
+  })
+})
+
+describe('a match through context only', () => {
+  it('scores under every name match and over body text', () => {
+    const sim = one(named('LCB 수감자', { context: [{ field: 'sinner', text: '료슈' }] }), '료슈').similarity
+    expect(sim).toBeLessThan(0.6)
+    expect(sim).toBeGreaterThan(0.5)
+  })
+})
+
+describe('similarity and kind', () => {
+  it('maps each way of matching to its value', () => {
+    const cases: [IndexEntry, string, string, number][] = [
+      [named('화상'), '화상', 'exact', 1],
+      [named('화상 피해'), '화상', 'prefix', 0.9],
+      [named('강한 화상'), '화상', 'word', 0.8],
+      [named('아주화상'), '화상', 'contains', 0.7],
+      [named('쐐기 사무소'), 'ㅆㄱ', 'initials', 0.6],
+      [named('료슈', { context: [{ field: 'sinner', text: 'LCB' }] }), '료슈 lcb', 'words', 0.5],
+      [named('불꽃', { text: '화상 3 부여' }), '부여', 'text', 0.4],
+    ]
+    for (const [e, q, kind, sim] of cases) expect([q, one(e, q).kind, one(e, q).similarity]).toEqual([q, kind, sim])
+  })
+  it('keeps the initials hit in the same list as names', () => {
+    expect(search(wedge, 'ㅆㄱ').map(h => h.kind)).toEqual(['initials', 'initials'])
+  })
+})
+
+describe('body text', () => {
+  const gift = named('불꽃 깃털', { text: '공격 시 화상 3 부여' })
+  const byName = named('부여의 증표')
+  it('finds text below any name hit and carries the snippet', () => {
+    const r = search([gift, byName], '부여')
+    expect(r.map(h => h.entry)).toEqual([byName, gift])
+    expect(r[1].kind).toBe('text')
+    expect(r[1].snippet).toEqual({ before: '공격 시 화상 3 ', hit: '부여', after: '' })
+    expect(r[0].snippet).toBeUndefined()
+  })
+  it('does not look in the text of an entry whose name matched', () => {
+    expect(one(named('부여', { text: '부여 부여' }), '부여').kind).toBe('exact')
+  })
+})
+
+describe('snippet', () => {
+  it('starts without an ellipsis at the start of the text', () => {
+    expect(snippet('화상 3 부여', '화상', 3)).toEqual({ before: '', hit: '화상', after: ' 3 …' })
+  })
+  it('wraps the middle in ellipses', () => {
+    expect(snippet('0123456789 화상 0123456789', '화상', 3)).toEqual({ before: '…89 ', hit: '화상', after: ' 01…' })
+  })
+  it('is null when absent', () => {
+    expect(snippet('화상 3 부여', '출혈')).toBeNull()
+  })
+  it('matches folded text but returns the original slices', () => {
+    expect(snippet('Gain  Red   Eyes now', 'redeyes', 4)).toEqual({ before: '…in  ', hit: 'Red   Eyes', after: ' now' })
+  })
+})
+
+describe('speed', () => {
+  it('searches 2,000 entries well inside a keystroke', () => {
+    const many = Array.from({ length: 2000 }, (_, i) => named(`쐐기 사무소 ${i} 해결사`, { href: `/p/${i}`, names: { ko: `쐐기 사무소 ${i} 해결사`, en: `Wedge Office Fixer ${i}` } }))
+    search(many, '워밍')
+    const t = performance.now()
+    search(many, '쇄기사무소')
+    search(many, '화사')
+    expect(performance.now() - t).toBeLessThan(150) // ~10 ms here; the margin is for slow CI runners
   })
 })

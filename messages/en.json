@@ -2313,6 +2313,8 @@
     "moreFilters": "Filters",
     "giftUnit": "gifts",
     "packUnit": "packs",
+    "suggestKeyword": "Keywords",
+    "suggestEffect": "Effects",
     "sort": "Sort",
     "sortKeyword": "By keyword",
     "sortReverse": "Reverse order",
